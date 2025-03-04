@@ -1,46 +1,121 @@
-# Getting Started with Create React App
+# Audiometry Trainer
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A professional web application for Pure Tone Audiometry Training designed for audiology students. This application provides a realistic simulation of the Hughson-Westlake procedure, allowing students to practice and master audiometric testing techniques.
 
-## Available Scripts
+![Audiometry Trainer Screenshot](./screenshot.png)
 
-In the project directory, you can run:
+## Features
 
-### `npm start`
+- **Interactive Audiogram**: Visualize and plot hearing thresholds across different frequencies
+- **Virtual Patient System**: Practice with simulated patients having various hearing profiles
+- **Hughson-Westlake Procedure**: Learn and apply the standard "5-up, 10-down" testing protocol
+- **Educational Feedback**: Receive guidance and performance assessment after each test
+- **Keyboard Shortcuts**: Efficient testing with keyboard controls
+- **Progress Tracking**: Monitor improvement over time
+- **Responsive Design**: Works on desktop, tablet, and mobile devices
+- **Accessibility Features**: High contrast mode and screen reader support
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+## Getting Started
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+### Prerequisites
 
-### `npm test`
+- Node.js (v14.0.0 or higher)
+- npm (v6.0.0 or higher)
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+### Installation
 
-### `npm run build`
+1. Clone the repository:
+   ```
+   git clone https://github.com/yourusername/audiometry-trainer.git
+   cd audiometry-trainer
+   ```
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+2. Install dependencies:
+   ```
+   npm install
+   ```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+3. Start the development server:
+   ```
+   npm start
+   ```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+4. Open your browser and navigate to:
+   ```
+   http://localhost:3000
+   ```
 
-### `npm run eject`
+## Usage
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+### Tutorial Mode
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+Start with the tutorial to learn the basics of pure tone audiometry and the Hughson-Westlake procedure. The tutorial provides step-by-step instructions and interactive examples.
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+### Practice Mode
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+Select a virtual patient from the patients page to begin practicing. Each patient has a unique hearing profile that simulates different types of hearing loss. Follow the Hughson-Westlake procedure to determine the patient's hearing thresholds.
 
-## Learn More
+### Keyboard Shortcuts
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+- **Space**: Present tone
+- **Up/Down Arrows**: Adjust intensity
+- **Left/Right Arrows**: Change frequency
+- **R**: Switch to right ear
+- **L**: Switch to left ear
+- **M**: Toggle masking
+- **Enter**: Record threshold
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+## Technical Details
+
+### Built With
+
+- [React](https://reactjs.org/) - Frontend framework
+- [TypeScript](https://www.typescriptlang.org/) - Type-safe JavaScript
+- [Material UI](https://mui.com/) - UI component library
+- [Web Audio API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API) - Audio generation and processing
+
+### Architecture
+
+The application follows a component-based architecture with the following structure:
+
+- **Components**: Reusable UI elements
+- **Pages**: Main application views
+- **Services**: Business logic and data handling
+- **Interfaces**: TypeScript type definitions
+- **Constants**: Application-wide constants and configuration
+
+### Local Storage
+
+The application uses browser local storage to save:
+- User settings and preferences
+- Test results and progress
+- Recently used virtual patients
+
+## Educational Resources
+
+The application includes educational content about:
+- Pure tone audiometry principles
+- The Hughson-Westlake procedure
+- Audiogram interpretation
+- Types of hearing loss
+- Masking techniques
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Acknowledgments
+
+- American Speech-Language-Hearing Association (ASHA) for audiometry guidelines
+- British Society of Audiology for recommended procedures
+- Audiology educators and students who provided feedback during development
