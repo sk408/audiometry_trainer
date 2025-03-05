@@ -43,64 +43,78 @@ import TutorialPage from './pages/TutorialPage';
 import PatientsPage from './pages/PatientsPage';
 import SettingsPage from './pages/SettingsPage';
 
-// Load settings from localStorage
-const loadSettings = () => {
-  try {
-    const savedSettings = localStorage.getItem('audiometryTrainerSettings');
-    return savedSettings ? JSON.parse(savedSettings) : null;
-  } catch (error) {
-    console.error('Error loading settings:', error);
-    return null;
-  }
-};
+// Import settings context
+import { SettingsProvider, useSettings } from './contexts/SettingsContext';
 
-function App() {
+function AppContent() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [darkMode, setDarkMode] = useState(false);
+  const { settings, updateSetting } = useSettings();
 
-  // Load dark mode setting on mount
-  useEffect(() => {
-    const settings = loadSettings();
-    if (settings && settings.darkMode !== undefined) {
-      setDarkMode(settings.darkMode);
-    }
-  }, []);
-
-  // Create theme based on dark mode setting
+  // Create theme based on settings
   const appTheme = React.useMemo(
     () =>
       createTheme({
         palette: {
-          mode: darkMode ? 'dark' : 'light',
+          mode: settings.darkMode ? 'dark' : 'light',
           primary: {
-            main: '#2196f3',
+            main: settings.highContrastMode ? '#ffffff' : '#2196f3',
           },
           secondary: {
-            main: '#f50057',
+            main: settings.highContrastMode ? '#ffff00' : '#f50057',
           },
+          background: {
+            default: settings.highContrastMode 
+              ? (settings.darkMode ? '#000000' : '#ffffff')
+              : (settings.darkMode ? '#121212' : '#f5f5f5'),
+            paper: settings.highContrastMode 
+              ? (settings.darkMode ? '#121212' : '#f5f5f5')
+              : (settings.darkMode ? '#1e1e1e' : '#ffffff'),
+          },
+          text: {
+            primary: settings.highContrastMode 
+              ? (settings.darkMode ? '#ffffff' : '#000000')
+              : (settings.darkMode ? '#e0e0e0' : '#212121'),
+            secondary: settings.highContrastMode 
+              ? (settings.darkMode ? '#cccccc' : '#333333')
+              : (settings.darkMode ? '#a0a0a0' : '#757575'),
+          },
+          contrastThreshold: settings.highContrastMode ? 4.5 : 3,
         },
         typography: {
           fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+          fontSize: settings.fontSize === 'small' ? 12 : settings.fontSize === 'large' ? 16 : 14,
           h1: {
             fontWeight: 500,
+            fontSize: settings.fontSize === 'small' ? '2rem' : settings.fontSize === 'large' ? '3rem' : '2.5rem',
           },
           h2: {
             fontWeight: 500,
+            fontSize: settings.fontSize === 'small' ? '1.75rem' : settings.fontSize === 'large' ? '2.75rem' : '2.25rem',
           },
           h3: {
             fontWeight: 500,
+            fontSize: settings.fontSize === 'small' ? '1.5rem' : settings.fontSize === 'large' ? '2.5rem' : '2rem',
           },
           h4: {
             fontWeight: 500,
+            fontSize: settings.fontSize === 'small' ? '1.25rem' : settings.fontSize === 'large' ? '2.25rem' : '1.75rem',
           },
           h5: {
             fontWeight: 500,
+            fontSize: settings.fontSize === 'small' ? '1.1rem' : settings.fontSize === 'large' ? '2rem' : '1.5rem',
           },
           h6: {
             fontWeight: 500,
+            fontSize: settings.fontSize === 'small' ? '1rem' : settings.fontSize === 'large' ? '1.75rem' : '1.25rem',
+          },
+          body1: {
+            fontSize: settings.fontSize === 'small' ? '0.875rem' : settings.fontSize === 'large' ? '1.25rem' : '1rem',
+          },
+          body2: {
+            fontSize: settings.fontSize === 'small' ? '0.75rem' : settings.fontSize === 'large' ? '1.1rem' : '0.875rem',
           },
         },
         components: {
@@ -120,7 +134,7 @@ function App() {
           },
         },
       }),
-    [darkMode]
+    [settings.darkMode, settings.highContrastMode, settings.fontSize]
   );
 
   const toggleDrawer = (open: boolean) => (event: React.KeyboardEvent | React.MouseEvent) => {
@@ -142,17 +156,7 @@ function App() {
   };
 
   const toggleDarkMode = () => {
-    const newDarkMode = !darkMode;
-    setDarkMode(newDarkMode);
-    
-    // Save to localStorage
-    try {
-      const settings = loadSettings() || {};
-      settings.darkMode = newDarkMode;
-      localStorage.setItem('audiometryTrainerSettings', JSON.stringify(settings));
-    } catch (error) {
-      console.error('Error saving dark mode setting:', error);
-    }
+    updateSetting('darkMode', !settings.darkMode);
   };
 
   const menuItems = [
@@ -188,9 +192,9 @@ function App() {
       <List>
         <ListItem onClick={toggleDarkMode}>
           <ListItemIcon>
-            {darkMode ? <LightModeIcon /> : <DarkModeIcon />}
+            {settings.darkMode ? <LightModeIcon /> : <DarkModeIcon />}
           </ListItemIcon>
-          <ListItemText primary={darkMode ? 'Light Mode' : 'Dark Mode'} />
+          <ListItemText primary={settings.darkMode ? 'Light Mode' : 'Dark Mode'} />
         </ListItem>
         <ListItem component="a" href="https://github.com/sk408/audiometry_trainer" target="_blank">
           <ListItemIcon>
@@ -241,7 +245,7 @@ function App() {
               )}
               
               <IconButton color="inherit" onClick={toggleDarkMode}>
-                {darkMode ? <LightModeIcon /> : <DarkModeIcon />}
+                {settings.darkMode ? <LightModeIcon /> : <DarkModeIcon />}
               </IconButton>
               
               <Button 
@@ -334,6 +338,14 @@ function App() {
         </Box>
       </Router>
     </ThemeProvider>
+  );
+}
+
+function App() {
+  return (
+    <SettingsProvider>
+      <AppContent />
+    </SettingsProvider>
   );
 }
 
