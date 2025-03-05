@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Container,
@@ -12,6 +12,7 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
+  TextField,
   Button,
   Grid,
   Alert,
@@ -37,24 +38,104 @@ import {
   HelpOutline
 } from '@mui/icons-material';
 import { DEFAULT_TONE_DURATION, DEFAULT_STARTING_LEVEL } from '../constants/AudioConstants';
-import { useSettings } from '../contexts/SettingsContext';
+
+// Mock settings service - in a real app, this would be a proper service
+const saveSettings = (settings: any) => {
+  try {
+    localStorage.setItem('audiometryTrainerSettings', JSON.stringify(settings));
+    console.log('Settings saved:', settings);
+    
+    // Dispatch a custom event to notify the App component of settings changes within the same tab
+    window.dispatchEvent(new Event('audiometrySettingsChanged'));
+    
+    return Promise.resolve(true);
+  } catch (error) {
+    console.error('Error saving settings:', error);
+    return Promise.reject(error);
+  }
+};
+
+const loadSettings = () => {
+  try {
+    const savedSettings = localStorage.getItem('audiometryTrainerSettings');
+    const parsedSettings = savedSettings ? JSON.parse(savedSettings) : null;
+    console.log('Settings loaded:', parsedSettings);
+    return parsedSettings;
+  } catch (error) {
+    console.error('Error loading settings:', error);
+    return null;
+  }
+};
 
 const SettingsPage: React.FC = () => {
-  const { settings, updateSetting, resetSettings } = useSettings();
+  // Default settings
+  const defaultSettings = {
+    darkMode: false,
+    volume: 80,
+    toneDuration: DEFAULT_TONE_DURATION,
+    startingLevel: DEFAULT_STARTING_LEVEL,
+    useKeyboardShortcuts: true,
+    showFrequencyLabels: true,
+    showIntensityLabels: true,
+    autoSaveResults: true,
+    calibrationMode: false,
+    highContrastMode: false,
+    notificationSounds: true,
+    fontSize: 'medium',
+    language: 'en'
+  };
+
+  // State for settings
+  const [settings, setSettings] = useState(defaultSettings);
   const [savedSuccessfully, setSavedSuccessfully] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
 
+  // Load saved settings on component mount
+  useEffect(() => {
+    const savedSettings = loadSettings();
+    if (savedSettings) {
+      setSettings({ ...defaultSettings, ...savedSettings });
+    }
+  }, [defaultSettings]);
+
   // Handle settings changes
   const handleChange = (setting: string, value: any) => {
-    updateSetting(setting as any, value);
+    const updatedSettings = {
+      ...settings,
+      [setting]: value
+    };
+    setSettings(updatedSettings);
+    
+    // Auto-save settings whenever they change
+    saveSettings(updatedSettings)
+      .then(() => {
+        // Only show the success message for important changes
+        if (['darkMode', 'highContrastMode', 'fontSize', 'language'].includes(setting)) {
+          setSavedSuccessfully(true);
+          setTimeout(() => setSavedSuccessfully(false), 2000);
+        }
+      })
+      .catch(error => console.error('Failed to save setting:', setting, error));
+  };
+
+  // Handle save button click
+  const handleSave = async () => {
+    await saveSettings(settings);
     setSavedSuccessfully(true);
   };
 
   // Handle reset to defaults
   const handleReset = () => {
-    resetSettings();
+    setSettings(defaultSettings);
     setShowResetConfirm(false);
-    setSavedSuccessfully(true);
+    
+    // Save default settings
+    saveSettings(defaultSettings)
+      .then(() => {
+        setSavedSuccessfully(true);
+        setTimeout(() => setSavedSuccessfully(false), 2000);
+      })
+      .catch(error => console.error('Failed to save default settings', error));
   };
 
   // Close success message
@@ -307,14 +388,6 @@ const SettingsPage: React.FC = () => {
               >
                 Reset to Defaults
               </Button>
-              <Button
-                variant="contained"
-                color="primary"
-                startIcon={<Save />}
-                onClick={() => setSavedSuccessfully(true)}
-              >
-                Save Settings
-              </Button>
             </Box>
           </Paper>
         </Grid>
@@ -403,4 +476,4 @@ const SettingsPage: React.FC = () => {
   );
 };
 
-export default SettingsPage;
+export default SettingsPage; 
