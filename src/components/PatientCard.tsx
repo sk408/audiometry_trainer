@@ -7,7 +7,9 @@ import {
   Button,
   Chip,
   Box,
-  Avatar
+  Avatar,
+  useMediaQuery,
+  useTheme
 } from '@mui/material';
 import { HearingProfile } from '../interfaces/AudioTypes';
 
@@ -43,11 +45,14 @@ const getInitials = (name: string): string => {
 };
 
 const PatientCard: React.FC<PatientCardProps> = ({ patient, onSelect, selected = false }) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
   return (
     <Card 
       elevation={selected ? 8 : 3} 
       sx={{ 
-        maxWidth: 345, 
+        maxWidth: '100%', 
         transition: 'all 0.3s ease',
         transform: selected ? 'scale(1.02)' : 'scale(1)',
         border: selected ? '2px solid #3f51b5' : 'none',
@@ -56,23 +61,37 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient, onSelect, selected =
         flexDirection: 'column'
       }}
     >
-      <CardContent sx={{ flexGrow: 1 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+      <CardContent sx={{ flexGrow: 1, p: { xs: 1.5, sm: 2 } }}>
+        <Box sx={{ 
+          display: 'flex', 
+          flexDirection: { xs: 'column', sm: 'row' },
+          alignItems: { xs: 'center', sm: 'flex-start' },
+          mb: 2 
+        }}>
           <Avatar 
             sx={{ 
               bgcolor: selected ? '#3f51b5' : '#9c27b0',
-              width: 56,
-              height: 56,
-              mr: 2
+              width: { xs: 48, sm: 56 },
+              height: { xs: 48, sm: 56 },
+              mr: { xs: 0, sm: 2 },
+              mb: { xs: 1, sm: 0 }
             }}
           >
             {getInitials(patient.name)}
           </Avatar>
-          <Box>
+          <Box sx={{ 
+            width: '100%',
+            textAlign: { xs: 'center', sm: 'left' }
+          }}>
             <Typography variant="h6" component="div" gutterBottom>
               {patient.name}
             </Typography>
-            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+            <Box sx={{ 
+              display: 'flex', 
+              gap: 1, 
+              flexWrap: 'wrap',
+              justifyContent: { xs: 'center', sm: 'flex-start' } 
+            }}>
               <Chip 
                 label={patient.difficulty} 
                 size="small" 
@@ -87,22 +106,34 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient, onSelect, selected =
           </Box>
         </Box>
         
-        <Typography variant="body2" color="text.secondary" paragraph>
+        <Typography 
+          variant="body2" 
+          color="text.secondary" 
+          paragraph
+          sx={{ textAlign: { xs: 'center', sm: 'left' } }}
+        >
           {patient.description}
         </Typography>
         
-        <Typography variant="body2" color="text.secondary">
-          <strong>Profile ID:</strong> {patient.id}
-        </Typography>
-        
-        <Typography variant="body2" color="text.secondary">
-          <strong>Thresholds:</strong> {patient.thresholds.length} data points
-        </Typography>
+        <Box sx={{ 
+          display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
+          justifyContent: 'space-between',
+          gap: 1
+        }}>
+          <Typography variant="body2" color="text.secondary">
+            <strong>Profile ID:</strong> {patient.id}
+          </Typography>
+          
+          <Typography variant="body2" color="text.secondary">
+            <strong>Thresholds:</strong> {patient.thresholds.length} data points
+          </Typography>
+        </Box>
       </CardContent>
       
-      <CardActions>
+      <CardActions sx={{ p: { xs: 1, sm: 1.5 } }}>
         <Button 
-          size="small" 
+          size={isMobile ? "medium" : "small"}
           variant={selected ? "contained" : "outlined"} 
           color="primary"
           onClick={() => onSelect(patient)}

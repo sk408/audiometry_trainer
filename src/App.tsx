@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import {
   AppBar,
   Box,
@@ -192,7 +192,7 @@ function App() {
           </ListItemIcon>
           <ListItemText primary={darkMode ? 'Light Mode' : 'Dark Mode'} />
         </ListItem>
-        <ListItem component="a" href="https://github.com/yourusername/audiometry-trainer" target="_blank">
+        <ListItem component="a" href="https://github.com/sk408/audiometry_trainer" target="_blank">
           <ListItemIcon>
             <HelpIcon />
           </ListItemIcon>
@@ -247,13 +247,13 @@ function App() {
               <Button 
                 color="inherit" 
                 onClick={handleMenuOpen}
-                endIcon={<KeyboardArrowDown />}
+                endIcon={isMobile ? null : <KeyboardArrowDown />}
                 sx={{ ml: 1 }}
               >
-                <Avatar sx={{ width: 32, height: 32, mr: 1, bgcolor: 'primary.dark' }}>
+                <Avatar sx={{ width: 32, height: 32, mr: isMobile ? 0 : 1, bgcolor: 'primary.dark' }}>
                   S
                 </Avatar>
-                Student
+                {!isMobile && "Student"}
               </Button>
               <Menu
                 anchorEl={anchorEl}
@@ -316,16 +316,18 @@ function App() {
               <Typography variant="body2" color="text.secondary" align="center">
                 © {new Date().getFullYear()} Audiometry Trainer - Educational Tool for Audiology Students
               </Typography>
-              <Typography variant="body2" color="text.secondary" align="center">
-                <Link to="/tutorial" style={{ color: 'inherit', marginRight: 16 }}>
-                  Tutorial
-                </Link>
-                <Link to="/patients" style={{ color: 'inherit', marginRight: 16 }}>
-                  Practice
-                </Link>
-                <Link to="/settings" style={{ color: 'inherit' }}>
-                  Settings
-                </Link>
+              <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 1 }}>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: { xs: 1, sm: 2 } }}>
+                  <Link to="/tutorial" style={{ color: 'inherit' }}>
+                    Tutorial
+                  </Link>
+                  <Link to="/patients" style={{ color: 'inherit' }}>
+                    Practice
+                  </Link>
+                  <Link to="/settings" style={{ color: 'inherit' }}>
+                    Settings
+                  </Link>
+                </Box>
               </Typography>
             </Container>
           </Box>

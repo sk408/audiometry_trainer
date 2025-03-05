@@ -153,12 +153,6 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
             levelResponseCounts[frequency][ear][currentLevel] = { total: 0, heard: 0 };
           }
           
-          // Uncomment and fix these lines to properly track responses
-          // levelResponseCounts[frequency][ear][currentLevel].total += 1;
-          // levelResponseCounts[frequency][ear][currentLevel].heard += didRespond ? 1 : 0;
-          
-          // console.log(`Updated response counts for ${frequency}Hz, ${ear} ear at ${currentLevel}dB: ${levelResponseCounts[frequency][ear][currentLevel].heard}/${levelResponseCounts[frequency][ear][currentLevel].total} responses`);
-
           setResponseCounts(levelResponseCounts);
           
           // Set UI to show the current level we're tracking
@@ -320,13 +314,13 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
           // FIXED HUGHSON-WESTLAKE PROTOCOL FOR NO RESPONSE:
           // After no response, check if we already have a threshold (2/3 responses)
           // First check if we've already met threshold criteria despite this no-response
-          if (totalCount >= 3 && heardCount >= 2) {
+          if (totalCount >= 2 && heardCount >= 2) {
             // We already have a threshold! (2+ out of 3+ responses)
             console.log(`✅ Threshold CONFIRMED at ${currentLevel}dB with ${heardCount}/${totalCount} responses, despite this no-response.`);
             setProcedurePhase('complete');
             setSuggestedAction('store_threshold');
             setCurrentGuidance(`You have established a threshold at ${currentLevel} dB. The patient has responded ${heardCount} times out of ${totalCount} at this level, which meets the criteria of "2 out of 3" responses needed to establish a threshold. You can now store this value and move to the next frequency.`);
-          } else if (totalCount >= 3 && heardCount < 2) {
+          } else if (totalCount >= 2 && heardCount < 2) {
             // Failed to confirm threshold at this level - move up 5 dB
             console.log(`❌ Level ${currentLevel}dB is below threshold with only ${heardCount}/${totalCount} positive responses.`);
             setSuggestedAction('increase');
@@ -469,19 +463,13 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
   const stopTone = useCallback(() => {
     console.log('🛑 Stopping tone...');
     
-    // Clean up the tone interval pattern
-    if (toneIntervalRef.current) {
-      clearInterval(toneIntervalRef.current);
-      toneIntervalRef.current = null;
-    }
-    
+    // Stop the pulsing tone
     audioService.stopTone();
     
     // Get current states BEFORE changing any state to avoid race conditions
     const currentToneActive = toneActive;
     const currentPatientResponse = patientResponse;
     const currentProcedurePhase = procedurePhase;
-    const currentThresholdPhaseStartTime = thresholdPhaseStartTime;
     
     // Log current state for debugging
     console.log('🛑 Stopping tone with current state:', {
@@ -499,7 +487,7 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
     
     console.log('⏱️ Presentation stopped at:', presentationStopTime);
     
-    // IMPORTANT: Simulate a patient response for internal processing, but don't show visual feedback
+    // Simulate a patient response for internal processing if one doesn't exist yet
     let effectiveResponse = currentPatientResponse;
     if (effectiveResponse === null) {
       // If we haven't determined a response yet, do so now
@@ -509,12 +497,10 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
       // Use this response for processing but don't update UI
       effectiveResponse = didRespond;
     } else {
-      // FIXED: If we already have a patient response from during tone playback,
-      // make sure to log it for clarity
       console.log('🔊 Using existing patient response from during tone playback:', effectiveResponse);
     }
     
-    // Always process a response after stopping the tone, regardless of phase
+    // Always process a response after stopping the tone
     if (currentStep) {
       console.log('💻 Processing tone stop in phase:', currentProcedurePhase);
       
@@ -522,7 +508,7 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
       if (presentationStopTime > lastProcessedPresentationRef.current) {
         console.log(`✅ Processing new presentation. Current: ${presentationStopTime}, Last processed: ${lastProcessedPresentationRef.current}`);
         
-        // Process the response for all phases consistently
+        // Process the response
         if (effectiveResponse !== null) {
           // Store the response in the testing service
           testingService.recordResponseWithoutAdjustment(Boolean(effectiveResponse));
@@ -560,7 +546,7 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
     setPatientJustResponded(false);
     console.log('🔄 Patient response visuals reset AFTER updating trainer state');
     
-  }, [patientResponse, currentStep, updateTrainerState, procedurePhase, thresholdPhaseStartTime, simulatePatientResponse]);
+  }, [patientResponse, currentStep, updateTrainerState, procedurePhase]);
 
   // Clean up interval on unmount
   useEffect(() => {
@@ -1052,28 +1038,19 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
     return freq >= 1000 ? `${freq / 1000} kHz` : `${freq} Hz`;
   };
 
-  // Start playing tone with beeping pattern
+  // Start playing tone with pulsing pattern
   const startTone = useCallback(() => {
     if (!currentStep) return;
     
     try {
       console.log('🎵 Starting tone...');
       
-      // IMPORTANT: First, clear any existing intervals to prevent overlapping tones
-      // This ensures we don't have multiple intervals running
-      if (toneIntervalRef.current) {
-        clearInterval(toneIntervalRef.current);
-        toneIntervalRef.current = null;
-        console.log('🧹 Cleared existing tone interval');
-      }
-      
-      // Also stop any currently playing tones to ensure a clean start
+      // Stop any currently playing tones to ensure a clean start
       audioService.stopTone();
       
       // Make sure TestingService has the correct level before playing
       if (currentStep) {
-        // CRITICAL FIX: Ensure the testing service knows about our current step's frequency
-        // This fixes the issue when navigating between frequencies
+        // Ensure the testing service knows about our current step's frequency
         const currentFrequency = currentStep.frequency;
         console.log(`🔊 Explicit frequency check: Using ${currentFrequency}Hz for tone`);
         
@@ -1088,17 +1065,15 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
       setShowResponseIndicator(false);
       console.log('🔄 Response states reset');
       
-      // IMPORTANT: Set tone active state BEFORE playing tone 
-      // This helps prevent race conditions in state updates
+      // Set tone active state BEFORE playing tone
       setToneActive(true);
       console.log('🔊 Tone active set to true');
       
-      // IMMEDIATELY play the initial tone - this happens right away when button is pressed
+      // Play the tone with pulsing - this now happens in AudioService
       testingService.playCurrentTone();
-      console.log('🎵 Initial tone played');
+      console.log('🎵 Pulsed tone started');
       
-      // IMMEDIATE response check - show response immediately if patient can hear it
-      // Modified: Apply the same immediate response logic to ALL phases, including threshold
+      // Immediate response check - show response immediately if patient can hear it
       const didRespond = simulatePatientResponse();
       console.log('👂 Immediate patient response check:', didRespond);
       
@@ -1108,24 +1083,17 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
         setPatientJustResponded(true);
         console.log('👂 Patient IMMEDIATELY responded to the tone!');
         
-        // FIXED: Record the response in the testing service for later processing
-        // This ensures the response is recorded even if it happens during tone playback
+        // Record the response in the testing service for later processing
         console.log('💾 Recording immediate response for later processing');
         testingService.recordResponseWithoutAdjustment(didRespond);
-        
-        // Note: We do NOT call updateTrainerState here as that will happen in stopTone
-        // This fix ensures the response is recorded in the testing service
-        // and will be properly counted when stopTone is called
       }
       
-      // For all phases - record the presentation time
-      // This ensures we accurately track when the student initiated the presentation
+      // Record the presentation time
       console.log('🎯 Recording tone presentation time');
       lastPresentationTimeRef.current = Date.now();
       
-      // For all phases, process automatic response after a brief delay if not already responded
+      // Process automatic response after a brief delay if not already responded
       console.log('⏱️ Setting up automatic response processing');
-      // Process only if not already responded
       setTimeout(() => {
         // Only process if tone is still active and no response yet
         if (toneActive && !patientResponse) {
@@ -1136,39 +1104,10 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
         }
       }, 600);
       
-      // Set up beeping pattern (tone on for 800ms, off for 200ms)
-      // This starts after the initial tone and creates a regular beeping pattern
-      console.log('🔄 Setting up tone interval pattern');
-      toneIntervalRef.current = setInterval(() => {
-        // First check if we're still in active tone presentation
-        if (!toneActive) {
-          // Clean up interval if tone is no longer active
-          console.log('⚠️ Tone no longer active in interval, cleaning up');
-          if (toneIntervalRef.current) {
-            clearInterval(toneIntervalRef.current);
-            toneIntervalRef.current = null;
-          }
-          return;
-        }
-        
-        // Use TestingService to play tone with specific duration
-        if (currentStep) {
-          console.log('🔄 Playing tone in interval pattern');
-          // CRITICAL FIX: Ensure each interval tone also uses the explicit frequency
-          const currentFrequency = currentStep.frequency;
-          console.log(`🔄 Interval tone using frequency: ${currentFrequency}Hz`);
-          testingService.playCurrentTone(800);
-        }
-      }, 1000); // Repeat every second
     } catch (error) {
       console.error("❌ Error playing tone:", error);
       setErrorMessage('Failed to play tone. Please try again.');
       
-      // Make sure to clean up if an error occurs
-      if (toneIntervalRef.current) {
-        clearInterval(toneIntervalRef.current);
-        toneIntervalRef.current = null;
-      }
       setToneActive(false);
       audioService.stopTone();
     }
@@ -1359,12 +1298,18 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
   }
 
   return (
-    <Box sx={{ padding: 3 }}>
-      <Grid container spacing={2}>
+    <Box sx={{ padding: { xs: 1, sm: 2, md: 3 } }}>
+      <Grid container spacing={{ xs: 1, sm: 2 }}>
         {/* Header row */}
         <Grid item xs={12}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-            <Typography variant="h5">
+          <Box sx={{ 
+            display: 'flex', 
+            flexDirection: { xs: 'column', sm: 'row' }, 
+            justifyContent: 'space-between', 
+            alignItems: { xs: 'flex-start', sm: 'center' }, 
+            mb: 2 
+          }}>
+            <Typography variant="h5" sx={{ mb: { xs: 1, sm: 0 } }}>
               Audiometry Testing - {currentStep?.ear === 'right' ? 'Right' : 'Left'} Ear
             </Typography>
             {session && session.patientId && (
@@ -1385,8 +1330,10 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
           {trainerMode && (
             <Box sx={{ 
               display: 'flex', 
-              alignItems: 'center', 
+              flexDirection: { xs: 'column', md: 'row' },
+              alignItems: { xs: 'flex-start', md: 'center' }, 
               justifyContent: 'space-between',
+              gap: 1,
               mt: 1,
               p: 1,
               borderRadius: 1,
@@ -1464,7 +1411,7 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
         <Grid item xs={12} md={6}>
           {/* Left column - Audiogram */}
           <Box sx={{ 
-            height: 450, 
+            height: { xs: 300, sm: 350, md: 450 }, 
             display: 'flex', 
             flexDirection: 'column',
             mb: { xs: 2, md: 0 }
@@ -1481,7 +1428,7 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
         <Grid item xs={12} md={6}>
           {/* Right column - Patient and controls */}
           <Box sx={{ 
-            height: 450, 
+            height: { xs: 'auto', md: 450 }, 
             display: 'flex', 
             flexDirection: 'column', 
             gap: 2,
@@ -1495,7 +1442,7 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
               alignItems: 'center', 
               position: 'relative',
               mb: 2,
-              minHeight: 150
+              minHeight: { xs: 120, sm: 150 }
             }}>
               <PatientImage 
                 patientId={session?.patientId} 
@@ -1511,16 +1458,20 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
                       position: 'absolute',
                       top: 0,
                       right: 0,
-                      padding: 2,
+                      padding: { xs: 1, sm: 2 },
                       borderRadius: 2,
                       backgroundColor: patientResponse ? 'rgba(76, 175, 80, 0.9)' : 'rgba(244, 67, 54, 0.9)',
                       color: 'white',
                       fontWeight: 'bold',
                       zIndex: 10,
                       boxShadow: 3,
+                      fontSize: { xs: '0.8rem', sm: '1rem' }
                     }}
                   >
-                    <Typography variant="subtitle1">
+                    <Typography 
+                      variant="subtitle1" 
+                      sx={{ fontSize: { xs: '0.8rem', sm: '1rem' } }}
+                    >
                       {patientResponse ? "Patient Response Detected!" : "No Response Detected"}
                     </Typography>
                   </Box>
@@ -1530,7 +1481,7 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
 
             {/* Controls section */}
             <Box sx={{ 
-                p: 2, 
+                p: { xs: 1, sm: 2 }, 
                 borderRadius: 2, 
                 border: '1px solid #e0e0e0',
                 flexShrink: 0
@@ -1539,13 +1490,14 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
                 <Box sx={{ mb: 3 }}>
                   <Box sx={{ 
                     display: 'flex', 
+                    flexDirection: { xs: 'column', sm: 'row' },
                     justifyContent: 'center', 
                     alignItems: 'center', 
-                    gap: 3,
+                    gap: { xs: 1, sm: 3 },
                     mb: 1 
                   }}>
                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                      <Typography variant="h6" sx={{ mr: 1 }}>
+                      <Typography variant="h6" sx={{ mr: 1, fontSize: { xs: '1rem', sm: '1.25rem' } }}>
                         Frequency: {formatFrequency(currentStep?.frequency || 0)}
                       </Typography>
                       <Box sx={{ display: 'flex', flexDirection: 'column' }}>
@@ -1578,16 +1530,17 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
                     justifyContent: 'center', 
                     alignItems: 'center' 
                   }}>
-                    <Typography variant="h6">
+                    <Typography variant="h6" sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>
                       Level: {currentStep?.currentLevel || 0} dB HL
                     </Typography>
                   </Box>
 
                   <Box sx={{ 
                     display: 'flex', 
+                    flexDirection: { xs: 'column', sm: 'row' },
                     justifyContent: 'center', 
                     alignItems: 'center',
-                    gap: 2,
+                    gap: { xs: 1, sm: 2 },
                     mt: 1
                   }}>
                     <Tooltip title="Decrease by 10 dB (descending phase)">
@@ -1599,6 +1552,7 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
                           disabled={!currentStep || toneActive}
                           onClick={() => handleAdjustLevel(-10)}
                           startIcon={<ArrowDownward />}
+                          fullWidth={true}
                         >
                           -10 dB
                         </Button>
@@ -1613,6 +1567,7 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
                           disabled={!currentStep || toneActive}
                           onClick={() => handleAdjustLevel(5)}
                           startIcon={<ArrowUpward />}
+                          fullWidth={true}
                         >
                           +5 dB
                         </Button>
@@ -1627,6 +1582,7 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
                           disabled={!currentStep || toneActive}
                           onClick={() => handleAdjustLevel(10)}
                           startIcon={<ArrowUpward />}
+                          fullWidth={true}
                         >
                           +10 dB
                         </Button>

@@ -31,19 +31,36 @@ const HomePage: React.FC = () => {
         sx={{
           bgcolor: 'primary.main',
           color: 'primary.contrastText',
-          py: 8,
+          py: { xs: 5, md: 8 },
           textAlign: 'center'
         }}
       >
         <Container maxWidth="md">
-          <HearingOutlined sx={{ fontSize: 60, mb: 2 }} />
-          <Typography variant="h2" component="h1" gutterBottom fontWeight="bold">
+          <HearingOutlined sx={{ fontSize: { xs: 40, md: 60 }, mb: 2 }} />
+          <Typography 
+            variant="h2" 
+            component="h1" 
+            gutterBottom 
+            fontWeight="bold"
+            sx={{ fontSize: { xs: '2rem', sm: '2.5rem', md: '3.75rem' } }}
+          >
             Pure Tone Audiometry Trainer
           </Typography>
-          <Typography variant="h5" paragraph>
+          <Typography 
+            variant="h5" 
+            paragraph
+            sx={{ fontSize: { xs: '1rem', sm: '1.25rem', md: '1.5rem' } }}
+          >
             A comprehensive training tool for audiology students to practice conducting hearing tests
           </Typography>
-          <Box sx={{ mt: 4, display: 'flex', justifyContent: 'center', gap: 2, flexWrap: 'wrap' }}>
+          <Box sx={{ 
+            mt: 4, 
+            display: 'flex', 
+            flexDirection: { xs: 'column', sm: 'row' },
+            justifyContent: 'center', 
+            gap: 2, 
+            flexWrap: 'wrap' 
+          }}>
             <Button
               variant="contained"
               color="secondary"
@@ -51,7 +68,7 @@ const HomePage: React.FC = () => {
               startIcon={<School />}
               component={RouterLink}
               to="/tutorial"
-              sx={{ px: 3, py: 1.5 }}
+              sx={{ px: 3, py: 1.5, width: { xs: '100%', sm: 'auto' } }}
             >
               Start Tutorial
             </Button>
@@ -62,7 +79,7 @@ const HomePage: React.FC = () => {
               startIcon={<Person />}
               component={RouterLink}
               to="/patients"
-              sx={{ px: 3, py: 1.5 }}
+              sx={{ px: 3, py: 1.5, width: { xs: '100%', sm: 'auto' } }}
             >
               Practice with Patients
             </Button>
@@ -71,15 +88,15 @@ const HomePage: React.FC = () => {
       </Box>
 
       {/* Features Section */}
-      <Container maxWidth="lg" sx={{ py: 6 }}>
+      <Container maxWidth="lg" sx={{ py: { xs: 4, md: 6 } }}>
         <Typography variant="h4" component="h2" gutterBottom align="center" sx={{ mb: 4 }}>
           Key Features
         </Typography>
-        <Grid container spacing={4}>
+        <Grid container spacing={{ xs: 2, md: 4 }}>
           <Grid item xs={12} md={4}>
             <Paper elevation={3} sx={{ height: '100%', borderRadius: 2, overflow: 'hidden' }}>
               <Box sx={{ height: 8, bgcolor: 'primary.main' }} />
-              <Box sx={{ p: 3 }}>
+              <Box sx={{ p: { xs: 2, md: 3 } }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                   <School color="primary" sx={{ mr: 1, fontSize: 28 }} />
                   <Typography variant="h5" component="h3">
@@ -104,7 +121,7 @@ const HomePage: React.FC = () => {
           <Grid item xs={12} md={4}>
             <Paper elevation={3} sx={{ height: '100%', borderRadius: 2, overflow: 'hidden' }}>
               <Box sx={{ height: 8, bgcolor: 'secondary.main' }} />
-              <Box sx={{ p: 3 }}>
+              <Box sx={{ p: { xs: 2, md: 3 } }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                   <HearingOutlined color="secondary" sx={{ mr: 1, fontSize: 28 }} />
                   <Typography variant="h5" component="h3">
@@ -129,7 +146,7 @@ const HomePage: React.FC = () => {
           <Grid item xs={12} md={4}>
             <Paper elevation={3} sx={{ height: '100%', borderRadius: 2, overflow: 'hidden' }}>
               <Box sx={{ height: 8, bgcolor: 'info.main' }} />
-              <Box sx={{ p: 3 }}>
+              <Box sx={{ p: { xs: 2, md: 3 } }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                   <Assessment color="info" sx={{ mr: 1, fontSize: 28 }} />
                   <Typography variant="h5" component="h3">
@@ -155,13 +172,13 @@ const HomePage: React.FC = () => {
       </Container>
 
       {/* How It Works Section */}
-      <Box sx={{ bgcolor: '#f5f5f5', py: 6 }}>
+      <Box sx={{ bgcolor: '#f5f5f5', py: { xs: 4, md: 6 } }}>
         <Container maxWidth="lg">
           <Typography variant="h4" component="h2" gutterBottom align="center" sx={{ mb: 4 }}>
             How It Works
           </Typography>
-          <Paper elevation={0} sx={{ p: 4, borderRadius: 2 }}>
-            <Grid container spacing={4} alignItems="center">
+          <Paper elevation={0} sx={{ p: { xs: 2, md: 4 }, borderRadius: 2 }}>
+            <Grid container spacing={{ xs: 3, md: 4 }} alignItems="center">
               <Grid item xs={12} md={6}>
                 <Box>
                   <Typography variant="h5" gutterBottom>
@@ -201,44 +218,44 @@ const HomePage: React.FC = () => {
               <Grid item xs={12} md={6}>
                 <Grid container spacing={2}>
                   <Grid item xs={6}>
-                    <Box sx={{ p: 2, bgcolor: 'background.paper', borderRadius: 2, textAlign: 'center' }}>
+                    <Box sx={{ p: { xs: 1.5, md: 2 }, bgcolor: 'background.paper', borderRadius: 2, textAlign: 'center' }}>
                       <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
                         Step 1
                       </Typography>
-                      <School color="primary" sx={{ fontSize: 40, my: 2 }} />
+                      <School color="primary" sx={{ fontSize: { xs: 30, md: 40 }, my: { xs: 1, md: 2 } }} />
                       <Typography variant="body2">
                         Complete the interactive tutorial to learn the procedure
                       </Typography>
                     </Box>
                   </Grid>
                   <Grid item xs={6}>
-                    <Box sx={{ p: 2, bgcolor: 'background.paper', borderRadius: 2, textAlign: 'center' }}>
+                    <Box sx={{ p: { xs: 1.5, md: 2 }, bgcolor: 'background.paper', borderRadius: 2, textAlign: 'center' }}>
                       <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
                         Step 2
                       </Typography>
-                      <Person color="secondary" sx={{ fontSize: 40, my: 2 }} />
+                      <Person color="secondary" sx={{ fontSize: { xs: 30, md: 40 }, my: { xs: 1, md: 2 } }} />
                       <Typography variant="body2">
                         Select a virtual patient with a specific hearing profile
                       </Typography>
                     </Box>
                   </Grid>
                   <Grid item xs={6}>
-                    <Box sx={{ p: 2, bgcolor: 'background.paper', borderRadius: 2, textAlign: 'center' }}>
+                    <Box sx={{ p: { xs: 1.5, md: 2 }, bgcolor: 'background.paper', borderRadius: 2, textAlign: 'center' }}>
                       <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
                         Step 3
                       </Typography>
-                      <HearingOutlined color="success" sx={{ fontSize: 40, my: 2 }} />
+                      <HearingOutlined color="success" sx={{ fontSize: { xs: 30, md: 40 }, my: { xs: 1, md: 2 } }} />
                       <Typography variant="body2">
                         Conduct the audiometry test following proper protocol
                       </Typography>
                     </Box>
                   </Grid>
                   <Grid item xs={6}>
-                    <Box sx={{ p: 2, bgcolor: 'background.paper', borderRadius: 2, textAlign: 'center' }}>
+                    <Box sx={{ p: { xs: 1.5, md: 2 }, bgcolor: 'background.paper', borderRadius: 2, textAlign: 'center' }}>
                       <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
                         Step 4
                       </Typography>
-                      <Assessment color="info" sx={{ fontSize: 40, my: 2 }} />
+                      <Assessment color="info" sx={{ fontSize: { xs: 30, md: 40 }, my: { xs: 1, md: 2 } }} />
                       <Typography variant="body2">
                         Review results and get feedback on your performance
                       </Typography>
@@ -252,15 +269,15 @@ const HomePage: React.FC = () => {
       </Box>
 
       {/* Quick Start Section */}
-      <Container maxWidth="md" sx={{ py: 6 }}>
+      <Container maxWidth="md" sx={{ py: { xs: 4, md: 6 } }}>
         <Typography variant="h4" component="h2" gutterBottom align="center" sx={{ mb: 4 }}>
           Ready to Get Started?
         </Typography>
         <Grid container spacing={3}>
           <Grid item xs={12} sm={6}>
             <Card elevation={2} sx={{ height: '100%' }}>
-              <CardContent>
-                <Help color="primary" sx={{ fontSize: 40, mb: 2 }} />
+              <CardContent sx={{ p: { xs: 2, md: 3 } }}>
+                <Help color="primary" sx={{ fontSize: { xs: 30, md: 40 }, mb: 2 }} />
                 <Typography variant="h5" component="h3" gutterBottom>
                   New to Audiometry?
                 </Typography>
@@ -269,7 +286,7 @@ const HomePage: React.FC = () => {
                   will guide you through the entire process, from basic concepts to advanced techniques.
                 </Typography>
               </CardContent>
-              <CardActions>
+              <CardActions sx={{ p: { xs: 1.5, md: 2 } }}>
                 <Button
                   component={RouterLink}
                   to="/tutorial"
@@ -283,8 +300,8 @@ const HomePage: React.FC = () => {
           </Grid>
           <Grid item xs={12} sm={6}>
             <Card elevation={2} sx={{ height: '100%' }}>
-              <CardContent>
-                <Info color="secondary" sx={{ fontSize: 40, mb: 2 }} />
+              <CardContent sx={{ p: { xs: 2, md: 3 } }}>
+                <Info color="secondary" sx={{ fontSize: { xs: 30, md: 40 }, mb: 2 }} />
                 <Typography variant="h5" component="h3" gutterBottom>
                   Ready to Practice?
                 </Typography>
@@ -293,7 +310,7 @@ const HomePage: React.FC = () => {
                   jump right into testing with our diverse set of virtual patients.
                 </Typography>
               </CardContent>
-              <CardActions>
+              <CardActions sx={{ p: { xs: 1.5, md: 2 } }}>
                 <Button
                   component={RouterLink}
                   to="/patients"
@@ -309,9 +326,9 @@ const HomePage: React.FC = () => {
       </Container>
 
       {/* Footer */}
-      <Box sx={{ bgcolor: 'primary.dark', color: 'primary.contrastText', py: 4, mt: 4 }}>
+      <Box sx={{ bgcolor: 'primary.dark', color: 'primary.contrastText', py: { xs: 3, md: 4 }, mt: 4 }}>
         <Container maxWidth="lg">
-          <Grid container spacing={4}>
+          <Grid container spacing={{ xs: 2, md: 4 }}>
             <Grid item xs={12} md={6}>
               <Typography variant="h6" gutterBottom>
                 Pure Tone Audiometry Trainer
@@ -321,7 +338,7 @@ const HomePage: React.FC = () => {
                 Practice conducting hearing tests following the Hughson-Westlake procedure.
               </Typography>
             </Grid>
-            <Grid item xs={12} md={3}>
+            <Grid item xs={6} md={3}>
               <Typography variant="h6" gutterBottom>
                 Quick Links
               </Typography>
@@ -340,16 +357,16 @@ const HomePage: React.FC = () => {
                 </Link>
               </Box>
             </Grid>
-            <Grid item xs={12} md={3}>
+            <Grid item xs={6} md={3}>
               <Typography variant="h6" gutterBottom>
                 Resources
               </Typography>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                 <Link href="https://www.asha.org" target="_blank" color="inherit" underline="hover">
-                  American Speech-Language-Hearing Association
+                  ASHA
                 </Link>
                 <Link href="https://www.audiology.org" target="_blank" color="inherit" underline="hover">
-                  American Academy of Audiology
+                  AAA
                 </Link>
               </Box>
             </Grid>

@@ -163,7 +163,7 @@ const PatientsPage: React.FC = () => {
   }
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
+    <Container maxWidth="lg" sx={{ py: { xs: 2, md: 4 } }}>
       <Typography variant="h4" gutterBottom>
         Virtual Patients
       </Typography>
@@ -172,8 +172,8 @@ const PatientsPage: React.FC = () => {
         hearing profile that simulates different types of hearing loss.
       </Typography>
       
-      <Box sx={{ mb: 4 }}>
-        <Grid container spacing={2} alignItems="center">
+      <Box sx={{ mb: { xs: 2, md: 4 } }}>
+        <Grid container spacing={{ xs: 1, md: 2 }} alignItems="center">
           <Grid item xs={12} md={6}>
             <TextField
               fullWidth
@@ -188,14 +188,23 @@ const PatientsPage: React.FC = () => {
                   </InputAdornment>
                 ),
               }}
+              size="small"
+              sx={{ mb: { xs: 1, md: 0 } }}
             />
           </Grid>
           <Grid item xs={12} md={6}>
-            <Box sx={{ display: 'flex', gap: 2, justifyContent: { xs: 'flex-start', md: 'flex-end' } }}>
+            <Box sx={{ 
+              display: 'flex', 
+              gap: { xs: 1, md: 2 }, 
+              justifyContent: { xs: 'space-between', md: 'flex-end' },
+              flexWrap: 'wrap'
+            }}>
               <Button
                 variant="outlined"
                 startIcon={<FilterList />}
                 onClick={() => setIsFiltersOpen(true)}
+                size="small"
+                sx={{ flex: { xs: 1, sm: 'initial' } }}
               >
                 Filters
               </Button>
@@ -205,6 +214,8 @@ const PatientsPage: React.FC = () => {
                   color="primary"
                   startIcon={<HearingOutlined />}
                   onClick={handleStartTesting}
+                  size="small"
+                  sx={{ flex: { xs: 1, sm: 'initial' } }}
                 >
                   Start Testing
                 </Button>
@@ -214,6 +225,8 @@ const PatientsPage: React.FC = () => {
                   color="secondary"
                   startIcon={<PersonAdd />}
                   disabled
+                  size="small"
+                  sx={{ flex: { xs: 1, sm: 'initial' } }}
                 >
                   Add Patient
                 </Button>
@@ -226,33 +239,45 @@ const PatientsPage: React.FC = () => {
       {/* Active filters display */}
       {(difficultyFilter !== 'all' || hearingLossTypeFilter !== 'all') && (
         <Box sx={{ mb: 3 }}>
-          <Stack direction="row" spacing={1} alignItems="center">
+          <Stack 
+            direction={{ xs: 'column', sm: 'row' }} 
+            spacing={1} 
+            alignItems={{ xs: 'flex-start', sm: 'center' }}
+            sx={{ flexWrap: 'wrap', gap: 1 }}
+          >
             <Typography variant="body2">Active Filters:</Typography>
-            {difficultyFilter !== 'all' && (
-              <Chip 
-                label={`Difficulty: ${difficultyFilter}`}
-                onDelete={() => setDifficultyFilter('all')}
-                size="small"
-                color="primary"
-              />
-            )}
-            {hearingLossTypeFilter !== 'all' && (
-              <Chip 
-                label={`Type: ${hearingLossTypeFilter.replace('_', ' ')}`}
-                onDelete={() => setHearingLossTypeFilter('all')}
-                size="small"
-                color="secondary"
-              />
-            )}
-            <Button size="small" onClick={handleResetFilters}>
-              Clear All
-            </Button>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+              {difficultyFilter !== 'all' && (
+                <Chip 
+                  label={`Difficulty: ${difficultyFilter}`}
+                  onDelete={() => setDifficultyFilter('all')}
+                  size="small"
+                  color="primary"
+                />
+              )}
+              {hearingLossTypeFilter !== 'all' && (
+                <Chip 
+                  label={`Type: ${hearingLossTypeFilter.replace('_', ' ')}`}
+                  onDelete={() => setHearingLossTypeFilter('all')}
+                  size="small"
+                  color="secondary"
+                />
+              )}
+              <Button size="small" onClick={handleResetFilters}>
+                Clear All
+              </Button>
+            </Box>
           </Stack>
         </Box>
       )}
       
       {/* Filter dialog */}
-      <Dialog open={isFiltersOpen} onClose={() => setIsFiltersOpen(false)}>
+      <Dialog 
+        open={isFiltersOpen} 
+        onClose={() => setIsFiltersOpen(false)}
+        fullWidth
+        maxWidth="xs"
+      >
         <DialogTitle>Filter Patients</DialogTitle>
         <DialogContent sx={{ pt: 1 }}>
           <FormControl fullWidth margin="normal">
@@ -295,12 +320,12 @@ const PatientsPage: React.FC = () => {
         </DialogActions>
       </Dialog>
       
-      <Divider sx={{ mb: 4 }} />
+      <Divider sx={{ mb: { xs: 2, md: 4 } }} />
       
       {/* Patient cards */}
       {filteredPatients.length > 0 ? (
         <>
-          <Grid container spacing={3}>
+          <Grid container spacing={{ xs: 1, sm: 2, md: 3 }}>
             {currentPatients.map((patient) => (
               <Grid item xs={12} sm={6} md={4} key={patient.id}>
                 <PatientCard
@@ -313,7 +338,7 @@ const PatientsPage: React.FC = () => {
           </Grid>
           
           {/* Pagination */}
-          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'center', mt: { xs: 2, md: 4 } }}>
             <Pagination 
               count={totalPages} 
               page={page} 
@@ -321,6 +346,7 @@ const PatientsPage: React.FC = () => {
               color="primary" 
               showFirstButton 
               showLastButton
+              size="small"
             />
           </Box>
         </>
@@ -328,7 +354,7 @@ const PatientsPage: React.FC = () => {
         <Paper 
           elevation={0} 
           sx={{ 
-            p: 4, 
+            p: { xs: 2, md: 4 }, 
             textAlign: 'center', 
             bgcolor: '#f5f5f5',
             borderRadius: 2
@@ -355,8 +381,8 @@ const PatientsPage: React.FC = () => {
         <Paper 
           elevation={3} 
           sx={{ 
-            mt: 4, 
-            p: 3, 
+            mt: { xs: 2, md: 4 }, 
+            p: { xs: 2, md: 3 }, 
             bgcolor: '#f9f9f9',
             borderRadius: 2,
             border: '1px solid #e0e0e0'
@@ -368,7 +394,7 @@ const PatientsPage: React.FC = () => {
           <Typography variant="body1" paragraph>
             {selectedPatient.description}
           </Typography>
-          <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+          <Box sx={{ display: 'flex', gap: 1, mb: 2, flexWrap: 'wrap' }}>
             <Chip 
               label={`Difficulty: ${selectedPatient.difficulty}`} 
               color={
@@ -387,6 +413,8 @@ const PatientsPage: React.FC = () => {
             startIcon={<HearingOutlined />}
             onClick={handleStartTesting}
             size="large"
+            fullWidth
+            sx={{ display: { xs: 'flex', md: 'inline-flex' }, width: { xs: '100%', md: 'auto' } }}
           >
             Begin Audiometry Test
           </Button>
