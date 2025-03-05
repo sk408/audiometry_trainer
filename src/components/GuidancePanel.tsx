@@ -346,14 +346,10 @@ const GuidancePanel: React.FC<GuidancePanelProps> = ({
           animation: action === 'store_threshold' || action === 'present' ? 
             `${pulse} 2s infinite` : 'none',
         }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', mb: 2 }}>
-            <ActionChip
-              label={actionInfo.label}
-              color={actionInfo.color}
-              icon={actionInfo.icon}
-              size="medium"
-              sx={{ mr: 2 }}
-            />
+          <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%', mb: 2 }}>
+            <Typography variant="body1" fontWeight="medium" gutterBottom>
+              {actionInfo.label}
+            </Typography>
             
             <Typography variant="body2" color="text.secondary">
               {actionInfo.description}
