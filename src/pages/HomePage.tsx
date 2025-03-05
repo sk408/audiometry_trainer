@@ -373,7 +373,7 @@ const HomePage: React.FC = () => {
           </Grid>
           <Divider sx={{ my: 3, bgcolor: 'rgba(255,255,255,0.1)' }} />
           <Typography variant="body2" align="center">
-            © {new Date().getFullYear()} Pure Tone Audiometry Trainer. All rights reserved.
+            © 2025 Stephen Kanney. All rights reserved.
           </Typography>
         </Container>
       </Box>

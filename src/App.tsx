@@ -314,7 +314,7 @@ function App() {
           >
             <Container maxWidth="lg">
               <Typography variant="body2" color="text.secondary" align="center">
-                © {new Date().getFullYear()} Audiometry Trainer - Educational Tool for Audiology Students
+                © 2025 Stephen Kanney. All rights reserved.
               </Typography>
               <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 1 }}>
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: { xs: 1, sm: 2 } }}>
