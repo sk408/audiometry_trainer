@@ -41,7 +41,7 @@ import {
 import HomePage from './pages/HomePage';
 import TutorialPage from './pages/TutorialPage';
 import PatientsPage from './pages/PatientsPage';
-import SettingsPage from './pages/SettingsPage';
+// import SettingsPage from './pages/SettingsPage';
 
 // Load settings from localStorage
 const loadSettings = () => {
@@ -199,7 +199,7 @@ function App() {
     { text: 'Home', icon: <HomeIcon />, path: '/' },
     { text: 'Tutorial', icon: <SchoolIcon />, path: '/tutorial' },
     { text: 'Patients', icon: <PersonIcon />, path: '/patients' },
-    { text: 'Settings', icon: <SettingsIcon />, path: '/settings' },
+    // { text: 'Settings', icon: <SettingsIcon />, path: '/settings' },
   ];
 
   const drawer = (
@@ -300,12 +300,12 @@ function App() {
                 open={Boolean(anchorEl)}
                 onClose={handleMenuClose}
               >
-                <MenuItem onClick={handleMenuClose} component={Link} to="/settings">
+                {/* <MenuItem onClick={handleMenuClose} component={Link} to="/settings">
                   <ListItemIcon>
                     <SettingsIcon fontSize="small" />
                   </ListItemIcon>
                   Settings
-                </MenuItem>
+                </MenuItem> */}
                 <MenuItem onClick={handleMenuClose}>
                   <ListItemIcon>
                     <AssessmentIcon fontSize="small" />
@@ -336,7 +336,7 @@ function App() {
               <Route path="/" element={<HomePage />} />
               <Route path="/tutorial" element={<TutorialPage />} />
               <Route path="/patients" element={<PatientsPage />} />
-              <Route path="/settings" element={<SettingsPage />} />
+              {/* <Route path="/settings" element={<SettingsPage />} /> */}
             </Routes>
           </Box>
           
@@ -364,9 +364,9 @@ function App() {
                   <Link to="/patients" style={{ color: 'inherit' }}>
                     Practice
                   </Link>
-                  <Link to="/settings" style={{ color: 'inherit' }}>
+                  {/* <Link to="/settings" style={{ color: 'inherit' }}>
                     Settings
-                  </Link>
+                  </Link> */}
                 </Box>
               </Typography>
             </Container>
