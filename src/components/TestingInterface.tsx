@@ -966,6 +966,8 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
       // Mark the step as completed and set responseStatus to 'threshold'
       updatedStep.completed = true;
       updatedStep.responseStatus = 'threshold';
+      // Also update the currentLevel to the validated threshold level
+      updatedStep.currentLevel = validThresholdLevel as HearingLevel;
       
       // Update our session state to reflect this change
       setSession(updatedSession);
@@ -975,7 +977,9 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
         const updatedCurrentStep: TestStep = {
           ...currentStep,
           completed: true,
-          responseStatus: 'threshold'
+          responseStatus: 'threshold',
+          // Also update the currentLevel in the current step
+          currentLevel: validThresholdLevel as HearingLevel
         };
         
         setCurrentStep(updatedCurrentStep);
