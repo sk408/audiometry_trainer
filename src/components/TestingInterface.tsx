@@ -762,6 +762,7 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
       // method to go back to the previous step
       if (session) {
         console.log('📊 Before navigating back - Current step:', session.currentStep);
+        // Create a deep copy of the session to avoid mutating the original
         const updatedSession = JSON.parse(JSON.stringify(session));
         
         // Only go back if we're not already at the first step
@@ -770,6 +771,12 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
           
           // Important: Get the previous step reference
           const previousStep = updatedSession.testSequence[updatedSession.currentStep];
+          if (!previousStep) {
+            console.error('Previous step not found in test sequence');
+            setErrorMessage('Error navigating to previous frequency.');
+            return;
+          }
+          
           console.log('📊 Going back to step:', updatedSession.currentStep, 'with frequency:', previousStep.frequency);
           
           // Update session and current step states with fresh objects
@@ -792,6 +799,9 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
           console.log('Already at the first frequency, cannot go back further');
           setErrorMessage('Already at the first frequency.');
         }
+      } else {
+        console.error('No active session found');
+        setErrorMessage('No active session. Please restart the test.');
       }
     } catch (error) {
       console.error("Error going to previous step:", error);
@@ -1514,7 +1524,7 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
                         <IconButton 
                           size="small" 
                           color="secondary" 
-                          disabled={!currentStep || toneActive || !session || session.currentStep === 0} 
+                          disabled={!currentStep || toneActive || !session || session?.currentStep <= 0} 
                           onClick={handlePreviousStep}
                           sx={{ p: 0.5 }}
                           aria-label="Previous frequency"
