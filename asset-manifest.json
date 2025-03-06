@@ -1,18 +1,18 @@
 {
   "files": {
-    "main.css": "/audiometry_trainer/mobile-layout/static/css/main.e6c13ad2.css",
-    "main.js": "/audiometry_trainer/mobile-layout/static/js/main.8631883b.js",
-    "static/js/977.c3a8a51f.chunk.js": "/audiometry_trainer/mobile-layout/static/js/977.c3a8a51f.chunk.js",
-    "static/js/732.fa01518d.chunk.js": "/audiometry_trainer/mobile-layout/static/js/732.fa01518d.chunk.js",
-    "static/js/453.d8fa5eab.chunk.js": "/audiometry_trainer/mobile-layout/static/js/453.d8fa5eab.chunk.js",
-    "index.html": "/audiometry_trainer/mobile-layout/index.html",
-    "main.e6c13ad2.css.map": "/audiometry_trainer/mobile-layout/static/css/main.e6c13ad2.css.map",
-    "main.8631883b.js.map": "/audiometry_trainer/mobile-layout/static/js/main.8631883b.js.map",
-    "732.fa01518d.chunk.js.map": "/audiometry_trainer/mobile-layout/static/js/732.fa01518d.chunk.js.map",
-    "453.d8fa5eab.chunk.js.map": "/audiometry_trainer/mobile-layout/static/js/453.d8fa5eab.chunk.js.map"
+    "main.css": "/audiometry_trainer/static/css/main.e6c13ad2.css",
+    "main.js": "/audiometry_trainer/static/js/main.622e837d.js",
+    "static/js/977.c3a8a51f.chunk.js": "/audiometry_trainer/static/js/977.c3a8a51f.chunk.js",
+    "static/js/732.fa01518d.chunk.js": "/audiometry_trainer/static/js/732.fa01518d.chunk.js",
+    "static/js/453.d8fa5eab.chunk.js": "/audiometry_trainer/static/js/453.d8fa5eab.chunk.js",
+    "index.html": "/audiometry_trainer/index.html",
+    "main.e6c13ad2.css.map": "/audiometry_trainer/static/css/main.e6c13ad2.css.map",
+    "main.622e837d.js.map": "/audiometry_trainer/static/js/main.622e837d.js.map",
+    "732.fa01518d.chunk.js.map": "/audiometry_trainer/static/js/732.fa01518d.chunk.js.map",
+    "453.d8fa5eab.chunk.js.map": "/audiometry_trainer/static/js/453.d8fa5eab.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.e6c13ad2.css",
-    "static/js/main.8631883b.js"
+    "static/js/main.622e837d.js"
   ]
 }
