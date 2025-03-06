@@ -74,7 +74,7 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
   const [responseCounts, setResponseCounts] = useState<{
     [frequency: number]: {
       [ear: string]: {
-        [level: number]: {total: number, heard: number}
+        [level: number]: { total: number; heard: number }
       }
     }
   }>({});
@@ -973,9 +973,14 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
       
       const updatedStep = updatedSession.testSequence[stepIndex];
       
+      // CRITICAL FIX: Make sure we explicitly set the responseStatus property
       // Mark the step as completed and set responseStatus to 'threshold'
       updatedStep.completed = true;
-      updatedStep.responseStatus = 'threshold';
+      
+      // Some TypeScript versions might not recognize responseStatus as a valid property
+      // Use explicit property assignment to ensure it's set
+      updatedStep.responseStatus = 'threshold' as 'threshold' | 'no_response' | 'not_tested';
+      
       // Also update the currentLevel to the validated threshold level
       updatedStep.currentLevel = validThresholdLevel as HearingLevel;
       
@@ -996,7 +1001,8 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
         const updatedCurrentStep: TestStep = {
           ...currentStep,
           completed: true,
-          responseStatus: 'threshold',
+          // Explicitly set the responseStatus with the correct type
+          responseStatus: 'threshold' as 'threshold' | 'no_response' | 'not_tested',
           // Also update the currentLevel in the current step
           currentLevel: validThresholdLevel as HearingLevel
         };
@@ -1226,40 +1232,39 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
   const thresholds = useMemo((): ThresholdPoint[] => {
     if (!session) return [];
     
-    // Debug helper: Log all completed test steps with thresholds
-    const completedSteps = session.testSequence.filter(step => step.completed && step.responseStatus === 'threshold');
-    if (completedSteps.length > 0) {
-      console.log('🎯 Current completed thresholds:');
-      completedSteps.forEach(step => {
-        console.log(`   ${step.frequency}Hz, ${step.ear} ear: ${step.currentLevel}dB`);
-      });
-    }
+    // First, let's log the entire test sequence for debugging
+    console.log('DEBUG: Full test sequence:', session.testSequence);
+    
+    // Filter steps with completed=true and responseStatus=threshold
+    const completedSteps = session.testSequence.filter(
+      step => step.completed && step.responseStatus === 'threshold'
+    );
+    
+    console.log(`DEBUG: Found ${completedSteps.length} completed threshold steps:`, completedSteps);
     
     // Create a map to ensure we track unique thresholds per frequency/ear combination
     const uniqueThresholds = new Map<string, ThresholdPoint>();
     
     // Process all completed steps with threshold status
-    session.testSequence
-      .filter(step => step.completed && step.responseStatus === 'threshold')
-      .forEach(step => {
-        // Create a unique key for this frequency/ear/testType combination
-        const key = `${step.frequency}-${step.ear}-${step.testType}`;
-        
-        // For completed steps with stored thresholds, use the validated level
-        console.log(`Including validated threshold for ${key}: ${step.currentLevel}dB`);
-        
-        // Create the threshold point
-        const thresholdPoint: ThresholdPoint = {
-          frequency: step.frequency,
-          hearingLevel: step.currentLevel,
-          ear: step.ear,
-          testType: step.testType,
-          responseStatus: 'threshold'
-        };
-        
-        // Store it in our map, which ensures we only have one threshold per frequency/ear/testType
-        uniqueThresholds.set(key, thresholdPoint);
-      });
+    completedSteps.forEach(step => {
+      // Create a unique key for this frequency/ear/testType combination
+      const key = `${step.frequency}-${step.ear}-${step.testType}`;
+      
+      // For completed steps with stored thresholds, use the validated level
+      console.log(`Including validated threshold for ${key}: ${step.currentLevel}dB, responseStatus=${step.responseStatus}`);
+      
+      // Create the threshold point
+      const thresholdPoint: ThresholdPoint = {
+        frequency: step.frequency,
+        hearingLevel: step.currentLevel,
+        ear: step.ear,
+        testType: step.testType,
+        responseStatus: 'threshold'
+      };
+      
+      // Store it in our map, which ensures we only have one threshold per frequency/ear/testType
+      uniqueThresholds.set(key, thresholdPoint);
+    });
     
     // Convert the map values back to an array
     const thresholdArray = Array.from(uniqueThresholds.values());
@@ -1474,6 +1479,13 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
               currentLevel={currentStep?.currentLevel}
               toneActive={Boolean(toneActive)}
             />
+            {/* Add debug info to help troubleshoot */}
+            {process.env.NODE_ENV === 'development' && (
+              <Box sx={{ mt: 1, p: 1, border: '1px dashed grey', fontSize: '0.75rem', overflow: 'auto', maxHeight: '100px' }}>
+                <Typography variant="caption" sx={{ fontWeight: 'bold' }}>Debug: Thresholds array length: {thresholds.length}</Typography>
+                <pre>{JSON.stringify(thresholds, null, 2)}</pre>
+              </Box>
+            )}
           </Box>
         </Grid>
 
