@@ -687,52 +687,46 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
     }
   }, [currentStep, session, trainerMode, procedurePhase]);
 
-  // Handle skip step action - update for trainer mode
+  // Handle skipping the current step
   const handleSkipStep = useCallback(() => {
     try {
       console.log('⏭️ handleSkipStep called - skipping to next frequency');
       
-      // Reset trainer mode state for the new frequency
+      // Reset trainer mode state for the next frequency
       if (trainerMode) {
-        // We're changing the condition here to allow navigation even after storing a threshold
-        // Previously this was preventing navigation after storing a threshold
         setProcedurePhase('initial');
         setLastResponseLevel(null);
         setSuggestedAction('present');
-        setCurrentGuidance('Starting with a new frequency. Begin at a comfortable level.');
-        console.log('Reset phase to: initial for new frequency in handleSkipStep');
+        setCurrentGuidance('Start testing at a comfortable level (30-40 dB).');
+        console.log('Reset phase to: initial for next frequency');
       }
       
-      // Use the updated skipCurrentStep method with false parameter to avoid marking as completed
-      console.log('📊 Before skip - Current session:', session?.currentStep);
-      const nextStep = testingService.skipCurrentStep(false);
-      console.log('📊 After skip - Got next step:', nextStep?.frequency);
+      // Use TestingService to skip to the next step
+      const nextStep = testingService.skipCurrentStep();
+      console.log('Next step from TestingService:', nextStep);
       
-      // Force a refresh of the session directly
-      const updatedSession = testingService.getCurrentSession();
-      console.log('📊 After skip - Updated session:', updatedSession?.currentStep);
-      
-      if (nextStep && updatedSession) {
-        // Update both the session and current step states with forceful refresh
-        console.log('📊 Updating UI with new frequency:', nextStep.frequency);
+      if (nextStep) {
+        // Let's make sure our session state is in sync with TestingService
+        const updatedSession = testingService.getCurrentSession();
         
-        // Create fresh objects to ensure React detects the change
-        // const freshSession = JSON.parse(JSON.stringify(updatedSession));
-        // setSession(freshSession);
-        
-        const freshStep = JSON.parse(JSON.stringify(nextStep));
-        setCurrentStep(freshStep);
-        
-        console.log('Moved to next frequency without marking complete:', nextStep.frequency);
-        
-        // Reset UI state for the new frequency
-        if (trainerMode) {
-          setProcedurePhase('initial');
-          // IMPORTANT: Do NOT reset responseCounts here as it contains threshold information
-          // Removed: setResponseCounts({});
+        if (updatedSession) {
+          // Make a deep copy to ensure we're not modifying the original reference
+          const sessionCopy = JSON.parse(JSON.stringify(updatedSession));
+          
+          // Set the updated session and step
+          setSession(sessionCopy);
+          
+          // Make sure we preserve any existing thresholds in the session
+          const currentSessionCopy = JSON.parse(JSON.stringify(nextStep));
+          setCurrentStep(currentSessionCopy);
+          
+          console.log('Moving to next frequency:', nextStep.frequency);
+        } else {
+          console.error('Failed to get updated session from TestingService');
+          setErrorMessage('Failed to update session data.');
         }
       } else {
-        console.log('Test complete');
+        // No more steps, complete the session
         const finalSession = testingService.completeSession();
         if (finalSession) {
           onComplete(finalSession);
@@ -742,7 +736,7 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
       console.error("Error skipping step:", error);
       setErrorMessage('Failed to skip to next step. Please try again.');
     }
-  }, [onComplete, trainerMode, setErrorMessage, setSession, setCurrentStep, setProcedurePhase, setLastResponseLevel, setSuggestedAction, setCurrentGuidance, session]);
+  }, [testingService, trainerMode, onComplete, setProcedurePhase, setLastResponseLevel, setSuggestedAction, setCurrentGuidance, setErrorMessage, setSession, setCurrentStep]);
 
   // Add a new function to handle going to the previous frequency
   const handlePreviousStep = useCallback(() => {
@@ -961,13 +955,38 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
     // Mark the current step as completed without advancing to next step
     if (session) {
       const updatedSession = { ...session };
-      const updatedStep = updatedSession.testSequence[updatedSession.currentStep];
+      
+      // Find the specific test step for the current frequency and ear
+      // We need to look by ID, frequency and ear to ensure we're modifying the correct step
+      const stepIndex = updatedSession.testSequence.findIndex(
+        step => step.id === currentStep.id && 
+               step.frequency === currentStep.frequency && 
+               step.ear === currentStep.ear &&
+               step.testType === currentStep.testType
+      );
+      
+      if (stepIndex === -1) {
+        console.error('Could not find matching test step in session');
+        setErrorMessage('Failed to store threshold: test step not found.');
+        return;
+      }
+      
+      const updatedStep = updatedSession.testSequence[stepIndex];
       
       // Mark the step as completed and set responseStatus to 'threshold'
       updatedStep.completed = true;
       updatedStep.responseStatus = 'threshold';
       // Also update the currentLevel to the validated threshold level
       updatedStep.currentLevel = validThresholdLevel as HearingLevel;
+      
+      // Add a debug log to check what we're storing
+      console.log(`DEBUG: Storing threshold for step ${stepIndex}:`, {
+        id: updatedStep.id,
+        frequency: updatedStep.frequency,
+        ear: updatedStep.ear,
+        currentLevel: updatedStep.currentLevel,
+        responseStatus: updatedStep.responseStatus
+      });
       
       // Update our session state to reflect this change
       setSession(updatedSession);
@@ -1021,7 +1040,7 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
       
       return newCounts;
     });
-  }, [currentStep, session, responseCounts, setErrorMessage, setSession, setCurrentStep, setCurrentGuidance, setProcedurePhase, setSuggestedAction, setResponseCounts]);
+  }, [currentStep, session, responseCounts, validateThreshold, setErrorMessage, setSession, setCurrentStep, setCurrentGuidance, setProcedurePhase, setSuggestedAction, setResponseCounts]);
 
   // Initialize the test session - reset trainer mode
   useEffect(() => {
@@ -1216,20 +1235,39 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
       });
     }
     
-    return session.testSequence
+    // Create a map to ensure we track unique thresholds per frequency/ear combination
+    const uniqueThresholds = new Map<string, ThresholdPoint>();
+    
+    // Process all completed steps with threshold status
+    session.testSequence
       .filter(step => step.completed && step.responseStatus === 'threshold')
-      .map(step => {
-        // For completed steps with stored thresholds, use the validated level
-        console.log(`Including validated threshold for completed step: ${step.currentLevel}dB (frequency: ${step.frequency}, ear: ${step.ear})`);
+      .forEach(step => {
+        // Create a unique key for this frequency/ear/testType combination
+        const key = `${step.frequency}-${step.ear}-${step.testType}`;
         
-        return {
+        // For completed steps with stored thresholds, use the validated level
+        console.log(`Including validated threshold for ${key}: ${step.currentLevel}dB`);
+        
+        // Create the threshold point
+        const thresholdPoint: ThresholdPoint = {
           frequency: step.frequency,
           hearingLevel: step.currentLevel,
           ear: step.ear,
           testType: step.testType,
           responseStatus: 'threshold'
-        } as ThresholdPoint;
+        };
+        
+        // Store it in our map, which ensures we only have one threshold per frequency/ear/testType
+        uniqueThresholds.set(key, thresholdPoint);
       });
+    
+    // Convert the map values back to an array
+    const thresholdArray = Array.from(uniqueThresholds.values());
+    
+    // Extra debug to check what we're returning
+    console.log(`DEBUG: Returning ${thresholdArray.length} thresholds:`, thresholdArray);
+    
+    return thresholdArray;
   }, [session]);
 
   // Handle implementing suggested action
