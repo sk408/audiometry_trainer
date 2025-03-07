@@ -1418,36 +1418,8 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
   return (
     <Box sx={{ padding: { xs: 1, sm: 2, md: 3 } }}>
       <Grid container spacing={{ xs: 1, sm: 2 }}>
-        {/* Header row with trainer mode switch */}
+        {/* Test progress */}
         <Grid item xs={12}>
-          <Box sx={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            alignItems: 'center', 
-            mb: 2 
-          }}>
-            <Typography variant="h5">
-              Audiometry Testing - {currentStep?.ear === 'right' ? 'Right' : 'Left'} Ear
-            </Typography>
-            
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={trainerMode}
-                  onChange={(e) => setTrainerMode(e.target.checked)}
-                  color="primary"
-                />
-              }
-              label={
-                <Typography variant="body2" sx={{ display: 'flex', alignItems: 'center' }}>
-                  <School sx={{ mr: 0.5 }} />
-                  Trainer Mode
-                </Typography>
-              }
-            />
-          </Box>
-
-          {/* Test progress */}
           <Box sx={{ mb: 2 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
               <Typography variant="h6">
@@ -1467,27 +1439,7 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
           </Box>
         </Grid>
 
-        {/* Audiogram - full size at the top, outside of tabs */}
-        <Grid item xs={12}>
-          <Paper elevation={3} sx={{ p: 2, mb: 2 }}>
-            <Typography variant="h6" gutterBottom>Audiogram</Typography>
-            <Box sx={{ 
-              height: { xs: 320, sm: 380, md: 450 },
-              width: '100%',
-              overflow: 'hidden',
-              position: 'relative'
-            }}>
-              <Audiogram 
-                thresholds={thresholds} 
-                currentFrequency={currentStep?.frequency} 
-                currentLevel={currentStep?.currentLevel} 
-                toneActive={Boolean(toneActive)}
-              />
-            </Box>
-          </Paper>
-        </Grid>
-
-        {/* Tabbed interface below the audiogram */}
+        {/* Tabbed interface above the audiogram */}
         <Grid item xs={12}>
           <Paper elevation={3} sx={{ p: 0, mb: 2 }}>
             <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
@@ -1498,9 +1450,9 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
                 variant="fullWidth"
                 sx={{ 
                   '& .MuiTab-root': { 
-                    minHeight: '60px',
-                    fontSize: { xs: '0.8rem', sm: '0.9rem' },
-                    p: { xs: 1, sm: 2 }
+                    minHeight: '39px', // 65% of 60px
+                    fontSize: { xs: '0.52rem', sm: '0.585rem' }, // 65% of current values
+                    padding: { xs: 0.65, sm: 1.3 } // 65% of current values, using 'padding' instead of 'p'
                   }
                 }}
               >
@@ -1546,70 +1498,51 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
                     alignItems: 'center',
                     mb: 1
                   }}>
+                    <Tooltip title="Decrease by 10 dB (descending phase)">
+                      <IconButton 
+                        color="secondary"
+                        disabled={!currentStep || toneActive}
+                        onClick={() => handleAdjustLevel(-10)}
+                        size="medium"
+                      >
+                        <ArrowDownward />
+                      </IconButton>
+                    </Tooltip>
+                    
                     <Chip
                       label={`${currentStep ? currentStep.currentLevel : '--'} dB HL`}
                       color="primary"
                       sx={{
-                        fontSize: '1.5rem',
+                        fontSize: '0.9rem',  // 35% of original size (was 1.5rem)
                         height: 'auto',
-                        p: 2
+                        p: 0.7,  // 35% of original padding (was 2)
+                        mx: 1
                       }}
                     />
-                  </Box>
-
-                  <Box sx={{ 
-                    display: 'flex', 
-                    flexDirection: { xs: 'column', sm: 'row' },
-                    justifyContent: 'center', 
-                    alignItems: 'center',
-                    gap: { xs: 1, sm: 2 },
-                    mt: 1
-                  }}>
-                    <Tooltip title="Decrease by 10 dB (descending phase)">
-                      <span>
-                        <Button
-                          size="small"
-                          variant="outlined"
-                          color="secondary"
-                          disabled={!currentStep || toneActive}
-                          onClick={() => handleAdjustLevel(-10)}
-                          startIcon={<ArrowDownward />}
-                          fullWidth={true}
-                        >
-                          -10 dB
-                        </Button>
-                      </span>
-                    </Tooltip>
-                    <Tooltip title="Increase by 5 dB (ascending phase)">
-                      <span>
-                        <Button
-                          size="small"
-                          variant="outlined"
+                    
+                    <Box>
+                      <Tooltip title="Increase by 5 dB (ascending phase)">
+                        <IconButton 
                           color="primary"
                           disabled={!currentStep || toneActive}
                           onClick={() => handleAdjustLevel(5)}
-                          startIcon={<ArrowUpward />}
-                          fullWidth={true}
-                        >
-                          +5 dB
-                        </Button>
-                      </span>
-                    </Tooltip>
-                    <Tooltip title="Increase by 10 dB (initial phase)">
-                      <span>
-                        <Button
                           size="small"
-                          variant="outlined"
+                        >
+                          <ArrowUpward />
+                        </IconButton>
+                      </Tooltip>
+                      
+                      <Tooltip title="Increase by 10 dB (initial phase)">
+                        <IconButton 
                           color="primary"
                           disabled={!currentStep || toneActive}
                           onClick={() => handleAdjustLevel(10)}
-                          startIcon={<ArrowUpward />}
-                          fullWidth={true}
+                          size="medium"
                         >
-                          +10 dB
-                        </Button>
-                      </span>
-                    </Tooltip>
+                          <ArrowUpward />
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
                   </Box>
                 </Box>
 
@@ -1667,7 +1600,7 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
               </Box>
             </TabPanel>
 
-            {/* Patient Response Tab - includes patient info */}
+            {/* Patient Response Tab */}
             <TabPanel value={activeTab} index={1}>
               <Box sx={{ p: { xs: 1, sm: 2 } }}>
                 {/* Patient information in this tab */}
@@ -1733,7 +1666,7 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
               </Box>
             </TabPanel>
 
-            {/* Training Guide Tab - only visible in trainer mode */}
+            {/* Trainer Guide Tab */}
             {trainerMode && (
               <TabPanel value={activeTab} index={2}>
                 <GuidancePanel
@@ -1748,6 +1681,26 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
                 />
               </TabPanel>
             )}
+          </Paper>
+        </Grid>
+
+        {/* Audiogram - full size below the tabs */}
+        <Grid item xs={12}>
+          <Paper elevation={3} sx={{ p: 2, mb: 2 }}>
+            <Typography variant="h6" gutterBottom>Audiogram</Typography>
+            <Box sx={{ 
+              height: { xs: 320, sm: 380, md: 450 },
+              width: '100%',
+              overflow: 'hidden',
+              position: 'relative'
+            }}>
+              <Audiogram 
+                thresholds={thresholds} 
+                currentFrequency={currentStep?.frequency} 
+                currentLevel={currentStep?.currentLevel} 
+                toneActive={Boolean(toneActive)}
+              />
+            </Box>
           </Paper>
         </Grid>
       </Grid>
