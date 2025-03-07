@@ -16,7 +16,10 @@ import {
   Switch,
   FormControlLabel,
   Grid,
-  Snackbar
+  Snackbar,
+  Tabs,
+  Tab,
+  Badge
 } from '@mui/material';
 import {
   VolumeUp,
@@ -28,7 +31,9 @@ import {
   Hearing,
   School,
   ArrowUpward,
-  ArrowDownward
+  ArrowDownward,
+  Person,
+  MenuBook
 } from '@mui/icons-material';
 import { TestSession, TestStep, HearingProfile, ThresholdPoint, HearingLevel, Frequency } from '../interfaces/AudioTypes';
 import testingService from '../services/TestingService';
@@ -41,6 +46,42 @@ interface TestingInterfaceProps {
   patient: HearingProfile;
   onComplete: (session: TestSession) => void;
   onCancel: () => void;
+}
+
+// Tab panel interface
+interface TabPanelProps {
+  children?: React.ReactNode;
+  index: number;
+  value: number;
+}
+
+// TabPanel component
+function TabPanel(props: TabPanelProps) {
+  const { children, value, index, ...other } = props;
+
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`testing-tabpanel-${index}`}
+      aria-labelledby={`testing-tab-${index}`}
+      {...other}
+    >
+      {value === index && (
+        <Box sx={{ p: 2 }}>
+          {children}
+        </Box>
+      )}
+    </div>
+  );
+}
+
+// Function for tab accessibility props
+function a11yProps(index: number) {
+  return {
+    id: `testing-tab-${index}`,
+    'aria-controls': `testing-tabpanel-${index}`,
+  };
 }
 
 const TestingInterface: React.FC<TestingInterfaceProps> = ({
@@ -78,6 +119,22 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
       }
     }
   }>({});
+
+  // Add state for active tab
+  const [activeTab, setActiveTab] = useState(0);
+
+  // Handle tab change
+  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    setActiveTab(newValue);
+  };
+
+  // Add handlePatientResponse function
+  const handlePatientResponse = () => {
+    if (currentStep && toneActive) {
+      setPatientResponse(true);
+      updateTrainerState(true);
+    }
+  };
 
   // Simulate virtual patient response based on hearing threshold
   const simulatePatientResponse = useCallback(() => {
@@ -1074,7 +1131,10 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
 
   // Format frequency for display
   const formatFrequency = (freq: number): string => {
-    return freq >= 1000 ? `${freq / 1000} kHz` : `${freq} Hz`;
+    if (freq >= 1000) {
+      return `${freq / 1000}k`;
+    }
+    return freq.toString();
   };
 
   // Start playing tone with pulsing pattern
@@ -1354,249 +1414,147 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
     );
   }
 
+  // Modify render section with the new structure
   return (
     <Box sx={{ padding: { xs: 1, sm: 2, md: 3 } }}>
       <Grid container spacing={{ xs: 1, sm: 2 }}>
-        {/* Header row */}
+        {/* Header row with trainer mode switch */}
         <Grid item xs={12}>
           <Box sx={{ 
             display: 'flex', 
-            flexDirection: { xs: 'column', sm: 'row' }, 
             justifyContent: 'space-between', 
-            alignItems: { xs: 'flex-start', sm: 'center' }, 
+            alignItems: 'center', 
             mb: 2 
           }}>
-            <Typography variant="h5" sx={{ mb: { xs: 1, sm: 0 } }}>
+            <Typography variant="h5">
               Audiometry Testing - {currentStep?.ear === 'right' ? 'Right' : 'Left'} Ear
             </Typography>
-            {session && session.patientId && (
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={trainerMode}
-                    onChange={(e) => setTrainerMode(e.target.checked)}
-                    color="primary"
-                  />
-                }
-                label="Trainer Mode"
-              />
-            )}
-          </Box>
-          
-          {/* Add testing status bar when trainer mode is active */}
-          {trainerMode && (
-            <Box sx={{ 
-              display: 'flex', 
-              flexDirection: { xs: 'column', md: 'row' },
-              alignItems: { xs: 'flex-start', md: 'center' }, 
-              justifyContent: 'space-between',
-              gap: 1,
-              mt: 1,
-              p: 1,
-              borderRadius: 1,
-              bgcolor: '#f5f5f5',
-              border: '1px solid #e0e0e0'
-            }}>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <Typography variant="subtitle2" sx={{ mr: 2, fontWeight: 'bold' }}>
-                  Current Phase:
-                </Typography>
-                <Chip
-                  label={(() => {
-                    switch(procedurePhase) {
-                      case 'initial': return 'Initial Presentation';
-                      case 'descending': return 'Descending Phase (-10 dB)';
-                      case 'ascending': return 'Ascending Phase (+5 dB)';
-                      case 'threshold': return 'Threshold Determination';
-                      case 'complete': return 'Threshold Complete';
-                      default: return 'Initial Phase';
-                    }
-                  })()}
-                  color={(() => {
-                    switch(procedurePhase) {
-                      case 'initial': return 'default';
-                      case 'descending': return 'secondary';
-                      case 'ascending': return 'primary';
-                      case 'threshold': return 'warning';
-                      case 'complete': return 'success';
-                      default: return 'default';
-                    }
-                  })() as any}
-                  size="small"
+            
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={trainerMode}
+                  onChange={(e) => setTrainerMode(e.target.checked)}
+                  color="primary"
                 />
-              </Box>
-              
-              {responseCount > 0 && (
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <Typography variant="subtitle2" sx={{ mr: 2, fontWeight: 'bold' }}>
-                    Responses at {lastResponseLevel}dB:
-                  </Typography>
-                  <Box sx={{ display: 'flex', gap: 0.5 }}>
-                    {[...Array(3)].map((_, i) => (
-                      <Box
-                        key={i}
-                        sx={{
-                          width: 24,
-                          height: 24,
-                          borderRadius: '50%',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          bgcolor: i < responseCount ? '#4caf50' : '#e0e0e0',
-                          color: i < responseCount ? 'white' : 'black',
-                          fontSize: 12,
-                          fontWeight: 'bold'
-                        }}
-                      >
-                        {i + 1}
-                      </Box>
-                    ))}
-                  </Box>
-                </Box>
-              )}
-              
-              <Box>
-                <Typography variant="subtitle2">
-                  Test Progress: {Math.round(testProgress)}%
+              }
+              label={
+                <Typography variant="body2" sx={{ display: 'flex', alignItems: 'center' }}>
+                  <School sx={{ mr: 0.5 }} />
+                  Trainer Mode
                 </Typography>
-              </Box>
-            </Box>
-          )}
-        </Grid>
-
-        {/* Main content row - Moved above the guidance panel */}
-        <Grid item xs={12} md={6}>
-          {/* Left column - Audiogram */}
-          <Box sx={{ 
-            height: { xs: 300, sm: 350, md: 450 }, 
-            display: 'flex', 
-            flexDirection: 'column',
-            mb: { xs: 2, md: 0 }
-          }}>
-            <Audiogram 
-              thresholds={thresholds}
-              currentFrequency={currentStep?.frequency}
-              currentLevel={currentStep?.currentLevel}
-              toneActive={Boolean(toneActive)}
+              }
             />
-            {/* Add debug info to help troubleshoot */}
-            {process.env.NODE_ENV === 'development' && (
-              <Box sx={{ mt: 1, p: 1, border: '1px dashed grey', fontSize: '0.75rem', overflow: 'auto', maxHeight: '100px' }}>
-                <Typography variant="caption" sx={{ fontWeight: 'bold' }}>Debug: Thresholds array length: {thresholds.length}</Typography>
-                <pre>{JSON.stringify(thresholds, null, 2)}</pre>
-              </Box>
-            )}
+          </Box>
+
+          {/* Test progress */}
+          <Box sx={{ mb: 2 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+              <Typography variant="h6">
+                {currentStep ? `Testing ${currentStep.ear} ear at ${currentStep.frequency} Hz` : 'Ready to start'}
+              </Typography>
+              <Chip 
+                label={`${testProgress}%`} 
+                color="primary" 
+                variant="outlined" 
+              />
+            </Box>
+            <LinearProgress 
+              variant="determinate" 
+              value={testProgress} 
+              sx={{ height: 10, borderRadius: 5 }} 
+            />
           </Box>
         </Grid>
 
-        <Grid item xs={12} md={6}>
-          {/* Right column - Patient and controls */}
-          <Box sx={{ 
-            height: { xs: 'auto', md: 450 }, 
-            display: 'flex', 
-            flexDirection: 'column', 
-            gap: 2,
-            justifyContent: 'space-between'
-          }}>
-            {/* Patient image */}
+        {/* Audiogram - full size at the top, outside of tabs */}
+        <Grid item xs={12}>
+          <Paper elevation={3} sx={{ p: 2, mb: 2 }}>
+            <Typography variant="h6" gutterBottom>Audiogram</Typography>
             <Box sx={{ 
-              flex: 1, 
-              display: 'flex', 
-              justifyContent: 'center', 
-              alignItems: 'center', 
-              position: 'relative',
-              mb: 2,
-              minHeight: { xs: 120, sm: 150 }
+              height: { xs: 320, sm: 380, md: 450 },
+              width: '100%',
+              overflow: 'hidden',
+              position: 'relative'
             }}>
-              <PatientImage 
-                patientId={session?.patientId} 
-                responding={Boolean(patientResponse)}
-                idle={!toneActive && !showResponseIndicator}
+              <Audiogram 
+                thresholds={thresholds} 
+                currentFrequency={currentStep?.frequency} 
+                currentLevel={currentStep?.currentLevel} 
+                toneActive={Boolean(toneActive)}
               />
-              
-              {/* Response notification */}
-              {showResponseIndicator && (
-                <Fade in={true}>
-                  <Box
-                    sx={{
-                      position: 'absolute',
-                      top: 0,
-                      right: 0,
-                      padding: { xs: 1, sm: 2 },
-                      borderRadius: 2,
-                      backgroundColor: patientResponse ? 'rgba(76, 175, 80, 0.9)' : 'rgba(244, 67, 54, 0.9)',
-                      color: 'white',
-                      fontWeight: 'bold',
-                      zIndex: 10,
-                      boxShadow: 3,
-                      fontSize: { xs: '0.8rem', sm: '1rem' }
-                    }}
-                  >
-                    <Typography 
-                      variant="subtitle1" 
-                      sx={{ fontSize: { xs: '0.8rem', sm: '1rem' } }}
+            </Box>
+          </Paper>
+        </Grid>
+
+        {/* Tabbed interface below the audiogram */}
+        <Grid item xs={12}>
+          <Paper elevation={3} sx={{ p: 0, mb: 2 }}>
+            <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+              <Tabs 
+                value={activeTab} 
+                onChange={handleTabChange} 
+                aria-label="testing interface tabs"
+                variant="fullWidth"
+                sx={{ 
+                  '& .MuiTab-root': { 
+                    minHeight: '60px',
+                    fontSize: { xs: '0.8rem', sm: '0.9rem' },
+                    p: { xs: 1, sm: 2 }
+                  }
+                }}
+              >
+                <Tab 
+                  icon={<VolumeUp />} 
+                  label="Testing" 
+                  {...a11yProps(0)} 
+                />
+                <Tab 
+                  icon={
+                    <Badge 
+                      color="success" 
+                      variant="dot" 
+                      invisible={!patientResponse}
                     >
-                      {patientResponse ? "Patient Response Detected!" : "No Response Detected"}
-                    </Typography>
-                  </Box>
-                </Fade>
-              )}
+                      <Person />
+                    </Badge>
+                  } 
+                  label="Patient Response" 
+                  {...a11yProps(1)} 
+                />
+                {trainerMode && (
+                  <Tab 
+                    icon={<MenuBook />} 
+                    label="Training Guide" 
+                    {...a11yProps(2)} 
+                  />
+                )}
+              </Tabs>
             </Box>
 
-            {/* Controls section */}
-            <Box sx={{ 
-                p: { xs: 1, sm: 2 }, 
-                borderRadius: 2, 
-                border: '1px solid #e0e0e0',
-                flexShrink: 0
-              }}>
-                {/* Frequency and level info */}
-                <Box sx={{ mb: 3 }}>
-                  <Box sx={{ 
-                    display: 'flex', 
-                    flexDirection: { xs: 'column', sm: 'row' },
-                    justifyContent: 'center', 
-                    alignItems: 'center', 
-                    gap: { xs: 1, sm: 3 },
-                    mb: 1 
-                  }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                      <Typography variant="h6" sx={{ mr: 1, fontSize: { xs: '1rem', sm: '1.25rem' } }}>
-                        Frequency: {formatFrequency(currentStep?.frequency || 0)}
-                      </Typography>
-                      <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                        <IconButton 
-                          size="small" 
-                          color="primary" 
-                          disabled={!currentStep || toneActive} 
-                          onClick={handleSkipStep}
-                          sx={{ p: 0.5 }}
-                          aria-label="Next frequency"
-                        >
-                          <ArrowUpward />
-                        </IconButton>
-                        <IconButton 
-                          size="small" 
-                          color="secondary" 
-                          disabled={!currentStep || toneActive || !session || session?.currentStep <= 0} 
-                          onClick={handlePreviousStep}
-                          sx={{ p: 0.5 }}
-                          aria-label="Previous frequency"
-                        >
-                          <ArrowDownward />
-                        </IconButton>
-                      </Box>
-                    </Box>
-                  </Box>
-
+            {/* Testing Tab */}
+            <TabPanel value={activeTab} index={0}>
+              <Box sx={{ p: { xs: 1, sm: 2 } }}>
+                {/* Current level display */}
+                <Box sx={{ mb: 3, textAlign: 'center' }}>
+                  <Typography variant="body1" gutterBottom>
+                    Current Level:
+                  </Typography>
                   <Box sx={{ 
                     display: 'flex', 
                     justifyContent: 'center', 
-                    alignItems: 'center' 
+                    alignItems: 'center',
+                    mb: 1
                   }}>
-                    <Typography variant="h6" sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>
-                      Level: {currentStep?.currentLevel || 0} dB HL
-                    </Typography>
+                    <Chip
+                      label={`${currentStep ? currentStep.currentLevel : '--'} dB HL`}
+                      color="primary"
+                      sx={{
+                        fontSize: '1.5rem',
+                        height: 'auto',
+                        p: 2
+                      }}
+                    />
                   </Box>
 
                   <Box sx={{ 
@@ -1687,7 +1645,7 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
                   </Button>
                 </Box>
                 
-                {/* Store threshold and skip buttons */}
+                {/* Store threshold button */}
                 <Box sx={{ 
                   display: 'flex', 
                   justifyContent: 'space-between', 
@@ -1707,24 +1665,91 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
                   </Button>
                 </Box>
               </Box>
-            </Box>
-          </Grid>
+            </TabPanel>
 
-        {/* Trainer guidance panel (when trainer mode is active) - Moved below the main content */}
-        {trainerMode && (
-          <Grid item xs={12}>
-            <GuidancePanel
-              guidance={currentGuidance}
-              action={suggestedAction}
-              phase={procedurePhase}
-              onStoreThreshold={handleStoreThreshold}
-              canStoreThreshold={canStoreThreshold()}
-              patientResponded={patientJustResponded}
-              onImplementSuggestion={handleSuggestedAction}
-              showResponseAlert={showResponseIndicator && Boolean(patientResponse)}
-            />
-          </Grid>
-        )}
+            {/* Patient Response Tab - includes patient info */}
+            <TabPanel value={activeTab} index={1}>
+              <Box sx={{ p: { xs: 1, sm: 2 } }}>
+                {/* Patient information in this tab */}
+                <Box sx={{ 
+                  mb: 3, 
+                  display: 'flex', 
+                  flexDirection: { xs: 'column', sm: 'row' },
+                  alignItems: { xs: 'center', sm: 'flex-start' },
+                  gap: 2 
+                }}>
+                  <PatientImage 
+                    patientId={patient.id}
+                    responding={Boolean(patientResponse)}
+                    idle={!toneActive && !showResponseIndicator}
+                  />
+                  <Box sx={{ 
+                    mt: { xs: 2, sm: 0 },
+                    textAlign: { xs: 'center', sm: 'left' } 
+                  }}>
+                    <Typography variant="h6">{patient.name}</Typography>
+                    <Typography variant="body2" color="textSecondary">
+                      {patient.description}
+                    </Typography>
+                  </Box>
+                </Box>
+                
+                <Divider sx={{ mb: 2 }} />
+                
+                {/* Patient response UI */}
+                <Box sx={{ 
+                  display: 'flex', 
+                  flexDirection: 'column',
+                  alignItems: 'center', 
+                  gap: 2,
+                  p: 2,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  borderRadius: 1,
+                  bgcolor: patientResponse ? 'success.light' : 'background.paper',
+                  transition: 'background-color 0.3s'
+                }}>
+                  <Typography variant="h6">
+                    {patientResponse 
+                      ? 'Patient has responded! 👍' 
+                      : 'Waiting for patient response...'}
+                  </Typography>
+                  
+                  <Box sx={{ width: '100%', textAlign: 'center', mt: 2 }}>
+                    <Button
+                      variant="contained"
+                      color={patientResponse ? 'success' : 'primary'}
+                      size="large"
+                      disabled={!currentStep || !toneActive}
+                      onClick={handlePatientResponse}
+                      startIcon={<Check />}
+                      fullWidth
+                      sx={{ py: 2 }}
+                    >
+                      Patient Heard Tone
+                    </Button>
+                  </Box>
+                </Box>
+              </Box>
+            </TabPanel>
+
+            {/* Training Guide Tab - only visible in trainer mode */}
+            {trainerMode && (
+              <TabPanel value={activeTab} index={2}>
+                <GuidancePanel
+                  guidance={currentGuidance}
+                  action={suggestedAction}
+                  phase={procedurePhase}
+                  onStoreThreshold={handleStoreThreshold}
+                  canStoreThreshold={canStoreThreshold()}
+                  patientResponded={patientJustResponded}
+                  onImplementSuggestion={handleSuggestedAction}
+                  showResponseAlert={showResponseIndicator && Boolean(patientResponse)}
+                />
+              </TabPanel>
+            )}
+          </Paper>
+        </Grid>
       </Grid>
 
       {errorMessage && (
