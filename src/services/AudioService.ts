@@ -10,6 +10,7 @@ class AudioService {
   private oscillator: OscillatorNode | null = null;
   private gainNode: GainNode | null = null;
   private calibrationValues: Map<Frequency, number> = new Map();
+  private boneCalibrationValues: Map<Frequency, number> = new Map();
   private panNode: StereoPannerNode | null = null;
   private currentFrequency: number = 0;
   private debugMode: boolean = true; // Enable debug logs
@@ -42,145 +43,170 @@ class AudioService {
     frequencies.forEach(freq => {
       // In a real application, these would be measured values
       this.calibrationValues.set(freq, 1.0);
+      
+      // Bone conduction calibration values - typically different from air conduction
+      // Bone conduction testing typically covers 250-4000 Hz
+      if (freq >= 250 && freq <= 4000) {
+        this.boneCalibrationValues.set(freq, 0.8); // Lower amplitude to simulate bone conduction
+      }
     });
   }
 
   /**
-   * Convert dB HL to amplitude gain
+   * Convert dB HL to amplitude gain, with option for bone conduction
    * @param dBHL - Hearing level in dB
-   * @param frequency - Tone frequency
-   * @returns Amplitude gain value
+   * @param frequency - Frequency in Hz
+   * @param isBone - Whether this is for bone conduction
+   * @returns Amplitude value
    */
-  private dBToAmplitude(dBHL: HearingLevel, frequency: Frequency): number {
-    // Get calibration value for this frequency (defaults to 1.0)
-    const calibration = this.calibrationValues.get(frequency) || 1.0;
+  private dBToAmplitude(dBHL: HearingLevel, frequency: Frequency, isBone: boolean = false): number {
+    // In a real audiometer, this would be based on calibration data
+    // Here we're making a simplified conversion
     
-    // Convert dB HL to amplitude
-    // This is a simplified conversion formula
-    // In a real application, this would be based on proper calibration
-    const dBSPL = dBHL + 7; // Rough conversion from dB HL to dB SPL
-    const amplitude = calibration * Math.pow(10, dBSPL / 20) / 1000;
+    // For values lower than 0 dB HL
+    if (dBHL < 0) {
+      return 0.0001 * Math.pow(10, (dBHL) / 20);
+    }
     
-    return Math.min(amplitude, 1.0); // Clamp amplitude to 1.0
+    // Base calculation
+    let amplitude = 0.0001 * Math.pow(10, dBHL / 20);
+    
+    // Apply calibration adjustment
+    if (isBone) {
+      const calibration = this.boneCalibrationValues.get(frequency) || 0.8;
+      amplitude *= calibration;
+    } else {
+      const calibration = this.calibrationValues.get(frequency) || 1.0;
+      amplitude *= calibration;
+    }
+    
+    return amplitude;
   }
 
   /**
    * Play a pure tone
-   * @param frequency - Tone frequency in Hz
-   * @param dBHL - Hearing level in dB HL
-   * @param ear - Which ear to present the tone to
-   * @param durationMs - Tone duration in milliseconds
+   * @param frequency - Frequency in Hz
+   * @param dBHL - Hearing level in dB
+   * @param ear - Ear to present to
+   * @param durationMs - Duration in milliseconds
+   * @param testType - Type of test (air or bone conduction)
    */
-  public playTone(frequency: Frequency, dBHL: HearingLevel, ear: Ear, durationMs: number = 1000): void {
+  public playTone(
+    frequency: Frequency, 
+    dBHL: HearingLevel, 
+    ear: Ear, 
+    durationMs: number = 1000,
+    testType: 'air' | 'bone' | 'masked_air' | 'masked_bone' = 'air'
+  ): void {
     if (!this.audioContext) {
-      console.error('AudioContext not initialized');
+      this.initializeAudioContext();
+    }
+
+    if (!this.audioContext) {
+      console.error('Could not initialize AudioContext');
       return;
     }
 
-    // CRITICAL: First, completely stop and destroy any existing tone nodes
+    // Ensure the audio context is running
+    this.resumeAudioContext();
+
+    // Destroy any existing audio nodes
     this.destroyAllAudioNodes();
-    
-    if (this.debugMode) {
-      console.log(`🎵 Playing tone with params:`, {
-        requestedFrequency: frequency,
-        previousFrequency: this.currentFrequency,
-        hearingLevel: dBHL,
-        ear: ear,
-        change: frequency - this.currentFrequency
-      });
-    }
-    
-    // Ensure frequency is a valid number before proceeding
-    if (typeof frequency !== 'number' || isNaN(frequency) || frequency <= 0) {
-      console.error(`Invalid frequency value: ${frequency}. Using default 1000Hz.`);
-      frequency = 1000;
-    }
-    
-    // SANITY CHECK: Force the current frequency tracking to match the requested frequency
+
+    // Store current frequency
     this.currentFrequency = frequency;
 
-    // Create completely fresh audio nodes every time
-    try {
-      // Create fresh audio context if needed
-      if (!this.audioContext || this.audioContext.state === 'closed') {
-        this.initializeAudioContext();
-        if (this.debugMode) {
-          console.log('🔄 Recreated AudioContext');
-        }
-      }
-      
-      // Resume audio context if suspended
-      if (this.audioContext && this.audioContext.state === 'suspended') {
-        this.audioContext.resume();
-        if (this.debugMode) {
-          console.log('▶️ Resumed suspended AudioContext');
-        }
-      }
+    // Calculate appropriate amplitude
+    let amplitude: number;
+    if (testType === 'bone' || testType === 'masked_bone') {
+      amplitude = this.dBToAmplitude(dBHL, frequency, true);
+    } else {
+      amplitude = this.dBToAmplitude(dBHL, frequency);
+    }
 
-      // Create fresh nodes
-      this.oscillator = this.audioContext.createOscillator();
-      this.gainNode = this.audioContext.createGain();
-      this.panNode = this.audioContext.createStereoPanner();
+    // Create audio nodes
+    this.oscillator = this.audioContext.createOscillator();
+    this.gainNode = this.audioContext.createGain();
+    this.panNode = this.audioContext.createStereoPanner();
 
-      // CRITICAL: Set exact frequency value as number, not through setValueAtTime
-      this.oscillator.type = 'sine';
-      this.oscillator.frequency.value = frequency;
-      
-      // Double-check the frequency was set correctly
-      if (this.debugMode) {
-        console.log(`🔊 Oscillator frequency explicitly set to: ${frequency}Hz, actual value: ${this.oscillator.frequency.value}Hz`);
-        
-        if (this.oscillator.frequency.value !== frequency) {
-          console.warn(`⚠️ CRITICAL FREQUENCY MISMATCH! Set: ${frequency}, Actual: ${this.oscillator.frequency.value}`);
-          // Force it again to be absolutely sure
-          this.oscillator.frequency.value = frequency;
-          console.log(`🔧 Forced frequency again to ${frequency}Hz, now: ${this.oscillator.frequency.value}Hz`);
-        }
-      }
+    // Set oscillator type and frequency
+    this.oscillator.type = this.getBoneOscillatorType(testType);
+    this.oscillator.frequency.value = frequency;
 
-      // Set gain (volume) based on dB HL
-      const amplitude = this.dBToAmplitude(dBHL, frequency);
-      this.gainNode.gain.value = amplitude;
+    // Set pan based on ear selection
+    this.setPan(ear);
 
-      // Set stereo panning based on ear
-      this.setPan(ear);
+    // Apply sound enveloping for bone conduction if needed
+    if (testType === 'bone' || testType === 'masked_bone') {
+      this.applyBoneConductionEffect();
+    }
 
-      // Connect nodes
-      this.oscillator.connect(this.gainNode);
-      this.gainNode.connect(this.panNode);
-      this.panNode.connect(this.audioContext.destination);
+    // Set initial gain to 0 to avoid clicks
+    this.gainNode.gain.value = 0;
 
-      // Apply envelope to avoid clicks
-      const currentTime = this.audioContext.currentTime;
-      const attackTime = 0.02; // 20ms attack
-      const releaseTime = 0.02; // 20ms release
+    // Connect nodes
+    this.oscillator.connect(this.gainNode);
+    this.gainNode.connect(this.panNode);
+    this.panNode.connect(this.audioContext.destination);
 
-      this.gainNode.gain.setValueAtTime(0, currentTime);
-      this.gainNode.gain.linearRampToValueAtTime(amplitude, currentTime + attackTime);
-      this.gainNode.gain.setValueAtTime(amplitude, currentTime + attackTime + (durationMs / 1000) - releaseTime);
-      this.gainNode.gain.linearRampToValueAtTime(0, currentTime + (durationMs / 1000));
+    // Start the oscillator
+    this.oscillator.start();
 
-      // Start and stop the oscillator
-      this.oscillator.start(currentTime);
-      this.oscillator.stop(currentTime + (durationMs / 1000));
+    // Apply envelope (attack, sustain, release)
+    const now = this.audioContext.currentTime;
+    const attackTime = 0.02; // 20ms attack
+    const releaseTime = 0.02; // 20ms release
+    
+    // Ramp up (attack)
+    this.gainNode.gain.linearRampToValueAtTime(amplitude, now + attackTime);
+    
+    // Sustain
+    this.gainNode.gain.setValueAtTime(amplitude, now + attackTime + (durationMs / 1000) - releaseTime);
+    
+    // Ramp down (release)
+    this.gainNode.gain.linearRampToValueAtTime(0, now + attackTime + (durationMs / 1000));
+    
+    // Stop oscillator after duration
+    this.oscillator.stop(now + attackTime + (durationMs / 1000) + 0.1); // Add small buffer
 
-      if (this.debugMode) {
-        console.log(`✅ Tone started at ${frequency}Hz with level ${dBHL}dB`);
-      }
+    if (this.debugMode) {
+      console.log(`Playing ${testType} tone: ${frequency}Hz at ${dBHL}dB HL to ${ear} ear for ${durationMs}ms`);
+    }
+  }
 
-      // Clean up after the tone finishes
-      this.oscillator.onended = () => {
-        if (this.debugMode) {
-          console.log(`🔚 Tone ended, cleaning up audio nodes for ${frequency}Hz`);
-        }
-        
-        // Call our consolidated cleanup function
-        this.destroyAllAudioNodes();
-      };
-    } catch (error) {
-      console.error('Error creating audio nodes:', error);
-      // Clean up any partial setup
-      this.destroyAllAudioNodes();
+  /**
+   * Get the appropriate oscillator type based on test type
+   * @param testType - Type of test
+   * @returns Oscillator type
+   */
+  private getBoneOscillatorType(testType: 'air' | 'bone' | 'masked_air' | 'masked_bone'): OscillatorType {
+    // For bone conduction, we use a different waveform to simulate
+    // the different perception of bone-conducted sound
+    if (testType === 'bone' || testType === 'masked_bone') {
+      return 'triangle'; // Triangle wave has fewer higher harmonics, better simulating bone conduction
+    }
+    
+    // Default to sine wave for air conduction
+    return 'sine';
+  }
+
+  /**
+   * Apply effects to simulate bone conduction sound quality
+   */
+  private applyBoneConductionEffect(): void {
+    if (!this.audioContext || !this.gainNode) return;
+    
+    // Create a simple low-pass filter to simulate bone conduction
+    const boneFilter = this.audioContext.createBiquadFilter();
+    boneFilter.type = 'lowpass';
+    boneFilter.frequency.value = 2000; // Bone conduction has limited high-frequency response
+    boneFilter.Q.value = 0.5;
+    
+    // Insert filter into the audio chain
+    if (this.oscillator && this.gainNode) {
+      this.oscillator.disconnect();
+      this.oscillator.connect(boneFilter);
+      boneFilter.connect(this.gainNode);
     }
   }
 

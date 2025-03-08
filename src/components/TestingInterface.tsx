@@ -43,6 +43,7 @@ import audioService from '../services/AudioService';
 import Audiogram from './Audiogram';
 import PatientImage from './PatientImage';
 import GuidancePanel from './GuidancePanel';
+import { useTheme, alpha } from '@mui/material/styles';
 
 interface TestingInterfaceProps {
   patient: HearingProfile;
@@ -90,7 +91,7 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
   patient,
   onComplete,
   onCancel
-}) => {
+}): React.ReactElement => {
   const [session, setSession] = useState<TestSession | null>(null);
   const [currentStep, setCurrentStep] = useState<TestStep | null>(null);
   const [testProgress, setTestProgress] = useState(0);
@@ -124,6 +125,8 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
 
   // Add state for active tab
   const [activeTab, setActiveTab] = useState(0);
+
+  const theme = useTheme();
 
   // Handle tab change
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
@@ -867,95 +870,28 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
     if (!currentStep) {
       return { isValid: false, message: 'No current test step available.' };
     }
-    
+
     const frequency = currentStep.frequency;
     const ear = currentStep.ear;
-    
-    console.log(`Validating threshold for ${frequency}Hz, ${ear} ear`);
-    
-    // Check responseCounts for any level with at least 2/3 positive responses
-    let validLevel = null;
-    let minValidLevel = Infinity;
-    
-    // First check our tracked response counts (more accurate)
-    const frequencyData = responseCounts[frequency];
-    const earData = frequencyData?.[ear] || {};
-    
-    console.log(`Found response data:`, earData);
-    
-    Object.entries(earData).forEach(([levelStr, counts]) => {
-      const level = parseInt(levelStr);
-      // PROPER HUGHSON-WESTLAKE CRITERIA: at least 2 out of 3 responses at this level
-      if (counts.total >= 3 && counts.heard >= 2 && level < minValidLevel) {
-        validLevel = level;
-        minValidLevel = level;
-        console.log(`  Found valid level at ${level}dB: ${counts.heard}/${counts.total} responses`);
-      }
-    });
-    
-    if (validLevel !== null) {
-      const counts = earData[validLevel];
-      return { 
-        isValid: true, 
-        message: `Valid threshold at ${validLevel} dB - patient responded ${counts.heard}/${counts.total} times at this level.` 
-      };
-    }
-    
-    // If we didn't find a valid threshold in our tracked counts, check the responses array
-    const { responses } = currentStep;
-    
-    // We need a minimum number of responses to establish a threshold
-    if (responses.length < 3) {
-      return { 
-        isValid: false, 
-        message: 'Not enough responses to determine a threshold. Hughson-Westlake requires at least 2 out of 3 responses at the same level.' 
-      };
-    }
-    
-    // Create a map of responses at each level
-    const responsesAtLevels = new Map<number, { total: number, heard: number }>();
-    
-    responses.forEach(response => {
-      const level = response.level;
-      const existing = responsesAtLevels.get(level) || { total: 0, heard: 0 };
-      existing.total += 1;
-      if (response.response) {
-        existing.heard += 1;
-      }
-      responsesAtLevels.set(level, existing);
-    });
-    
-    // Check for any level with at least 2 out of 3 positive responses
-    responsesAtLevels.forEach((counts, level) => {
-      if (counts.total >= 3 && counts.heard >= 2 && level < minValidLevel) {
-        validLevel = level;
-        minValidLevel = level;
-      }
-    });
-    
-    if (validLevel !== null) {
-      const counts = responsesAtLevels.get(validLevel) || { total: 0, heard: 0 };
-      return { 
-        isValid: true, 
-        message: `Valid threshold at ${validLevel} dB - patient responded ${counts.heard}/${counts.total} times at this level.` 
-      };
-    } else {
-      // Find the level with the most responses to give helpful feedback
-      let maxResponses = 0;
-      let mostTestedLevel = null;
+    const currentLevel = currentStep.currentLevel;
+
+    // Check if we have response data for this frequency/ear/level
+    if (responseCounts && 
+        responseCounts[frequency] && 
+        responseCounts[frequency][ear] && 
+        responseCounts[frequency][ear][currentLevel]) {
       
-      responsesAtLevels.forEach((counts, level) => {
-        if (counts.total > maxResponses) {
-          maxResponses = counts.total;
-          mostTestedLevel = level;
-        }
-      });
+      // Get response data
+      const heardCount = responseCounts[frequency][ear][currentLevel].heard;
+      const totalCount = responseCounts[frequency][ear][currentLevel].total;
       
-      if (mostTestedLevel !== null) {
-        const heardAtLevel = responsesAtLevels.get(mostTestedLevel)?.heard || 0;
+      // Hughson-Westlake requires at least 2 out of 3 responses at the same level
+      if (totalCount >= 3 && heardCount >= 2) {
+        return { isValid: true, message: 'Valid threshold established.' };
+      } else if (totalCount < 3) {
         return { 
           isValid: false, 
-          message: `Invalid threshold. At ${mostTestedLevel} dB, patient responded ${heardAtLevel}/${maxResponses} times, but Hughson-Westlake requires at least 2 out of 3 responses at the same level.` 
+          message: `Need more responses at this level (${heardCount}/${totalCount} so far).` 
         };
       } else {
         return { 
@@ -963,9 +899,14 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
           message: 'Invalid threshold. Hughson-Westlake requires at least 2 out of 3 responses at the same level.' 
         };
       }
+    } else {
+      return { 
+        isValid: false, 
+        message: 'No response data available for this level.' 
+      };
     }
   }, [currentStep, responseCounts]);
-  
+
   // Helper function to determine if threshold can be stored
   const canStoreThreshold = useCallback(() => {
     return validateThreshold().isValid;
@@ -1139,6 +1080,38 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
     return freq.toString();
   };
 
+  // Helper function to get a readable label for the test type
+  const getTestTypeLabel = (testType: string): string => {
+    switch (testType) {
+      case 'air':
+        return 'Air Conduction';
+      case 'bone':
+        return 'Bone Conduction';
+      case 'masked_air':
+        return 'Masked Air Conduction';
+      case 'masked_bone':
+        return 'Masked Bone Conduction';
+      default:
+        return 'Unknown Test Type';
+    }
+  };
+
+  // Add a function to display the current test type
+  const getTestTypeIcon = (testType: string) => {
+    switch (testType) {
+      case 'air':
+        return <VolumeUp />;
+      case 'bone':
+        return <Hearing />;
+      case 'masked_air':
+        return <Badge badgeContent="M" color="primary"><VolumeUp /></Badge>;
+      case 'masked_bone':
+        return <Badge badgeContent="M" color="primary"><Hearing /></Badge>;
+      default:
+        return <HelpOutline />;
+    }
+  };
+
   // Start playing tone with pulsing pattern
   const startTone = useCallback(() => {
     if (!currentStep) return;
@@ -1212,132 +1185,47 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
       setToneActive(false);
       audioService.stopTone();
     }
-  }, [currentStep, processAutomaticResponse, toneActive, simulatePatientResponse, patientResponse]);
+  }, [currentStep, processAutomaticResponse, toneActive, simulatePatientResponse, patientResponse, procedurePhase]);
 
-  // Update keyboard shortcuts to handle space bar press/release
-  useEffect(() => {
-    console.log('🎮 Setting up keyboard event handlers');
+  // Add handleAdjustFrequency function - place this near the handleAdjustLevel function
+  const handleAdjustFrequency = (direction: number) => {
+    if (!currentStep) return;
     
-    // Keyboard event handler for key down
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Space bar - play tone
-      if (e.code === 'Space' && !toneActive) {
-        e.preventDefault();
-        console.log('⌨️ Space key down - starting tone');
-        startTone();
-      }
-      // Up arrow - increase level
-      else if (e.code === 'ArrowUp' && e.shiftKey) {
-        e.preventDefault();
-        console.log('⌨️ Shift+Up arrow - increasing level by 5dB');
-        handleAdjustLevel(5);
-      }
-      // Down arrow - decrease level
-      else if (e.code === 'ArrowDown' && e.shiftKey) {
-        e.preventDefault();
-        console.log('⌨️ Shift+Down arrow - decreasing level by 5dB');
-        handleAdjustLevel(-5);
-      }
-      // Up arrow - next frequency
-      else if (e.code === 'ArrowUp' && !e.shiftKey) {
-        e.preventDefault();
-        console.log('⌨️ Up arrow - skipping to next frequency');
-        handleSkipStep();
-      }
-      // Down arrow - previous frequency
-      else if (e.code === 'ArrowDown' && !e.shiftKey) {
-        e.preventDefault();
-        console.log('⌨️ Down arrow - going to previous frequency');
-        handlePreviousStep();
-      }
-      // S key - store threshold (when valid)
-      else if (e.code === 'KeyS' && trainerMode && canStoreThreshold()) {
-        e.preventDefault();
-        console.log('⌨️ S key - storing threshold');
-        handleStoreThreshold();
-      }
-    };
-
-    // Keyboard event handler for key up
-    const handleKeyUp = (e: KeyboardEvent) => {
-      // Space bar release - stop tone
-      if (e.code === 'Space' && toneActive) {
-        e.preventDefault();
-        console.log('⌨️ Space key up - stopping tone');
-        stopTone();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('keyup', handleKeyUp);
-
-    return () => {
-      console.log('🧹 Removing keyboard event handlers and cleaning up audio');
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('keyup', handleKeyUp);
-      // Clean up audio when component unmounts
-      audioService.stopTone();
-    };
-  }, [handleAdjustLevel, handleSkipStep, handlePreviousStep, handleStoreThreshold, startTone, stopTone, toneActive, trainerMode, responseCount, suggestedAction, canStoreThreshold, session]);
-
-  // Update test progress when current step changes
-  useEffect(() => {
-    if (session && currentStep) {
-      const totalSteps = session.testSequence.length;
-      const currentStepIndex = session.currentStep;
-      const progress = (currentStepIndex / totalSteps) * 100;
-      setTestProgress(progress);
+    const availableFrequencies: Frequency[] = [125, 250, 500, 750, 1000, 1500, 2000, 3000, 4000, 6000, 8000];
+    const currentFreq = currentStep.frequency;
+    const currentIndex = availableFrequencies.indexOf(currentFreq);
+    
+    if (currentIndex === -1) return;
+    
+    let newIndex = currentIndex + direction;
+    
+    // Ensure we stay within bounds
+    if (newIndex < 0) newIndex = 0;
+    if (newIndex >= availableFrequencies.length) newIndex = availableFrequencies.length - 1;
+    
+    // Only update if the frequency would actually change
+    if (newIndex !== currentIndex) {
+      const newFrequency = availableFrequencies[newIndex];
+      setCurrentStep({
+        ...currentStep,
+        frequency: newFrequency
+      });
     }
-  }, [session, currentStep]);
+  };
 
-  // Memoize the thresholds calculation to prevent infinite re-renders
-  const thresholds = useMemo((): ThresholdPoint[] => {
-    if (!session) return [];
+  // Add this function to handle audiogram position clicks
+  const handleAudiogramClick = (frequency: number, level: number) => {
+    if (!currentStep || toneActive) return;
     
-    // First, let's log the entire test sequence for debugging
-    console.log('DEBUG: Full test sequence:', session.testSequence);
-    
-    // Filter steps with completed=true and responseStatus=threshold
-    const completedSteps = session.testSequence.filter(
-      step => step.completed && step.responseStatus === 'threshold'
-    );
-    
-    console.log(`DEBUG: Found ${completedSteps.length} completed threshold steps:`, completedSteps);
-    
-    // Create a map to ensure we track unique thresholds per frequency/ear combination
-    const uniqueThresholds = new Map<string, ThresholdPoint>();
-    
-    // Process all completed steps with threshold status
-    completedSteps.forEach(step => {
-      // Create a unique key for this frequency/ear/testType combination
-      const key = `${step.frequency}-${step.ear}-${step.testType}`;
-      
-      // For completed steps with stored thresholds, use the validated level
-      console.log(`Including validated threshold for ${key}: ${step.currentLevel}dB, responseStatus=${step.responseStatus}`);
-      
-      // Create the threshold point
-      const thresholdPoint: ThresholdPoint = {
-        frequency: step.frequency,
-        hearingLevel: step.currentLevel,
-        ear: step.ear,
-        testType: step.testType,
-        responseStatus: 'threshold'
-      };
-      
-      // Store it in our map, which ensures we only have one threshold per frequency/ear/testType
-      uniqueThresholds.set(key, thresholdPoint);
+    // Update the current step with the new frequency and level
+    setCurrentStep({
+      ...currentStep,
+      frequency: frequency as Frequency, // Cast to Frequency type
+      currentLevel: level as HearingLevel // Cast to HearingLevel type
     });
-    
-    // Convert the map values back to an array
-    const thresholdArray = Array.from(uniqueThresholds.values());
-    
-    // Extra debug to check what we're returning
-    console.log(`DEBUG: Returning ${thresholdArray.length} thresholds:`, thresholdArray);
-    
-    return thresholdArray;
-  }, [session]);
+  };
 
-  // Handle implementing suggested action
+  // Add the missing handleSuggestedAction function
   const handleSuggestedAction = useCallback(() => {
     if (!currentStep) return;
     
@@ -1400,45 +1288,43 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
       default:
         console.log('Unknown suggested action:', suggestedAction);
     }
-  }, [suggestedAction, procedurePhase, currentStep, handleAdjustLevel, handleStoreThreshold, handleSkipStep, validateThreshold, setCurrentGuidance, setErrorMessage, setProcedurePhase]);
+  }, [suggestedAction, procedurePhase, currentStep, handleAdjustLevel, handleStoreThreshold, 
+      handleSkipStep, validateThreshold, setCurrentGuidance, setErrorMessage, setProcedurePhase]);
 
-  // Add handleAdjustFrequency function - place this near the handleAdjustLevel function
-  const handleAdjustFrequency = (direction: number) => {
-    if (!currentStep) return;
+  // Add thresholds definition before handleAdjustFrequency
+  // Memoize the thresholds calculation to prevent infinite re-renders
+  const thresholds = useMemo((): ThresholdPoint[] => {
+    if (!session) return [];
     
-    const availableFrequencies: Frequency[] = [125, 250, 500, 750, 1000, 1500, 2000, 3000, 4000, 6000, 8000];
-    const currentFreq = currentStep.frequency;
-    const currentIndex = availableFrequencies.indexOf(currentFreq);
+    // Filter steps with completed=true and responseStatus=threshold
+    const completedSteps = session.testSequence.filter(
+      step => step.completed && step.responseStatus === 'threshold'
+    );
     
-    if (currentIndex === -1) return;
+    // Create a map to ensure we track unique thresholds per frequency/ear combination
+    const uniqueThresholds = new Map<string, ThresholdPoint>();
     
-    let newIndex = currentIndex + direction;
-    
-    // Ensure we stay within bounds
-    if (newIndex < 0) newIndex = 0;
-    if (newIndex >= availableFrequencies.length) newIndex = availableFrequencies.length - 1;
-    
-    // Only update if the frequency would actually change
-    if (newIndex !== currentIndex) {
-      const newFrequency = availableFrequencies[newIndex];
-      setCurrentStep({
-        ...currentStep,
-        frequency: newFrequency
-      });
-    }
-  };
-
-  // Add this function to handle audiogram position clicks
-  const handleAudiogramClick = (frequency: number, level: number) => {
-    if (!currentStep || toneActive) return;
-    
-    // Update the current step with the new frequency and level
-    setCurrentStep({
-      ...currentStep,
-      frequency: frequency as Frequency, // Cast to Frequency type
-      currentLevel: level as HearingLevel // Cast to HearingLevel type
+    // Process all completed steps with threshold status
+    completedSteps.forEach(step => {
+      // Create a unique key for this frequency/ear/testType combination
+      const key = `${step.frequency}-${step.ear}-${step.testType}`;
+      
+      // Create the threshold point
+      const thresholdPoint: ThresholdPoint = {
+        frequency: step.frequency,
+        hearingLevel: step.currentLevel,
+        ear: step.ear,
+        testType: step.testType,
+        responseStatus: 'threshold'
+      };
+      
+      // Store it in our map, which ensures we only have one threshold per frequency/ear/testType
+      uniqueThresholds.set(key, thresholdPoint);
     });
-  };
+    
+    // Convert the map values back to an array
+    return Array.from(uniqueThresholds.values());
+  }, [session]);
 
   if (!session || !currentStep) {
     return (
@@ -1463,12 +1349,19 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
           <Box sx={{ mb: 2 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
               <Typography variant="h6">
-                {currentStep ? `Testing ${currentStep.ear} ear at ${currentStep.frequency} Hz` : 'Ready to start'}
+                {currentStep ? 
+                  `Testing ${currentStep.ear} ear at ${currentStep.frequency} Hz (${
+                    currentStep.testType === 'air' ? 'Air Conduction' : 
+                    currentStep.testType === 'bone' ? 'Bone Conduction' : 
+                    currentStep.testType === 'masked_air' ? 'Masked Air' : 
+                    currentStep.testType === 'masked_bone' ? 'Masked Bone' : 
+                    currentStep.testType
+                  })` : 
+                  'Ready to start'}
               </Typography>
               <Chip 
                 label={`${testProgress}%`} 
                 color="primary" 
-                variant="outlined" 
               />
             </Box>
             <LinearProgress 
@@ -1776,9 +1669,13 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
               onClick={onCancel}
               color="primary"
               sx={{ 
-                backgroundColor: 'rgba(0, 0, 0, 0.05)',
+                backgroundColor: theme.palette.mode === 'dark'
+                  ? alpha(theme.palette.action.active, 0.1)
+                  : 'rgba(0, 0, 0, 0.05)',
                 '&:hover': {
-                  backgroundColor: 'rgba(0, 0, 0, 0.1)'
+                  backgroundColor: theme.palette.mode === 'dark'
+                    ? alpha(theme.palette.action.active, 0.2)
+                    : 'rgba(0, 0, 0, 0.1)'
                 }
               }}
             >

@@ -1,6 +1,7 @@
 import React, { ReactElement, useEffect, useState } from 'react';
 import { Paper, Typography, Box, Chip, Button, Divider, Alert, List, ListItem, ListItemIcon, ListItemText, Collapse } from '@mui/material';
-import { styled, keyframes } from '@mui/material/styles';
+import { styled, keyframes, useTheme } from '@mui/material/styles';
+import { alpha } from '@mui/material/styles';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import CheckIcon from '@mui/icons-material/Check';
@@ -93,6 +94,7 @@ const GuidancePanel: React.FC<GuidancePanelProps> = ({
 }) => {
   const [responseDetected, setResponseDetected] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  const theme = useTheme();
   
   // Update effect to handle responseDetected
   useEffect(() => {
@@ -233,7 +235,13 @@ const GuidancePanel: React.FC<GuidancePanelProps> = ({
       sx={{ 
         p: 3, 
         mb: 2, 
-        backgroundColor: isResponseRelevant ? '#f5fff5' : '#f8f9fa', 
+        backgroundColor: isResponseRelevant 
+          ? theme.palette.mode === 'dark' 
+            ? alpha(theme.palette.success.dark, 0.1) 
+            : '#f5fff5' 
+          : theme.palette.mode === 'dark' 
+            ? theme.palette.background.paper 
+            : '#f8f9fa', 
         borderLeft: isResponseRelevant ? '4px solid #4caf50' : '4px solid #3f51b5',
         position: 'relative',
         transition: 'all 0.3s ease'
@@ -282,9 +290,11 @@ const GuidancePanel: React.FC<GuidancePanelProps> = ({
           <Box sx={{ 
             mt: 1, 
             p: 2, 
-            backgroundColor: '#f5f5f5', 
+            backgroundColor: theme.palette.mode === 'dark' 
+              ? alpha(theme.palette.background.paper, 0.6) 
+              : '#f5f5f5', 
             borderRadius: 1,
-            border: '1px solid #e0e0e0'
+            border: `1px solid ${theme.palette.divider}`
           }}>
             <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
               {currentPhaseInfo.name} - Procedure Tips:
@@ -315,10 +325,18 @@ const GuidancePanel: React.FC<GuidancePanelProps> = ({
           variant="body1" 
           sx={{ 
             p: 2, 
-            backgroundColor: isResponseRelevant ? '#e8f5e9' : '#e3f2fd', 
+            backgroundColor: isResponseRelevant 
+              ? theme.palette.mode === 'dark' 
+                ? alpha(theme.palette.success.dark, 0.2) 
+                : '#e8f5e9' 
+              : theme.palette.mode === 'dark' 
+                ? alpha(theme.palette.primary.dark, 0.1) 
+                : '#e3f2fd', 
             borderRadius: 2, 
             fontWeight: 500,
-            border: isResponseRelevant ? '1px solid #4caf50' : '1px solid #bbdefb',
+            border: isResponseRelevant 
+              ? `1px solid ${theme.palette.success.main}` 
+              : `1px solid ${theme.palette.mode === 'dark' ? theme.palette.primary.dark : '#bbdefb'}`,
             transition: 'all 0.3s ease',
             boxShadow: '0 1px 3px rgba(0,0,0,0.12)'
           }}
@@ -340,8 +358,10 @@ const GuidancePanel: React.FC<GuidancePanelProps> = ({
           mt: 1,
           p: 2,
           borderRadius: 2,
-          backgroundColor: '#f8f9fa',
-          border: '1px solid #e0e0e0',
+          backgroundColor: theme.palette.mode === 'dark' 
+            ? alpha(theme.palette.background.paper, 0.6) 
+            : '#f8f9fa',
+          border: `1px solid ${theme.palette.divider}`,
           boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
           animation: action === 'store_threshold' || action === 'present' ? 
             `${pulse} 2s infinite` : 'none',

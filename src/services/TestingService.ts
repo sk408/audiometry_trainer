@@ -1,9 +1,17 @@
 import { v4 as uuidv4 } from 'uuid';
 import { 
   TestSession, TestStep, HearingProfile, ThresholdPoint, 
-  Frequency, HearingLevel, TestResult 
+  Frequency, HearingLevel, TestResult, Ear 
 } from '../interfaces/AudioTypes';
 import audioService from './AudioService';
+
+/**
+ * Interface for test session configuration
+ */
+interface TestSessionConfig {
+  includeAirConduction?: boolean;
+  includeBoneConduction?: boolean;
+}
 
 /**
  * TestingService - Implements the Hughson-Westlake testing protocol
@@ -17,6 +25,12 @@ class TestingService {
   // Standard test frequencies in Hz (from low to high)
   private testFrequencies: Frequency[] = [1000, 2000, 4000, 8000, 1000, 500, 250];
   
+  // Bone conduction test frequencies (typically 250-4000 Hz)
+  private boneTestFrequencies: Frequency[] = [1000, 2000, 4000, 1000, 500, 250];
+  
+  // Test types to include in sequence
+  private testTypes: ('air' | 'bone')[] = ['air', 'bone'];
+  
   // Default starting level in dB HL
   private defaultStartLevel: HearingLevel = 40;
   
@@ -24,12 +38,29 @@ class TestingService {
   private initialStepSize: number = 10;
   private finalStepSize: number = 5;
 
+  // Whether to include bone conduction tests
+  private includeBoneConduction: boolean = true;
+
+  // Whether to include air conduction tests
+  private includeAirConduction: boolean = true;
+
   /**
    * Start a new test session with a patient
    * @param patient - Patient profile
+   * @param config - Test configuration options
    * @returns New test session
    */
-  public startSession(patient: HearingProfile): TestSession {
+  public startSession(patient: HearingProfile, config?: TestSessionConfig): TestSession {
+    // Apply configuration settings
+    if (config) {
+      if (config.includeAirConduction !== undefined) {
+        this.includeAirConduction = config.includeAirConduction;
+      }
+      if (config.includeBoneConduction !== undefined) {
+        this.includeBoneConduction = config.includeBoneConduction;
+      }
+    }
+    
     // Generate test sequence based on Hughson-Westlake protocol
     const testSequence = this.generateTestSequence();
     
@@ -50,69 +81,42 @@ class TestingService {
   }
 
   /**
-   * Generate a test sequence following standard audiometry protocol
+   * Generate a test sequence based on the Hughson-Westlake protocol
    * @returns Array of test steps
    */
   private generateTestSequence(): TestStep[] {
-    const testSequence: TestStep[] = [];
+    const sequence: TestStep[] = [];
     let stepId = 1;
     
-    // First test right ear air conduction
-    this.testFrequencies.forEach(freq => {
-      testSequence.push({
-        id: stepId++,
-        frequency: freq,
-        ear: 'right',
-        testType: 'air',
-        currentLevel: this.defaultStartLevel,
-        completed: false,
-        responses: []
+    // For each ear (right first, then left)
+    ['right', 'left'].forEach(ear => {
+      // For each test type (air conduction, then bone conduction)
+      this.testTypes.forEach(testType => {
+        // Skip bone conduction for some difficulties or based on settings
+        if (testType === 'bone' && !this.includeBoneConduction) {
+          return;
+        }
+        
+        // Select appropriate frequencies for this test type
+        const frequencies = testType === 'bone' ? this.boneTestFrequencies : this.testFrequencies;
+        
+        // For each frequency in the sequence
+        frequencies.forEach(freq => {
+          // Add test step
+          sequence.push({
+            id: stepId++,
+            frequency: freq,
+            ear: ear as Ear,
+            testType: testType,
+            currentLevel: this.defaultStartLevel,
+            completed: false,
+            responses: []
+          });
+        });
       });
     });
     
-    // Then test left ear air conduction
-    this.testFrequencies.forEach(freq => {
-      testSequence.push({
-        id: stepId++,
-        frequency: freq,
-        ear: 'left',
-        testType: 'air',
-        currentLevel: this.defaultStartLevel,
-        completed: false,
-        responses: []
-      });
-    });
-    
-    // Add bone conduction tests for frequencies up to 4000 Hz
-    const boneFrequencies: Frequency[] = [1000, 2000, 4000, 1000, 500, 250];
-    
-    // Right ear bone conduction
-    boneFrequencies.forEach(freq => {
-      testSequence.push({
-        id: stepId++,
-        frequency: freq,
-        ear: 'right',
-        testType: 'bone',
-        currentLevel: this.defaultStartLevel,
-        completed: false,
-        responses: []
-      });
-    });
-    
-    // Left ear bone conduction
-    boneFrequencies.forEach(freq => {
-      testSequence.push({
-        id: stepId++,
-        frequency: freq,
-        ear: 'left',
-        testType: 'bone',
-        currentLevel: this.defaultStartLevel,
-        completed: false,
-        responses: []
-      });
-    });
-    
-    return testSequence;
+    return sequence;
   }
 
   /**
@@ -129,21 +133,23 @@ class TestingService {
   }
 
   /**
-   * Play the current test tone
+   * Play the current tone based on the current step
    * @param durationMs - Optional duration in milliseconds
    */
   public playCurrentTone(durationMs?: number): void {
-    const step = this.getCurrentStep();
-    if (!step) return;
+    const currentStep = this.getCurrentStep();
+    if (!currentStep) return;
     
-    audioService.resumeAudioContext().then(() => {
-      audioService.playTone(
-        step.frequency,
-        step.currentLevel,
-        step.ear,
-        durationMs
-      );
-    });
+    const { frequency, ear, currentLevel, testType } = currentStep;
+    
+    // Play the tone with the appropriate parameters
+    audioService.playTone(
+      frequency,
+      currentLevel,
+      ear,
+      durationMs,
+      testType // Pass the test type to the playTone method
+    );
   }
 
   /**

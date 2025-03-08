@@ -1,4 +1,4 @@
-import { HearingProfile, ThresholdPoint } from '../interfaces/AudioTypes';
+import { HearingProfile, ThresholdPoint, Frequency, HearingLevel } from '../interfaces/AudioTypes';
 
 /**
  * PatientService - Manages virtual patients with different hearing profiles
@@ -78,180 +78,205 @@ class PatientService {
   }
 
   /**
-   * Generate thresholds for normal hearing
+   * Generate normal hearing thresholds
+   * @returns Array of threshold points for normal hearing
    */
   private generateNormalHearingThresholds(): ThresholdPoint[] {
-    const frequencies = [250, 500, 1000, 2000, 3000, 4000, 8000] as const;
     const thresholds: ThresholdPoint[] = [];
-
-    // Generate air conduction thresholds
+    const frequencies: number[] = [250, 500, 750, 1000, 1500, 2000, 3000, 4000, 6000, 8000];
+    
+    // Air conduction thresholds
     frequencies.forEach(freq => {
-      // Normal hearing (0-15 dB HL)
-      const rightLevel = this.getRandomLevel(0, 15) as any;
-      const leftLevel = this.getRandomLevel(0, 15) as any;
-
-      // Right ear air conduction
+      // Right ear thresholds (normal = between -10 and 15 dB HL)
       thresholds.push({
-        frequency: freq,
-        hearingLevel: rightLevel,
+        frequency: freq as Frequency,
+        hearingLevel: this.getRandomLevel(-10, 15) as HearingLevel,
         ear: 'right',
         testType: 'air',
         responseStatus: 'threshold'
       });
-
-      // Left ear air conduction
+      
+      // Left ear thresholds
       thresholds.push({
-        frequency: freq,
-        hearingLevel: leftLevel,
+        frequency: freq as Frequency,
+        hearingLevel: this.getRandomLevel(-10, 15) as HearingLevel,
         ear: 'left',
         testType: 'air',
         responseStatus: 'threshold'
       });
-
-      // Bone conduction (similar to air for normal hearing)
-      if (freq <= 4000) { // Bone conduction testing typically only up to 4000 Hz
-        thresholds.push({
-          frequency: freq,
-          hearingLevel: rightLevel,
-          ear: 'right',
-          testType: 'bone',
-          responseStatus: 'threshold'
-        });
-
-        thresholds.push({
-          frequency: freq,
-          hearingLevel: leftLevel,
-          ear: 'left',
-          testType: 'bone',
-          responseStatus: 'threshold'
-        });
-      }
     });
-
+    
+    // Bone conduction thresholds (typically for frequencies 250-4000 Hz)
+    const boneFrequencies: number[] = [250, 500, 1000, 2000, 3000, 4000];
+    
+    boneFrequencies.forEach(freq => {
+      // For normal hearing, bone conduction thresholds should be similar to air conduction
+      // Right ear bone conduction
+      thresholds.push({
+        frequency: freq as Frequency,
+        hearingLevel: this.getRandomLevel(-10, 15) as HearingLevel,
+        ear: 'right',
+        testType: 'bone',
+        responseStatus: 'threshold'
+      });
+      
+      // Left ear bone conduction
+      thresholds.push({
+        frequency: freq as Frequency,
+        hearingLevel: this.getRandomLevel(-10, 15) as HearingLevel,
+        ear: 'left',
+        testType: 'bone',
+        responseStatus: 'threshold'
+      });
+    });
+    
     return thresholds;
   }
 
   /**
-   * Generate thresholds for mild high-frequency sensorineural hearing loss
+   * Generate mild high-frequency sensorineural hearing loss
+   * @returns Array of threshold points
    */
   private generateMildHighFrequencyLoss(): ThresholdPoint[] {
-    const frequencies = [250, 500, 1000, 2000, 3000, 4000, 8000] as const;
     const thresholds: ThresholdPoint[] = [];
-
+    const frequencies: number[] = [250, 500, 750, 1000, 1500, 2000, 3000, 4000, 6000, 8000];
+    
+    // Air conduction thresholds
     frequencies.forEach(freq => {
-      // Determine hearing level based on frequency
-      let rightLevel, leftLevel;
+      // Hearing level based on frequency - higher frequencies have higher thresholds
+      let rightLevel: HearingLevel = 10 as HearingLevel;
+      let leftLevel: HearingLevel = 10 as HearingLevel;
       
-      if (freq <= 1000) {
-        // Normal hearing at low frequencies
-        rightLevel = this.getRandomLevel(5, 15) as any;
-        leftLevel = this.getRandomLevel(5, 15) as any;
-      } else if (freq <= 2000) {
-        // Mild loss at mid frequencies
-        rightLevel = this.getRandomLevel(20, 30) as any;
-        leftLevel = this.getRandomLevel(20, 30) as any;
-      } else {
-        // Moderate loss at high frequencies
-        rightLevel = this.getRandomLevel(35, 50) as any;
-        leftLevel = this.getRandomLevel(35, 50) as any;
+      // Progressive loss in high frequencies
+      if (freq >= 2000) {
+        rightLevel = Math.min(85, 10 + Math.round((freq - 1500) / 100)) as HearingLevel;
+        leftLevel = Math.min(85, 10 + Math.round((freq - 1500) / 100)) as HearingLevel;
       }
-
-      // Air conduction
+      
+      // Add some randomness
+      rightLevel = (rightLevel + this.getRandomLevel(-5, 5)) as HearingLevel;
+      leftLevel = (leftLevel + this.getRandomLevel(-5, 5)) as HearingLevel;
+      
+      // Right ear
       thresholds.push({
-        frequency: freq,
+        frequency: freq as Frequency,
         hearingLevel: rightLevel,
         ear: 'right',
         testType: 'air',
         responseStatus: 'threshold'
       });
-
+      
+      // Left ear
       thresholds.push({
-        frequency: freq,
+        frequency: freq as Frequency,
         hearingLevel: leftLevel,
         ear: 'left',
         testType: 'air',
         responseStatus: 'threshold'
       });
-
-      // Bone conduction (similar to air for sensorineural loss)
-      if (freq <= 4000) {
-        thresholds.push({
-          frequency: freq,
-          hearingLevel: rightLevel,
-          ear: 'right',
-          testType: 'bone',
-          responseStatus: 'threshold'
-        });
-
-        thresholds.push({
-          frequency: freq,
-          hearingLevel: leftLevel,
-          ear: 'left',
-          testType: 'bone',
-          responseStatus: 'threshold'
-        });
-      }
     });
-
+    
+    // Bone conduction thresholds (typically for frequencies 250-4000 Hz)
+    const boneFrequencies: number[] = [250, 500, 1000, 2000, 3000, 4000];
+    
+    boneFrequencies.forEach(freq => {
+      // For sensorineural hearing loss, bone conduction thresholds should be similar to air conduction
+      let rightLevel: HearingLevel = 10 as HearingLevel;
+      let leftLevel: HearingLevel = 10 as HearingLevel;
+      
+      // Progressive loss in high frequencies
+      if (freq >= 2000) {
+        rightLevel = Math.min(85, 10 + Math.round((freq - 1500) / 100)) as HearingLevel;
+        leftLevel = Math.min(85, 10 + Math.round((freq - 1500) / 100)) as HearingLevel;
+      }
+      
+      // Add some randomness
+      rightLevel = (rightLevel + this.getRandomLevel(-5, 5)) as HearingLevel;
+      leftLevel = (leftLevel + this.getRandomLevel(-5, 5)) as HearingLevel;
+      
+      // Right ear bone conduction
+      thresholds.push({
+        frequency: freq as Frequency,
+        hearingLevel: rightLevel,
+        ear: 'right',
+        testType: 'bone',
+        responseStatus: 'threshold'
+      });
+      
+      // Left ear bone conduction
+      thresholds.push({
+        frequency: freq as Frequency,
+        hearingLevel: leftLevel,
+        ear: 'left',
+        testType: 'bone',
+        responseStatus: 'threshold'
+      });
+    });
+    
     return thresholds;
   }
 
   /**
-   * Generate thresholds for conductive hearing loss
+   * Generate moderate flat conductive hearing loss
+   * @returns Array of threshold points
    */
   private generateConductiveLoss(): ThresholdPoint[] {
-    const frequencies = [250, 500, 1000, 2000, 3000, 4000, 8000] as const;
     const thresholds: ThresholdPoint[] = [];
+    const frequencies: number[] = [250, 500, 750, 1000, 1500, 2000, 3000, 4000, 6000, 8000];
     
-    // Air-bone gap of approximately 30-40 dB
-    const airBoneGap = 35;
-
+    // Air conduction thresholds - conductive loss is typically flat across frequencies
     frequencies.forEach(freq => {
-      // Normal bone conduction
-      const rightBoneLevel = this.getRandomLevel(0, 15) as any;
-      const leftBoneLevel = this.getRandomLevel(0, 15) as any;
+      // Moderate conductive loss (40-55 dB HL)
+      const rightLevel = (40 + this.getRandomLevel(0, 15)) as HearingLevel;
+      const leftLevel = (40 + this.getRandomLevel(0, 15)) as HearingLevel;
       
-      // Elevated air conduction due to conductive component
-      const rightAirLevel = (rightBoneLevel + airBoneGap) as any;
-      const leftAirLevel = (leftBoneLevel + airBoneGap) as any;
-
-      // Air conduction
+      // Right ear
       thresholds.push({
-        frequency: freq,
-        hearingLevel: rightAirLevel,
+        frequency: freq as Frequency,
+        hearingLevel: rightLevel,
         ear: 'right',
         testType: 'air',
         responseStatus: 'threshold'
       });
-
+      
+      // Left ear
       thresholds.push({
-        frequency: freq,
-        hearingLevel: leftAirLevel,
+        frequency: freq as Frequency,
+        hearingLevel: leftLevel,
         ear: 'left',
         testType: 'air',
         responseStatus: 'threshold'
       });
-
-      // Bone conduction (normal for conductive loss)
-      if (freq <= 4000) {
-        thresholds.push({
-          frequency: freq,
-          hearingLevel: rightBoneLevel,
-          ear: 'right',
-          testType: 'bone',
-          responseStatus: 'threshold'
-        });
-
-        thresholds.push({
-          frequency: freq,
-          hearingLevel: leftBoneLevel,
-          ear: 'left',
-          testType: 'bone',
-          responseStatus: 'threshold'
-        });
-      }
     });
-
+    
+    // Bone conduction thresholds (typically for frequencies 250-4000 Hz)
+    const boneFrequencies: number[] = [250, 500, 1000, 2000, 3000, 4000];
+    
+    boneFrequencies.forEach(freq => {
+      // For conductive hearing loss, bone conduction thresholds should be normal
+      // despite elevated air conduction thresholds
+      const rightLevel = (this.getRandomLevel(-10, 15)) as HearingLevel;
+      const leftLevel = (this.getRandomLevel(-10, 15)) as HearingLevel;
+      
+      // Right ear bone conduction
+      thresholds.push({
+        frequency: freq as Frequency,
+        hearingLevel: rightLevel,
+        ear: 'right',
+        testType: 'bone',
+        responseStatus: 'threshold'
+      });
+      
+      // Left ear bone conduction
+      thresholds.push({
+        frequency: freq as Frequency,
+        hearingLevel: leftLevel,
+        ear: 'left',
+        testType: 'bone',
+        responseStatus: 'threshold'
+      });
+    });
+    
     return thresholds;
   }
 

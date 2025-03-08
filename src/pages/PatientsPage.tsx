@@ -20,7 +20,9 @@ import {
   DialogActions,
   Chip,
   Stack,
-  Pagination
+  Pagination,
+  Alert,
+  useMediaQuery
 } from '@mui/material';
 import { Search, FilterList, HearingOutlined, PersonAdd } from '@mui/icons-material';
 import { HearingProfile } from '../interfaces/AudioTypes';
@@ -28,6 +30,7 @@ import patientService from '../services/PatientService';
 import PatientCard from '../components/PatientCard';
 import TestingInterface from '../components/TestingInterface';
 import TestResults from '../components/TestResults';
+import { useTheme, alpha } from '@mui/material/styles';
 
 const PatientsPage: React.FC = () => {
   const [patients, setPatients] = useState<HearingProfile[]>([]);
@@ -41,6 +44,8 @@ const PatientsPage: React.FC = () => {
   const [page, setPage] = useState(1);
   const [patientsPerPage] = useState(6);
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   // Load patients on component mount
   useEffect(() => {
@@ -163,7 +168,7 @@ const PatientsPage: React.FC = () => {
   }
 
   return (
-    <Container maxWidth="lg" sx={{ py: { xs: 2, md: 4 } }}>
+    <Container maxWidth="lg" sx={{ mt: { xs: 2, md: 4 }, mb: 6 }}>
       <Typography variant="h4" gutterBottom>
         Virtual Patients
       </Typography>
@@ -356,7 +361,9 @@ const PatientsPage: React.FC = () => {
           sx={{ 
             p: { xs: 2, md: 4 }, 
             textAlign: 'center', 
-            bgcolor: '#f5f5f5',
+            bgcolor: theme.palette.mode === 'dark' 
+              ? alpha(theme.palette.background.paper, 0.6) 
+              : '#f5f5f5',
             borderRadius: 2
           }}
         >
@@ -383,9 +390,11 @@ const PatientsPage: React.FC = () => {
           sx={{ 
             mt: { xs: 2, md: 4 }, 
             p: { xs: 2, md: 3 }, 
-            bgcolor: '#f9f9f9',
+            bgcolor: theme.palette.mode === 'dark' 
+              ? theme.palette.background.paper 
+              : '#f9f9f9',
             borderRadius: 2,
-            border: '1px solid #e0e0e0'
+            border: `1px solid ${theme.palette.divider}`
           }}
         >
           <Typography variant="h5" gutterBottom>

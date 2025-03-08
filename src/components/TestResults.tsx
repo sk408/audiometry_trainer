@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   Box,
   Paper,
@@ -31,6 +31,7 @@ import Audiogram from './Audiogram';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
 import patientService from '../services/PatientService';
+import { useTheme } from '@mui/material/styles';
 
 interface TestResultsProps {
   session: TestSession;
@@ -64,6 +65,9 @@ const TabPanel: React.FC<TabPanelProps> = ({ children, value, index, ...other })
 const TestResults: React.FC<TestResultsProps> = ({ session, onNewTest }) => {
   const [tabValue, setTabValue] = useState(0);
   const [exportLoading, setExportLoading] = useState(false);
+  const audiogramRef = useRef<HTMLDivElement>(null);
+  const summaryRef = useRef<HTMLDivElement>(null);
+  const theme = useTheme();
   
   // Get results from session
   const results = session.results as TestResult;
@@ -178,7 +182,7 @@ const TestResults: React.FC<TestResultsProps> = ({ session, onNewTest }) => {
   
   return (
     <Paper elevation={3} sx={{ borderRadius: 2, maxWidth: 1200, mx: 'auto' }} id="test-results-container">
-      <Box sx={{ p: 3 }}>
+      <Box sx={{ p: { xs: 1, sm: 2, md: 3 }, mb: 4 }}>
         <Typography variant="h4" gutterBottom>
           Test Results
         </Typography>
@@ -200,7 +204,11 @@ const TestResults: React.FC<TestResultsProps> = ({ session, onNewTest }) => {
           <TabPanel value={tabValue} index={0}>
             <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 3 }}>
               <Box sx={{ flex: 1 }}>
-                <Paper elevation={2} sx={{ p: 2, mb: 3, bgcolor: '#f8f9fa' }}>
+                <Paper elevation={2} sx={{ 
+                  p: 2, 
+                  mb: 3, 
+                  bgcolor: theme.palette.mode === 'dark' ? theme.palette.background.paper : '#f8f9fa' 
+                }}>
                   <Typography variant="h6" gutterBottom>
                     Test Summary
                   </Typography>

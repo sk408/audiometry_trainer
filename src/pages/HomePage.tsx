@@ -11,8 +11,10 @@ import {
   CardContent,
   CardActions,
   Divider,
-  Link
+  Link,
+  useMediaQuery
 } from '@mui/material';
+import { useTheme, alpha } from '@mui/material/styles';
 import {
   School,
   Person,
@@ -24,6 +26,9 @@ import {
 } from '@mui/icons-material';
 
 const HomePage: React.FC = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+
   return (
     <Box>
       {/* Hero Section */}
@@ -172,7 +177,12 @@ const HomePage: React.FC = () => {
       </Container>
 
       {/* How It Works Section */}
-      <Box sx={{ bgcolor: '#f5f5f5', py: { xs: 4, md: 6 } }}>
+      <Box sx={{ 
+        bgcolor: theme.palette.mode === 'dark' 
+          ? alpha(theme.palette.background.paper, 0.6) 
+          : '#f5f5f5', 
+        py: { xs: 4, md: 6 } 
+      }}>
         <Container maxWidth="lg">
           <Typography variant="h4" component="h2" gutterBottom align="center" sx={{ mb: 4 }}>
             How It Works

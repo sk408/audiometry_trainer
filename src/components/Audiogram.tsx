@@ -33,6 +33,48 @@ const STANDARD_FREQUENCIES = [125, 250, 500, 750, 1000, 1500, 2000, 3000, 4000, 
 // Define major frequencies to show labels for on mobile devices
 const MAJOR_FREQUENCIES = [250, 500, 1000, 2000, 4000, 8000];
 
+// Define symbol mappings
+const SYMBOL_MAPPINGS = {
+  right_air: {
+    symbol: 'circle',
+    color: 'red',
+  },
+  left_air: {
+    symbol: 'crossRot',
+    color: 'blue',
+  },
+  right_bone: {
+    symbol: 'triangle',
+    color: 'red',
+  },
+  left_bone: {
+    symbol: 'triangle',
+    color: 'blue',
+    rotation: 180,
+  },
+  right_air_no_response: {
+    symbol: 'circle',
+    color: 'red',
+    withArrow: true,
+  },
+  left_air_no_response: {
+    symbol: 'crossRot',
+    color: 'blue',
+    withArrow: true,
+  },
+  right_bone_no_response: {
+    symbol: 'triangle',
+    color: 'red',
+    withArrow: true,
+  },
+  left_bone_no_response: {
+    symbol: 'triangle',
+    color: 'blue',
+    rotation: 180,
+    withArrow: true,
+  },
+};
+
 interface AudiogramProps {
   thresholds: ThresholdPoint[];
   width?: number;
@@ -110,103 +152,172 @@ const Audiogram: React.FC<AudiogramProps> = ({
 
   // Convert threshold data to chart format
   const prepareChartData = (): ChartData<'scatter'> => {
-    // Filter out any thresholds that don't have 'threshold' responseStatus
-    const validThresholds = thresholds.filter(t => t.responseStatus === 'threshold');
-    
-    // Split thresholds by ear and test type
-    const rightAir = validThresholds.filter(t => t.ear === 'right' && t.testType === 'air');
-    const leftAir = validThresholds.filter(t => t.ear === 'left' && t.testType === 'air');
-    const rightBone = validThresholds.filter(t => t.ear === 'right' && t.testType === 'bone');
-    const leftBone = validThresholds.filter(t => t.ear === 'left' && t.testType === 'bone');
-    
-    // Convert to scatter plot format
+    // Data sets for different ear and test types
     const datasets = [];
     
+    // Create separate datasets for each combination of ear and test type
     // Right ear air conduction
     datasets.push({
-      label: 'Right Air',
-      data: rightAir.map(t => ({ x: t.frequency, y: t.hearingLevel })),
-      backgroundColor: symbols.right.air.fillColor,
-      borderColor: symbols.right.air.borderColor,
-      pointStyle: symbols.right.air.symbol,
-      pointRadius: 8,
+      label: 'Right Ear (Air)',
+      data: thresholds
+        .filter(point => point.ear === 'right' && point.testType === 'air')
+        .map(point => ({
+          x: point.frequency,
+          y: point.hearingLevel,
+          responseStatus: point.responseStatus
+        })),
+      pointStyle: 'circle',
+      borderColor: 'red',
+      backgroundColor: 'red',
       borderWidth: 2,
+      pointRadius: 6,
       showLine: true,
       tension: 0.1
     });
-    
+
     // Left ear air conduction
     datasets.push({
-      label: 'Left Air',
-      data: leftAir.map(t => ({ x: t.frequency, y: t.hearingLevel })),
-      backgroundColor: symbols.left.air.fillColor,
-      borderColor: symbols.left.air.borderColor,
-      pointStyle: symbols.left.air.symbol,
-      pointRadius: 8,
+      label: 'Left Ear (Air)',
+      data: thresholds
+        .filter(point => point.ear === 'left' && point.testType === 'air')
+        .map(point => ({
+          x: point.frequency,
+          y: point.hearingLevel,
+          responseStatus: point.responseStatus
+        })),
+      pointStyle: 'crossRot',
+      borderColor: 'blue',
+      backgroundColor: 'blue',
       borderWidth: 2,
+      pointRadius: 6,
       showLine: true,
       tension: 0.1
     });
-    
+
     // Right ear bone conduction
     datasets.push({
-      label: 'Right Bone',
-      data: rightBone.map(t => ({ x: t.frequency, y: t.hearingLevel })),
-      backgroundColor: symbols.right.bone.fillColor,
-      borderColor: symbols.right.bone.borderColor,
-      pointStyle: symbols.right.bone.symbol,
-      pointRadius: 10,
+      label: 'Right Ear (Bone)',
+      data: thresholds
+        .filter(point => point.ear === 'right' && point.testType === 'bone')
+        .map(point => ({
+          x: point.frequency,
+          y: point.hearingLevel,
+          responseStatus: point.responseStatus
+        })),
+      pointStyle: 'triangle',
+      borderColor: 'red',
+      backgroundColor: 'rgba(255, 0, 0, 0.2)',
       borderWidth: 2,
-      showLine: false
+      pointRadius: 6,
+      showLine: true,
+      tension: 0.1
     });
-    
+
     // Left ear bone conduction
     datasets.push({
-      label: 'Left Bone',
-      data: leftBone.map(t => ({ x: t.frequency, y: t.hearingLevel })),
-      backgroundColor: symbols.left.bone.fillColor,
-      borderColor: symbols.left.bone.borderColor,
-      pointStyle: symbols.left.bone.symbol,
-      pointRadius: 10,
+      label: 'Left Ear (Bone)',
+      data: thresholds
+        .filter(point => point.ear === 'left' && point.testType === 'bone')
+        .map(point => ({
+          x: point.frequency,
+          y: point.hearingLevel,
+          responseStatus: point.responseStatus
+        })),
+      pointStyle: 'triangle',
+      borderColor: 'blue',
+      backgroundColor: 'rgba(0, 0, 255, 0.2)',
       borderWidth: 2,
-      showLine: false
+      pointRadius: 6,
+      showLine: true,
+      tension: 0.1,
+      rotation: 180
     });
-    
-    // Add comparison thresholds if provided
-    if (compareThresholds && compareThresholds.length > 0) {
-      // Split compare thresholds by ear and test type
-      const compareRightAir = compareThresholds.filter(t => t.ear === 'right' && t.testType === 'air');
-      const compareLeftAir = compareThresholds.filter(t => t.ear === 'left' && t.testType === 'air');
-      
-      // Right ear comparison (dashed line)
+
+    // Compare thresholds if provided
+    if (compareThresholds) {
+      // Additional datasets for comparison
+      // Right ear air comparison
       datasets.push({
-        label: 'Actual Right Thresholds',
-        data: compareRightAir.map(t => ({ x: t.frequency, y: t.hearingLevel })),
-        backgroundColor: 'rgba(255, 0, 0, 0.3)',
-        borderColor: 'rgba(255, 0, 0, 0.7)',
+        label: 'Right Ear Air (Expected)',
+        data: compareThresholds
+          .filter(point => point.ear === 'right' && point.testType === 'air')
+          .map(point => ({
+            x: point.frequency,
+            y: point.hearingLevel,
+            responseStatus: point.responseStatus
+          })),
         pointStyle: 'circle',
+        borderColor: 'rgba(255, 0, 0, 0.5)',
+        backgroundColor: 'rgba(255, 0, 0, 0.5)',
+        borderWidth: 1,
         pointRadius: 4,
-        borderWidth: 2,
-        borderDash: [5, 5],
         showLine: true,
-        tension: 0.1
+        tension: 0.1,
+        borderDash: [5, 5]
       });
-      
-      // Left ear comparison (dashed line)
+
+      // Left ear air comparison
       datasets.push({
-        label: 'Actual Left Thresholds',
-        data: compareLeftAir.map(t => ({ x: t.frequency, y: t.hearingLevel })),
-        backgroundColor: 'rgba(0, 0, 255, 0.3)',
-        borderColor: 'rgba(0, 0, 255, 0.7)',
+        label: 'Left Ear Air (Expected)',
+        data: compareThresholds
+          .filter(point => point.ear === 'left' && point.testType === 'air')
+          .map(point => ({
+            x: point.frequency,
+            y: point.hearingLevel,
+            responseStatus: point.responseStatus
+          })),
         pointStyle: 'crossRot',
+        borderColor: 'rgba(0, 0, 255, 0.5)',
+        backgroundColor: 'rgba(0, 0, 255, 0.5)',
+        borderWidth: 1,
         pointRadius: 4,
-        borderWidth: 2,
-        borderDash: [5, 5],
         showLine: true,
-        tension: 0.1
+        tension: 0.1,
+        borderDash: [5, 5]
+      });
+
+      // Right ear bone comparison
+      datasets.push({
+        label: 'Right Ear Bone (Expected)',
+        data: compareThresholds
+          .filter(point => point.ear === 'right' && point.testType === 'bone')
+          .map(point => ({
+            x: point.frequency,
+            y: point.hearingLevel,
+            responseStatus: point.responseStatus
+          })),
+        pointStyle: 'triangle',
+        borderColor: 'rgba(255, 0, 0, 0.5)',
+        backgroundColor: 'rgba(255, 0, 0, 0.2)',
+        borderWidth: 1,
+        pointRadius: 4,
+        showLine: true,
+        tension: 0.1,
+        borderDash: [5, 5]
+      });
+
+      // Left ear bone comparison
+      datasets.push({
+        label: 'Left Ear Bone (Expected)',
+        data: compareThresholds
+          .filter(point => point.ear === 'left' && point.testType === 'bone')
+          .map(point => ({
+            x: point.frequency,
+            y: point.hearingLevel,
+            responseStatus: point.responseStatus
+          })),
+        pointStyle: 'triangle',
+        borderColor: 'rgba(0, 0, 255, 0.5)',
+        backgroundColor: 'rgba(0, 0, 255, 0.2)',
+        borderWidth: 1,
+        pointRadius: 4,
+        showLine: true,
+        tension: 0.1,
+        borderDash: [5, 5],
+        rotation: 180
       });
     }
-    
+
     // Add reticle dataset if current frequency and level are provided
     if (currentFrequency !== undefined && currentLevel !== undefined) {
       // Reticle horizontal line (frequency indicator)
