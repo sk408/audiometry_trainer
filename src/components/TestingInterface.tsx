@@ -33,7 +33,9 @@ import {
   ArrowUpward,
   ArrowDownward,
   Person,
-  MenuBook
+  MenuBook,
+  ArrowBackIosNew,
+  ArrowForwardIos
 } from '@mui/icons-material';
 import { TestSession, TestStep, HearingProfile, ThresholdPoint, HearingLevel, Frequency } from '../interfaces/AudioTypes';
 import testingService from '../services/TestingService';
@@ -1400,6 +1402,44 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
     }
   }, [suggestedAction, procedurePhase, currentStep, handleAdjustLevel, handleStoreThreshold, handleSkipStep, validateThreshold, setCurrentGuidance, setErrorMessage, setProcedurePhase]);
 
+  // Add handleAdjustFrequency function - place this near the handleAdjustLevel function
+  const handleAdjustFrequency = (direction: number) => {
+    if (!currentStep) return;
+    
+    const availableFrequencies: Frequency[] = [125, 250, 500, 750, 1000, 1500, 2000, 3000, 4000, 6000, 8000];
+    const currentFreq = currentStep.frequency;
+    const currentIndex = availableFrequencies.indexOf(currentFreq);
+    
+    if (currentIndex === -1) return;
+    
+    let newIndex = currentIndex + direction;
+    
+    // Ensure we stay within bounds
+    if (newIndex < 0) newIndex = 0;
+    if (newIndex >= availableFrequencies.length) newIndex = availableFrequencies.length - 1;
+    
+    // Only update if the frequency would actually change
+    if (newIndex !== currentIndex) {
+      const newFrequency = availableFrequencies[newIndex];
+      setCurrentStep({
+        ...currentStep,
+        frequency: newFrequency
+      });
+    }
+  };
+
+  // Add this function to handle audiogram position clicks
+  const handleAudiogramClick = (frequency: number, level: number) => {
+    if (!currentStep || toneActive) return;
+    
+    // Update the current step with the new frequency and level
+    setCurrentStep({
+      ...currentStep,
+      frequency: frequency as Frequency, // Cast to Frequency type
+      currentLevel: level as HearingLevel // Cast to HearingLevel type
+    });
+  };
+
   if (!session || !currentStep) {
     return (
       <Box sx={{ p: 3, textAlign: 'center' }}>
@@ -1439,7 +1479,28 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
           </Box>
         </Grid>
 
-        {/* Tabbed interface above the audiogram */}
+        {/* Audiogram - now at the top below the test progress */}
+        <Grid item xs={12}>
+          <Paper elevation={3} sx={{ p: 2, mb: 2 }}>
+            <Box sx={{ 
+              height: { xs: 320, sm: 380, md: 450 },
+              width: '100%',
+              overflow: 'hidden',
+              position: 'relative'
+            }}>
+              <Audiogram 
+                thresholds={thresholds} 
+                currentFrequency={currentStep?.frequency} 
+                currentLevel={currentStep?.currentLevel} 
+                toneActive={Boolean(toneActive)}
+                onPositionClick={handleAudiogramClick}
+                interactive={!!currentStep && !toneActive}
+              />
+            </Box>
+          </Paper>
+        </Grid>
+
+        {/* Tabbed interface below the audiogram */}
         <Grid item xs={12}>
           <Paper elevation={3} sx={{ p: 0, mb: 2 }}>
             <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
@@ -1532,14 +1593,38 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
                         </IconButton>
                       </Tooltip>
                       
-                      <Tooltip title="Increase by 10 dB (initial phase)">
+                    </Box>
+                  </Box>
+
+                  {/* Frequency adjustment buttons */}
+                  <Box sx={{ 
+                    display: 'flex', 
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    ml: 2
+                  }}>
+                    <Typography variant="body2" color="textSecondary">
+                      Frequency
+                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      <Tooltip title="Decrease frequency">
                         <IconButton 
-                          color="primary"
+                          color="secondary"
                           disabled={!currentStep || toneActive}
-                          onClick={() => handleAdjustLevel(10)}
-                          size="medium"
+                          onClick={() => handleAdjustFrequency(-1)}
+                          size="small"
                         >
-                          <ArrowUpward />
+                          <ArrowBackIosNew fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Increase frequency">
+                        <IconButton 
+                          color="secondary"
+                          disabled={!currentStep || toneActive}
+                          onClick={() => handleAdjustFrequency(1)}
+                          size="small"
+                        >
+                          <ArrowForwardIos fontSize="small" />
                         </IconButton>
                       </Tooltip>
                     </Box>
@@ -1684,24 +1769,22 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
           </Paper>
         </Grid>
 
-        {/* Audiogram - full size below the tabs */}
-        <Grid item xs={12}>
-          <Paper elevation={3} sx={{ p: 2, mb: 2 }}>
-            <Typography variant="h6" gutterBottom>Audiogram</Typography>
-            <Box sx={{ 
-              height: { xs: 320, sm: 380, md: 450 },
-              width: '100%',
-              overflow: 'hidden',
-              position: 'relative'
-            }}>
-              <Audiogram 
-                thresholds={thresholds} 
-                currentFrequency={currentStep?.frequency} 
-                currentLevel={currentStep?.currentLevel} 
-                toneActive={Boolean(toneActive)}
-              />
-            </Box>
-          </Paper>
+        {/* Back button at the bottom */}
+        <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+          <Tooltip title="Go back">
+            <IconButton
+              onClick={onCancel}
+              color="primary"
+              sx={{ 
+                backgroundColor: 'rgba(0, 0, 0, 0.05)',
+                '&:hover': {
+                  backgroundColor: 'rgba(0, 0, 0, 0.1)'
+                }
+              }}
+            >
+              <KeyboardTab sx={{ transform: 'rotate(180deg)' }} />
+            </IconButton>
+          </Tooltip>
         </Grid>
       </Grid>
 

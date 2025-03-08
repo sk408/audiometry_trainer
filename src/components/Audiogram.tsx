@@ -30,6 +30,9 @@ ChartJS.register(
 // Define standard audiometric frequencies
 const STANDARD_FREQUENCIES = [125, 250, 500, 750, 1000, 1500, 2000, 3000, 4000, 6000, 8000];
 
+// Define major frequencies to show labels for on mobile devices
+const MAJOR_FREQUENCIES = [250, 500, 1000, 2000, 4000, 8000];
+
 interface AudiogramProps {
   thresholds: ThresholdPoint[];
   width?: number;
@@ -40,6 +43,8 @@ interface AudiogramProps {
   currentFrequency?: number; // Current frequency being tested
   currentLevel?: number; // Current hearing level being tested
   toneActive?: boolean; // Whether a tone is currently being presented
+  onPositionClick?: (frequency: number, level: number) => void; // Callback for when chart is clicked
+  interactive?: boolean; // Whether chart should respond to clicks/touches
 }
 
 const Audiogram: React.FC<AudiogramProps> = ({
@@ -51,7 +56,9 @@ const Audiogram: React.FC<AudiogramProps> = ({
   compareThresholds,
   currentFrequency,
   currentLevel,
-  toneActive = false
+  toneActive = false,
+  onPositionClick,
+  interactive = false
 }) => {
   const chartRef = useRef<ChartJS<'scatter'>>(null);
   const [reticleFlash, setReticleFlash] = useState(false);
@@ -266,8 +273,8 @@ const Audiogram: React.FC<AudiogramProps> = ({
         },
         ticks: {
           callback: (value: any) => {
-            // Only show standard frequencies
-            if (STANDARD_FREQUENCIES.includes(value)) {
+            // Only show labels for major frequencies to avoid crowding on mobile
+            if (MAJOR_FREQUENCIES.includes(value)) {
               return value.toString();
             }
             return '';
@@ -280,7 +287,7 @@ const Audiogram: React.FC<AudiogramProps> = ({
         grid: {
           display: true,
           color: (context: any) => {
-            // Only show grid lines for standard frequencies
+            // Still show grid lines for all standard frequencies
             if (STANDARD_FREQUENCIES.includes(context.tick.value)) {
               return 'rgba(0, 0, 0, 0.1)';
             }
@@ -329,65 +336,63 @@ const Audiogram: React.FC<AudiogramProps> = ({
     }
   };
 
+  // Handle chart click events
+  const handleChartClick = (event: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!interactive || !onPositionClick || !chartRef.current) return;
+    
+    // Don't allow clicks when tone is active
+    if (toneActive) return;
+    
+    const chart = chartRef.current;
+    const canvas = chart.canvas;
+    
+    // Get click position relative to chart
+    const rect = canvas.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    
+    // Convert to chart coordinates
+    const xScale = chart.scales.x;
+    const yScale = chart.scales.y;
+    
+    if (!xScale || !yScale) return;
+    
+    // Get the value in data coordinates
+    const frequency = xScale.getValueForPixel(x);
+    const level = yScale.getValueForPixel(y);
+    
+    if (frequency === undefined || level === undefined) return;
+    
+    // Find the nearest standard frequency
+    const nearestFrequency = STANDARD_FREQUENCIES.reduce((prev, curr) => {
+      return (Math.abs(curr - frequency) < Math.abs(prev - frequency)) ? curr : prev;
+    });
+    
+    // Round the level to the nearest 5
+    const roundedLevel = Math.round(level / 5) * 5;
+    
+    // Ensure level is within valid range (-10 to 120)
+    const clampedLevel = Math.max(-10, Math.min(120, roundedLevel));
+    
+    // Call the callback with the nearest standard frequency and rounded level
+    onPositionClick(nearestFrequency, clampedLevel);
+  };
+
   return (
-    <Paper 
-      elevation={3} 
-      sx={{ 
-        p: 2, 
-        borderRadius: 2,
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column'
-      }}
-    >
-      <Typography variant="h6" align="center" gutterBottom>
-        {title}
-      </Typography>
-      <Box sx={{ flexGrow: 1, position: 'relative' }}>
-        <Scatter data={prepareChartData()} options={options} ref={chartRef} />
-      </Box>
-      {/* Custom legend at the bottom */}
-      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2, flexWrap: 'wrap', gap: 2 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: 'red', mr: 1 }} />
-          <Typography variant="caption">Right Air</Typography>
-        </Box>
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: 'blue', mr: 1 }} />
-          <Typography variant="caption">Left Air</Typography>
-        </Box>
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <Box 
-            component="span" 
-            sx={{ 
-              display: 'inline-block', 
-              width: 0, 
-              height: 0, 
-              borderTop: '6px solid transparent',
-              borderBottom: '6px solid transparent',
-              borderLeft: '12px solid red',
-              mr: 1 
-            }} 
-          />
-          <Typography variant="caption">Right Bone</Typography>
-        </Box>
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <Box 
-            component="span" 
-            sx={{ 
-              display: 'inline-block', 
-              width: 0, 
-              height: 0, 
-              borderTop: '6px solid transparent',
-              borderBottom: '6px solid transparent',
-              borderRight: '12px solid blue',
-              mr: 1 
-            }} 
-          />
-          <Typography variant="caption">Left Bone</Typography>
-        </Box>
-      </Box>
-    </Paper>
+    <Box sx={{ 
+      flexGrow: 1, 
+      position: 'relative',
+      height: '100%',
+      width: '100%',
+      cursor: interactive && !toneActive ? 'crosshair' : 'default'
+    }}>
+      <Scatter 
+        data={prepareChartData()} 
+        options={options} 
+        ref={chartRef}
+        onClick={handleChartClick}
+      />
+    </Box>
   );
 };
 
