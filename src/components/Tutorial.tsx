@@ -13,7 +13,9 @@ import {
   Card,
   CardContent,
   CardMedia,
-  Grid
+  Grid,
+  IconButton,
+  Tooltip
 } from '@mui/material';
 import { 
   ArrowForward, 
@@ -25,6 +27,8 @@ import {
   School,
   Info
 } from '@mui/icons-material';
+import audioService from '../services/AudioService';
+import { Frequency } from '../interfaces/AudioTypes';
 
 interface TutorialProps {
   onComplete: () => void;
@@ -32,6 +36,7 @@ interface TutorialProps {
 
 const Tutorial: React.FC<TutorialProps> = ({ onComplete }) => {
   const [activeStep, setActiveStep] = useState(0);
+  const [playingTone, setPlayingTone] = useState<number | null>(null);
 
   const handleNext = () => {
     setActiveStep((prevActiveStep) => prevActiveStep + 1);
@@ -43,6 +48,23 @@ const Tutorial: React.FC<TutorialProps> = ({ onComplete }) => {
 
   const handleFinish = () => {
     onComplete();
+  };
+
+  // Play a sample tone
+  const playSampleTone = (frequency: number) => {
+    // Resume audio context on first interaction
+    audioService.resumeAudioContext().then(() => {
+      // Set the currently playing tone
+      setPlayingTone(frequency);
+      
+      // Play a medium-loud tone (40 dB) in the right ear for 1 second
+      audioService.playTone(frequency as Frequency, 40, 'right', 1000);
+      
+      // Reset playing status after tone completes
+      setTimeout(() => {
+        setPlayingTone(null);
+      }, 1100); // Slightly longer than tone duration to ensure it completes
+    });
   };
 
   // Tutorial steps for audiometric testing
@@ -226,6 +248,157 @@ const Tutorial: React.FC<TutorialProps> = ({ onComplete }) => {
             </Grid>
           </Paper>
           
+          <Divider sx={{ my: 2 }} />
+          
+          <Typography variant="subtitle1" gutterBottom>
+            Frequency Samples - What Do Different Tones Sound Like?
+          </Typography>
+          <Paper elevation={2} sx={{ p: 2, mb: 2 }}>
+            <Typography variant="body2" paragraph>
+              Click on the buttons below to hear sample tones at different frequencies. Understanding how different frequencies sound will help you identify them during testing.
+            </Typography>
+            
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={6} md={4}>
+                <Typography variant="subtitle2" gutterBottom>
+                  Low Frequencies
+                </Typography>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Tooltip title="Play 125 Hz tone (very low pitch)">
+                      <IconButton 
+                        onClick={() => playSampleTone(125)} 
+                        color={playingTone === 125 ? "secondary" : "primary"}
+                        disabled={playingTone !== null && playingTone !== 125}
+                      >
+                        <VolumeUp />
+                      </IconButton>
+                    </Tooltip>
+                    <Typography variant="body2">125 Hz - Very low pitch (like a deep hum)</Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Tooltip title="Play 250 Hz tone (low pitch)">
+                      <IconButton 
+                        onClick={() => playSampleTone(250)} 
+                        color={playingTone === 250 ? "secondary" : "primary"}
+                        disabled={playingTone !== null && playingTone !== 250}
+                      >
+                        <VolumeUp />
+                      </IconButton>
+                    </Tooltip>
+                    <Typography variant="body2">250 Hz - Low pitch (like a low note on piano)</Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Tooltip title="Play 500 Hz tone (low-medium pitch)">
+                      <IconButton 
+                        onClick={() => playSampleTone(500)} 
+                        color={playingTone === 500 ? "secondary" : "primary"}
+                        disabled={playingTone !== null && playingTone !== 500}
+                      >
+                        <VolumeUp />
+                      </IconButton>
+                    </Tooltip>
+                    <Typography variant="body2">500 Hz - Low-medium pitch</Typography>
+                  </Box>
+                </Box>
+              </Grid>
+              
+              <Grid item xs={12} sm={6} md={4}>
+                <Typography variant="subtitle2" gutterBottom>
+                  Mid Frequencies
+                </Typography>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Tooltip title="Play 1000 Hz tone (medium pitch)">
+                      <IconButton 
+                        onClick={() => playSampleTone(1000)} 
+                        color={playingTone === 1000 ? "secondary" : "primary"}
+                        disabled={playingTone !== null && playingTone !== 1000}
+                      >
+                        <VolumeUp />
+                      </IconButton>
+                    </Tooltip>
+                    <Typography variant="body2">1000 Hz - Medium pitch (speech clarity)</Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Tooltip title="Play 1500 Hz tone">
+                      <IconButton 
+                        onClick={() => playSampleTone(1500)} 
+                        color={playingTone === 1500 ? "secondary" : "primary"}
+                        disabled={playingTone !== null && playingTone !== 1500}
+                      >
+                        <VolumeUp />
+                      </IconButton>
+                    </Tooltip>
+                    <Typography variant="body2">1500 Hz - Medium-high pitch</Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Tooltip title="Play 2000 Hz tone">
+                      <IconButton 
+                        onClick={() => playSampleTone(2000)} 
+                        color={playingTone === 2000 ? "secondary" : "primary"}
+                        disabled={playingTone !== null && playingTone !== 2000}
+                      >
+                        <VolumeUp />
+                      </IconButton>
+                    </Tooltip>
+                    <Typography variant="body2">2000 Hz - Speech consonants</Typography>
+                  </Box>
+                </Box>
+              </Grid>
+              
+              <Grid item xs={12} sm={6} md={4}>
+                <Typography variant="subtitle2" gutterBottom>
+                  High Frequencies
+                </Typography>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Tooltip title="Play 4000 Hz tone (high pitch)">
+                      <IconButton 
+                        onClick={() => playSampleTone(4000)} 
+                        color={playingTone === 4000 ? "secondary" : "primary"}
+                        disabled={playingTone !== null && playingTone !== 4000}
+                      >
+                        <VolumeUp />
+                      </IconButton>
+                    </Tooltip>
+                    <Typography variant="body2">4000 Hz - High pitch (consonant sounds)</Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Tooltip title="Play 6000 Hz tone (very high pitch)">
+                      <IconButton 
+                        onClick={() => playSampleTone(6000)} 
+                        color={playingTone === 6000 ? "secondary" : "primary"}
+                        disabled={playingTone !== null && playingTone !== 6000}
+                      >
+                        <VolumeUp />
+                      </IconButton>
+                    </Tooltip>
+                    <Typography variant="body2">6000 Hz - Very high pitch</Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Tooltip title="Play 8000 Hz tone (extremely high pitch)">
+                      <IconButton 
+                        onClick={() => playSampleTone(8000)} 
+                        color={playingTone === 8000 ? "secondary" : "primary"}
+                        disabled={playingTone !== null && playingTone !== 8000}
+                      >
+                        <VolumeUp />
+                      </IconButton>
+                    </Tooltip>
+                    <Typography variant="body2">8000 Hz - Extremely high pitch (like a whistle)</Typography>
+                  </Box>
+                </Box>
+              </Grid>
+            </Grid>
+            
+            <Alert severity="info" sx={{ mt: 2 }}>
+              <Typography variant="body2">
+                <strong>Note:</strong> The actual perception of tones may vary depending on your device's speakers or headphones. For best results, use headphones or quality speakers in a quiet environment.
+              </Typography>
+            </Alert>
+          </Paper>
+          
           <Alert severity="info">
             The audiogram provides a visual representation of a patient's hearing sensitivity across frequencies. Understanding how to read and interpret an audiogram is essential for audiologists.
           </Alert>
@@ -330,6 +503,186 @@ const Tutorial: React.FC<TutorialProps> = ({ onComplete }) => {
               <strong>Important:</strong> Always retest 1000 Hz at the end to verify test reliability. A difference of more than 5 dB suggests inconsistent responses and requires retesting.
             </Typography>
           </Alert>
+          
+          <Divider sx={{ my: 2 }} />
+          
+          <Typography variant="subtitle1" gutterBottom>
+            Practical Demonstration: Up 5, Down 10 Procedure
+          </Typography>
+          <Paper elevation={2} sx={{ p: 2, mb: 2 }}>
+            <Typography variant="body2" paragraph>
+              Click the buttons below to hear how the Hughson-Westlake procedure works in practice. This demonstrates the "up 5 dB, down 10 dB" approach, starting with an audible tone and finding threshold.
+            </Typography>
+            
+            <Grid container spacing={2}>
+              <Grid item xs={12} md={6}>
+                <Typography variant="subtitle2" gutterBottom>
+                  Testing sequence at 1000 Hz
+                </Typography>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Tooltip title="Play 1000 Hz at 40 dB (starting level)">
+                      <IconButton 
+                        onClick={() => playSampleTone(1000)} 
+                        color={playingTone === 1000 ? "secondary" : "primary"}
+                        disabled={playingTone !== null && playingTone !== 1000}
+                        size="small"
+                      >
+                        <VolumeUp />
+                      </IconButton>
+                    </Tooltip>
+                    <Typography variant="body2">Step 1: Present at 40 dB (patient should hear this)</Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Tooltip title="Play 1000 Hz at 30 dB (descending)">
+                      <IconButton 
+                        onClick={() => {
+                          audioService.resumeAudioContext().then(() => {
+                            setPlayingTone(1000);
+                            audioService.playTone(1000 as Frequency, 30, 'right', 1000);
+                            setTimeout(() => setPlayingTone(null), 1100);
+                          });
+                        }} 
+                        color={playingTone === 1000 ? "secondary" : "primary"}
+                        disabled={playingTone !== null}
+                        size="small"
+                      >
+                        <VolumeUp />
+                      </IconButton>
+                    </Tooltip>
+                    <Typography variant="body2">Step 2: Descend by 10 dB to 30 dB</Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Tooltip title="Play 1000 Hz at 20 dB (descending)">
+                      <IconButton 
+                        onClick={() => {
+                          audioService.resumeAudioContext().then(() => {
+                            setPlayingTone(1000);
+                            audioService.playTone(1000 as Frequency, 20, 'right', 1000);
+                            setTimeout(() => setPlayingTone(null), 1100);
+                          });
+                        }} 
+                        color={playingTone === 1000 ? "secondary" : "primary"}
+                        disabled={playingTone !== null}
+                        size="small"
+                      >
+                        <VolumeUp />
+                      </IconButton>
+                    </Tooltip>
+                    <Typography variant="body2">Step 3: Descend by 10 dB to 20 dB</Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Tooltip title="Play 1000 Hz at 10 dB (descending)">
+                      <IconButton 
+                        onClick={() => {
+                          audioService.resumeAudioContext().then(() => {
+                            setPlayingTone(1000);
+                            audioService.playTone(1000 as Frequency, 10, 'right', 1000);
+                            setTimeout(() => setPlayingTone(null), 1100);
+                          });
+                        }} 
+                        color={playingTone === 1000 ? "secondary" : "primary"}
+                        disabled={playingTone !== null}
+                        size="small"
+                      >
+                        <VolumeUp />
+                      </IconButton>
+                    </Tooltip>
+                    <Typography variant="body2">Step 4: Descend by 10 dB to 10 dB</Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Tooltip title="Play 1000 Hz at 0 dB (descending, might not be audible)">
+                      <IconButton 
+                        onClick={() => {
+                          audioService.resumeAudioContext().then(() => {
+                            setPlayingTone(1000);
+                            audioService.playTone(1000 as Frequency, 0, 'right', 1000);
+                            setTimeout(() => setPlayingTone(null), 1100);
+                          });
+                        }} 
+                        color={playingTone === 1000 ? "secondary" : "primary"}
+                        disabled={playingTone !== null}
+                        size="small"
+                      >
+                        <VolumeUp />
+                      </IconButton>
+                    </Tooltip>
+                    <Typography variant="body2">Step 5: Descend by 10 dB to 0 dB (no response)</Typography>
+                  </Box>
+                </Box>
+              </Grid>
+              
+              <Grid item xs={12} md={6}>
+                <Typography variant="subtitle2" gutterBottom>
+                  Finding threshold
+                </Typography>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Tooltip title="Play 1000 Hz at 5 dB (ascending)">
+                      <IconButton 
+                        onClick={() => {
+                          audioService.resumeAudioContext().then(() => {
+                            setPlayingTone(1000);
+                            audioService.playTone(1000 as Frequency, 5, 'right', 1000);
+                            setTimeout(() => setPlayingTone(null), 1100);
+                          });
+                        }} 
+                        color={playingTone === 1000 ? "secondary" : "primary"}
+                        disabled={playingTone !== null}
+                        size="small"
+                      >
+                        <VolumeUp />
+                      </IconButton>
+                    </Tooltip>
+                    <Typography variant="body2">Step 6: Ascend by 5 dB to 5 dB</Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Tooltip title="Play 1000 Hz at 5 dB again (test for threshold)">
+                      <IconButton 
+                        onClick={() => {
+                          audioService.resumeAudioContext().then(() => {
+                            setPlayingTone(1000);
+                            audioService.playTone(1000 as Frequency, 5, 'right', 1000);
+                            setTimeout(() => setPlayingTone(null), 1100);
+                          });
+                        }} 
+                        color={playingTone === 1000 ? "secondary" : "primary"}
+                        disabled={playingTone !== null}
+                        size="small"
+                      >
+                        <VolumeUp />
+                      </IconButton>
+                    </Tooltip>
+                    <Typography variant="body2">Step 7: Present at 5 dB again (response 1/2)</Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Tooltip title="Play 1000 Hz at 5 dB a third time (confirming threshold)">
+                      <IconButton 
+                        onClick={() => {
+                          audioService.resumeAudioContext().then(() => {
+                            setPlayingTone(1000);
+                            audioService.playTone(1000 as Frequency, 5, 'right', 1000);
+                            setTimeout(() => setPlayingTone(null), 1100);
+                          });
+                        }} 
+                        color={playingTone === 1000 ? "secondary" : "primary"}
+                        disabled={playingTone !== null}
+                        size="small"
+                      >
+                        <VolumeUp />
+                      </IconButton>
+                    </Tooltip>
+                    <Typography variant="body2">Step 8: Present at 5 dB again (response 2/3)</Typography>
+                  </Box>
+                  <Box sx={{ mt: 2, p: 1, bgcolor: 'success.light', borderRadius: 1 }}>
+                    <Typography variant="body2">
+                      <strong>Result:</strong> Threshold is 5 dB at 1000 Hz (responded to 2/3 presentations)
+                    </Typography>
+                  </Box>
+                </Box>
+              </Grid>
+            </Grid>
+          </Paper>
         </Box>
       )
     },
