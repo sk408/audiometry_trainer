@@ -346,7 +346,9 @@ const TutorialPage: React.FC = () => {
             <Typography variant="body2" paragraph>
               - From the level where the patient last responded, decrease by 10 dB<br />
               - Present tones, increasing by 5 dB each time until the patient responds<br />
-              - Repeat this ascending pattern until the patient responds at the same level in 2 out of 3 or 3 out of 5 presentations<br />
+              - When the patient responds, immediately decrease by 10 dB and begin ascending again<br />
+              - Continue this bracketing pattern (down 10 dB after response, up 5 dB after no response)<br />
+              - Threshold is established when the patient responds at the same level in at least 2 out of 3 presentations<br />
               - This level is recorded as the threshold
             </Typography>
             
@@ -377,23 +379,9 @@ const TutorialPage: React.FC = () => {
             <Grid container spacing={2}>
               <Grid item xs={12} md={6}>
                 <Typography variant="subtitle2" gutterBottom>
-                  Testing sequence at 1000 Hz
+                  Initial Descending Phase
                 </Typography>
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Button 
-                      variant="outlined" 
-                      startIcon={<VolumeUp />}
-                      onClick={() => playSampleTone(1000)} 
-                      color={playingTone === 1000 ? "secondary" : "primary"}
-                      disabled={playingTone !== null && playingTone !== 1000}
-                      size="small"
-                      sx={{ minWidth: '100px', mr: 1 }}
-                    >
-                      40 dB
-                    </Button>
-                    <Typography variant="body2">Step 1: Present at 40 dB (patient should hear this)</Typography>
-                  </Box>
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
                     <Button 
                       variant="outlined" 
@@ -404,7 +392,7 @@ const TutorialPage: React.FC = () => {
                           audioService.playTone(1000 as Frequency, 30, 'right', 1000);
                           setTimeout(() => setPlayingTone(null), 1100);
                         });
-                      }} 
+                      }}
                       color={playingTone === 1000 ? "secondary" : "primary"}
                       disabled={playingTone !== null}
                       size="small"
@@ -412,7 +400,7 @@ const TutorialPage: React.FC = () => {
                     >
                       30 dB
                     </Button>
-                    <Typography variant="body2">Step 2: Descend by 10 dB to 30 dB</Typography>
+                    <Typography variant="body2">Step 1: Present at 30 dB (patient responds)</Typography>
                   </Box>
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
                     <Button 
@@ -432,7 +420,7 @@ const TutorialPage: React.FC = () => {
                     >
                       20 dB
                     </Button>
-                    <Typography variant="body2">Step 3: Descend by 10 dB to 20 dB</Typography>
+                    <Typography variant="body2">Step 2: Decrease by 10 dB to 20 dB (response)</Typography>
                   </Box>
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
                     <Button 
@@ -452,7 +440,7 @@ const TutorialPage: React.FC = () => {
                     >
                       10 dB
                     </Button>
-                    <Typography variant="body2">Step 4: Descend by 10 dB to 10 dB</Typography>
+                    <Typography variant="body2">Step 3: Decrease by 10 dB to 10 dB (response)</Typography>
                   </Box>
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
                     <Button 
@@ -472,14 +460,14 @@ const TutorialPage: React.FC = () => {
                     >
                       0 dB
                     </Button>
-                    <Typography variant="body2">Step 5: Descend by 10 dB to 0 dB (no response)</Typography>
+                    <Typography variant="body2">Step 4: Decrease by 10 dB to 0 dB (no response)</Typography>
                   </Box>
                 </Box>
               </Grid>
               
               <Grid item xs={12} md={6}>
                 <Typography variant="subtitle2" gutterBottom>
-                  Finding threshold
+                  Bracketing to Find Threshold
                 </Typography>
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -500,7 +488,32 @@ const TutorialPage: React.FC = () => {
                     >
                       5 dB
                     </Button>
-                    <Typography variant="body2">Step 6: Ascend by 5 dB to 5 dB</Typography>
+                    <Typography variant="body2">Step 5: Increase by 5 dB to 5 dB (response)</Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', bgcolor: 'info.light', p: 1, borderRadius: 1 }}>
+                    <Typography variant="body2">
+                      <strong>Note:</strong> After a response at 5 dB, decrease by 10 dB to -5 dB (below standard range)
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Button 
+                      variant="outlined" 
+                      startIcon={<VolumeUp />}
+                      onClick={() => {
+                        audioService.resumeAudioContext().then(() => {
+                          setPlayingTone(1000);
+                          audioService.playTone(1000 as Frequency, 0, 'right', 1000);
+                          setTimeout(() => setPlayingTone(null), 1100);
+                        });
+                      }} 
+                      color={playingTone === 1000 ? "secondary" : "primary"}
+                      disabled={playingTone !== null}
+                      size="small"
+                      sx={{ minWidth: '100px', mr: 1 }}
+                    >
+                      0 dB
+                    </Button>
+                    <Typography variant="body2">Step 6: Increase by 5 dB to 0 dB (no response)</Typography>
                   </Box>
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
                     <Button 
@@ -520,7 +533,32 @@ const TutorialPage: React.FC = () => {
                     >
                       5 dB
                     </Button>
-                    <Typography variant="body2">Step 7: Present at 5 dB again (response 1/2)</Typography>
+                    <Typography variant="body2">Step 7: Increase by 5 dB to 5 dB (response #1)</Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', bgcolor: 'info.light', p: 1, borderRadius: 1 }}>
+                    <Typography variant="body2">
+                      <strong>Note:</strong> After a response at 5 dB, decrease by 10 dB to -5 dB (below standard range)
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Button 
+                      variant="outlined" 
+                      startIcon={<VolumeUp />}
+                      onClick={() => {
+                        audioService.resumeAudioContext().then(() => {
+                          setPlayingTone(1000);
+                          audioService.playTone(1000 as Frequency, 0, 'right', 1000);
+                          setTimeout(() => setPlayingTone(null), 1100);
+                        });
+                      }} 
+                      color={playingTone === 1000 ? "secondary" : "primary"}
+                      disabled={playingTone !== null}
+                      size="small"
+                      sx={{ minWidth: '100px', mr: 1 }}
+                    >
+                      0 dB
+                    </Button>
+                    <Typography variant="body2">Step 8: Increase by 5 dB to 0 dB (no response)</Typography>
                   </Box>
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
                     <Button 
@@ -540,16 +578,28 @@ const TutorialPage: React.FC = () => {
                     >
                       5 dB
                     </Button>
-                    <Typography variant="body2">Step 8: Present at 5 dB again (response 2/3)</Typography>
+                    <Typography variant="body2">Step 9: Increase by 5 dB to 5 dB (response #2)</Typography>
                   </Box>
                   <Box sx={{ mt: 2, p: 1, bgcolor: 'success.light', borderRadius: 1 }}>
                     <Typography variant="body2">
-                      <strong>Result:</strong> Threshold is 5 dB at 1000 Hz (responded to 2/3 presentations)
+                      <strong>Result:</strong> Threshold is 5 dB at 1000 Hz (responded to 2/3 presentations at 5 dB)
                     </Typography>
                   </Box>
                 </Box>
               </Grid>
             </Grid>
+            
+            <Box sx={{ mt: 2, p: 2, bgcolor: '#f9f9f9', borderRadius: 1 }}>
+              <Typography variant="subtitle2" gutterBottom>
+                Key Hughson-Westlake Principles:
+              </Typography>
+              <Typography variant="body2" component="ul" sx={{ ml: 2 }}>
+                <li>Always decrease by 10 dB after <strong>any</strong> response (throughout the entire procedure)</li>
+                <li>Always increase by 5 dB after no response</li>
+                <li>Threshold is the lowest level where the patient responds at least 2 out of 3 times</li>
+                <li>The bracketing pattern (10 down, 5 up) continues until threshold is confirmed</li>
+              </Typography>
+            </Box>
             
             <Typography variant="body2" sx={{ mt: 2, fontStyle: 'italic' }}>
               Note: You may not be able to hear the very soft tones (5 dB, 0 dB) depending on your device's audio capabilities and your environment.
@@ -931,7 +981,7 @@ const TutorialPage: React.FC = () => {
             <List>
               <ListItem 
                 component="a" 
-                href="https://www.asha.org/practice-portal/clinical-topics/adult-hearing-screening/" 
+                href="https://www.asha.org/practice-portal/clinical-topics/hearing-loss/" 
                 target="_blank"
                 rel="noopener noreferrer"
                 sx={{ color: 'primary.main', textDecoration: 'none' }}
@@ -940,7 +990,7 @@ const TutorialPage: React.FC = () => {
               </ListItem>
               <ListItem 
                 component="a" 
-                href="https://www.thebsa.org.uk/resources/pure-tone-air-bone-conduction-threshold-audiometry-with-without-masking/" 
+                href="https://www.thebsa.org.uk/" 
                 target="_blank"
                 rel="noopener noreferrer"
                 sx={{ color: 'primary.main', textDecoration: 'none' }}
@@ -949,7 +999,7 @@ const TutorialPage: React.FC = () => {
               </ListItem>
               <ListItem 
                 component="a" 
-                href="https://www.audiology.org/publications-resources/journal-american-academy-audiology/" 
+                href="https://www.audiology.org/" 
                 target="_blank"
                 rel="noopener noreferrer"
                 sx={{ color: 'primary.main', textDecoration: 'none' }}
