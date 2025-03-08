@@ -15,7 +15,9 @@ import {
   CardMedia,
   Grid,
   IconButton,
-  Tooltip
+  Tooltip,
+  useTheme,
+  alpha
 } from '@mui/material';
 import { 
   ArrowForward, 
@@ -35,6 +37,7 @@ interface TutorialProps {
 }
 
 const Tutorial: React.FC<TutorialProps> = ({ onComplete }) => {
+  const theme = useTheme();
   const [activeStep, setActiveStep] = useState(0);
   const [playingTone, setPlayingTone] = useState<number | null>(null);
 
@@ -78,7 +81,7 @@ const Tutorial: React.FC<TutorialProps> = ({ onComplete }) => {
       content: (
         <Grid container spacing={3} sx={{ mt: 1 }}>
           <Grid item xs={12} md={6}>
-            <Card elevation={2}>
+            <Card elevation={2} sx={{ bgcolor: theme.palette.background.paper }}>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
                   Key Concepts
@@ -99,7 +102,7 @@ const Tutorial: React.FC<TutorialProps> = ({ onComplete }) => {
             </Card>
           </Grid>
           <Grid item xs={12} md={6}>
-            <Card elevation={2}>
+            <Card elevation={2} sx={{ bgcolor: theme.palette.background.paper }}>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
                   Equipment Used
@@ -139,7 +142,7 @@ const Tutorial: React.FC<TutorialProps> = ({ onComplete }) => {
           </Typography>
           <Grid container spacing={2} sx={{ mb: 2 }}>
             <Grid item xs={12} sm={6}>
-              <Paper elevation={2} sx={{ p: 2 }}>
+              <Paper elevation={2} sx={{ p: 2, bgcolor: theme.palette.background.paper }}>
                 <Typography variant="subtitle2" gutterBottom>
                   Right Ear
                 </Typography>
@@ -175,7 +178,7 @@ const Tutorial: React.FC<TutorialProps> = ({ onComplete }) => {
               </Paper>
             </Grid>
             <Grid item xs={12} sm={6}>
-              <Paper elevation={2} sx={{ p: 2 }}>
+              <Paper elevation={2} sx={{ p: 2, bgcolor: theme.palette.background.paper }}>
                 <Typography variant="subtitle2" gutterBottom>
                   Left Ear
                 </Typography>
@@ -220,7 +223,7 @@ const Tutorial: React.FC<TutorialProps> = ({ onComplete }) => {
           <Typography variant="subtitle1" gutterBottom>
             Interpreting Hearing Loss
           </Typography>
-          <Paper elevation={2} sx={{ p: 2, mb: 2 }}>
+          <Paper elevation={2} sx={{ p: 2, mb: 2, bgcolor: theme.palette.background.paper }}>
             <Grid container spacing={2}>
               <Grid item xs={12} sm={6}>
                 <Typography variant="subtitle2" gutterBottom>
@@ -253,7 +256,7 @@ const Tutorial: React.FC<TutorialProps> = ({ onComplete }) => {
           <Typography variant="subtitle1" gutterBottom>
             Frequency Samples - What Do Different Tones Sound Like?
           </Typography>
-          <Paper elevation={2} sx={{ p: 2, mb: 2 }}>
+          <Paper elevation={2} sx={{ p: 2, mb: 2, bgcolor: theme.palette.background.paper }}>
             <Typography variant="body2" paragraph>
               Click on the buttons below to hear sample tones at different frequencies. Understanding how different frequencies sound will help you identify them during testing.
             </Typography>
@@ -413,7 +416,7 @@ const Tutorial: React.FC<TutorialProps> = ({ onComplete }) => {
         <Box sx={{ mt: 2 }}>
           <Grid container spacing={3}>
             <Grid item xs={12} md={6}>
-              <Paper elevation={2} sx={{ p: 2, height: '100%' }}>
+              <Paper elevation={2} sx={{ p: 2, height: '100%', bgcolor: theme.palette.background.paper }}>
                 <Typography variant="h6" gutterBottom>
                   Step-by-Step Procedure
                 </Typography>
@@ -457,7 +460,7 @@ const Tutorial: React.FC<TutorialProps> = ({ onComplete }) => {
               </Paper>
             </Grid>
             <Grid item xs={12} md={6}>
-              <Paper elevation={2} sx={{ p: 2, height: '100%' }}>
+              <Paper elevation={2} sx={{ p: 2, height: '100%', bgcolor: theme.palette.background.paper }}>
                 <Typography variant="h6" gutterBottom>
                   Testing Tips
                 </Typography>
@@ -509,7 +512,7 @@ const Tutorial: React.FC<TutorialProps> = ({ onComplete }) => {
           <Typography variant="subtitle1" gutterBottom>
             Practical Demonstration: Up 5, Down 10 Procedure
           </Typography>
-          <Paper elevation={2} sx={{ p: 2, mb: 2 }}>
+          <Paper elevation={2} sx={{ p: 2, mb: 2, bgcolor: theme.palette.background.paper }}>
             <Typography variant="body2" paragraph>
               Click the buttons below to hear how the Hughson-Westlake procedure works in practice. This demonstrates the "up 5 dB, down 10 dB" approach, starting with an audible tone and finding threshold.
             </Typography>
@@ -674,7 +677,7 @@ const Tutorial: React.FC<TutorialProps> = ({ onComplete }) => {
                     </Tooltip>
                     <Typography variant="body2">Step 8: Present at 5 dB again (response 2/3)</Typography>
                   </Box>
-                  <Box sx={{ mt: 2, p: 1, bgcolor: 'success.light', borderRadius: 1 }}>
+                  <Box sx={{ mt: 2, p: 1, bgcolor: theme.palette.mode === 'dark' ? alpha(theme.palette.success.dark, 0.2) : 'success.light', borderRadius: 1 }}>
                     <Typography variant="body2">
                       <strong>Result:</strong> Threshold is 5 dB at 1000 Hz (responded to 2/3 presentations)
                     </Typography>
@@ -694,7 +697,7 @@ const Tutorial: React.FC<TutorialProps> = ({ onComplete }) => {
         <Box sx={{ mt: 2 }}>
           <Grid container spacing={3}>
             <Grid item xs={12} md={6}>
-              <Paper elevation={2} sx={{ p: 2 }}>
+              <Paper elevation={2} sx={{ p: 2, bgcolor: theme.palette.background.paper }}>
                 <Typography variant="h6" gutterBottom>
                   When to Mask
                 </Typography>
@@ -718,7 +721,7 @@ const Tutorial: React.FC<TutorialProps> = ({ onComplete }) => {
               </Paper>
             </Grid>
             <Grid item xs={12} md={6}>
-              <Paper elevation={2} sx={{ p: 2 }}>
+              <Paper elevation={2} sx={{ p: 2, bgcolor: theme.palette.background.paper }}>
                 <Typography variant="h6" gutterBottom>
                   Masking Process
                 </Typography>
@@ -750,7 +753,7 @@ const Tutorial: React.FC<TutorialProps> = ({ onComplete }) => {
           
           <Divider sx={{ my: 2 }} />
           
-          <Paper elevation={2} sx={{ p: 2 }}>
+          <Paper elevation={2} sx={{ p: 2, bgcolor: theme.palette.background.paper }}>
             <Typography variant="h6" gutterBottom>
               Interaural Attenuation Values
             </Typography>
@@ -810,7 +813,7 @@ const Tutorial: React.FC<TutorialProps> = ({ onComplete }) => {
         <Box sx={{ mt: 2 }}>
           <Grid container spacing={3}>
             <Grid item xs={12} md={6}>
-              <Paper elevation={2} sx={{ p: 2, height: '100%' }}>
+              <Paper elevation={2} sx={{ p: 2, height: '100%', bgcolor: theme.palette.background.paper }}>
                 <Typography variant="h6" gutterBottom color="error">
                   Procedural Errors
                 </Typography>
@@ -844,7 +847,7 @@ const Tutorial: React.FC<TutorialProps> = ({ onComplete }) => {
               </Paper>
             </Grid>
             <Grid item xs={12} md={6}>
-              <Paper elevation={2} sx={{ p: 2, height: '100%' }}>
+              <Paper elevation={2} sx={{ p: 2, height: '100%', bgcolor: theme.palette.background.paper }}>
                 <Typography variant="h6" gutterBottom color="error">
                   Technical Errors
                 </Typography>
@@ -881,7 +884,7 @@ const Tutorial: React.FC<TutorialProps> = ({ onComplete }) => {
           
           <Divider sx={{ my: 2 }} />
           
-          <Paper elevation={2} sx={{ p: 2 }}>
+          <Paper elevation={2} sx={{ p: 2, bgcolor: theme.palette.background.paper }}>
             <Typography variant="h6" gutterBottom>
               <School fontSize="small" sx={{ verticalAlign: 'middle', mr: 1 }} />
               Educational Best Practices
@@ -959,7 +962,7 @@ const Tutorial: React.FC<TutorialProps> = ({ onComplete }) => {
               my: 3
             }}
           >
-            <Paper elevation={3} sx={{ p: 2, width: 200, textAlign: 'center' }}>
+            <Paper elevation={3} sx={{ p: 2, width: 200, textAlign: 'center', bgcolor: theme.palette.background.paper }}>
               <VolumeUp fontSize="large" color="primary" />
               <Typography variant="subtitle1" gutterBottom>
                 Present Tones
@@ -968,7 +971,7 @@ const Tutorial: React.FC<TutorialProps> = ({ onComplete }) => {
                 Practice presenting tones at various frequencies and intensities
               </Typography>
             </Paper>
-            <Paper elevation={3} sx={{ p: 2, width: 200, textAlign: 'center' }}>
+            <Paper elevation={3} sx={{ p: 2, width: 200, textAlign: 'center', bgcolor: theme.palette.background.paper }}>
               <BarChart fontSize="large" color="primary" />
               <Typography variant="subtitle1" gutterBottom>
                 Track Thresholds
@@ -977,7 +980,7 @@ const Tutorial: React.FC<TutorialProps> = ({ onComplete }) => {
                 Plot thresholds on an audiogram to visualize hearing sensitivity
               </Typography>
             </Paper>
-            <Paper elevation={3} sx={{ p: 2, width: 200, textAlign: 'center' }}>
+            <Paper elevation={3} sx={{ p: 2, width: 200, textAlign: 'center', bgcolor: theme.palette.background.paper }}>
               <School fontSize="large" color="primary" />
               <Typography variant="subtitle1" gutterBottom>
                 Receive Feedback
@@ -1002,7 +1005,7 @@ const Tutorial: React.FC<TutorialProps> = ({ onComplete }) => {
   ];
 
   return (
-    <Paper elevation={3} sx={{ p: 3, borderRadius: 2, maxWidth: 1200, mx: 'auto' }}>
+    <Paper elevation={3} sx={{ p: 3, borderRadius: 2, maxWidth: 1200, mx: 'auto', bgcolor: theme.palette.background.paper }}>
       <Typography variant="h4" gutterBottom align="center">
         Pure Tone Audiometry Training
       </Typography>

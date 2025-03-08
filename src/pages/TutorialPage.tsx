@@ -22,7 +22,8 @@ import {
   AccordionSummary,
   AccordionDetails,
   Chip,
-  useTheme
+  useTheme,
+  alpha
 } from '@mui/material';
 import {
   VolumeUp,
@@ -113,7 +114,11 @@ const TutorialPage: React.FC = () => {
               height="250"
               image={audiogramImage}
               alt="Sample Audiogram"
-              sx={{ objectFit: 'contain', p: 2, bgcolor: '#f5f5f5' }}
+              sx={{ 
+                objectFit: 'contain', 
+                p: 2, 
+                bgcolor: theme.palette.mode === 'dark' ? alpha(theme.palette.background.paper, 0.6) : '#f5f5f5' 
+              }}
             />
             <CardContent>
               <Typography variant="body2" color="text.secondary">
@@ -232,7 +237,13 @@ const TutorialPage: React.FC = () => {
           </Typography>
           <Grid container spacing={2} sx={{ mb: 2 }}>
             <Grid item xs={12} sm={4}>
-              <Paper elevation={0} sx={{ p: 2, bgcolor: '#f0f7ff', height: '100%' }}>
+              <Paper elevation={0} sx={{ 
+                p: 2, 
+                bgcolor: theme.palette.mode === 'dark' 
+                  ? alpha(theme.palette.primary.dark, 0.2) 
+                  : '#f0f7ff', 
+                height: '100%' 
+              }}>
                 <Typography variant="subtitle2" gutterBottom>
                   Conductive Hearing Loss
                 </Typography>
@@ -243,7 +254,13 @@ const TutorialPage: React.FC = () => {
               </Paper>
             </Grid>
             <Grid item xs={12} sm={4}>
-              <Paper elevation={0} sx={{ p: 2, bgcolor: '#fff4f0', height: '100%' }}>
+              <Paper elevation={0} sx={{ 
+                p: 2, 
+                bgcolor: theme.palette.mode === 'dark' 
+                  ? alpha(theme.palette.warning.dark, 0.2) 
+                  : '#fff4f0', 
+                height: '100%' 
+              }}>
                 <Typography variant="subtitle2" gutterBottom>
                   Sensorineural Hearing Loss
                 </Typography>
@@ -254,7 +271,13 @@ const TutorialPage: React.FC = () => {
               </Paper>
             </Grid>
             <Grid item xs={12} sm={4}>
-              <Paper elevation={0} sx={{ p: 2, bgcolor: '#f7f0ff', height: '100%' }}>
+              <Paper elevation={0} sx={{ 
+                p: 2, 
+                bgcolor: theme.palette.mode === 'dark' 
+                  ? alpha(theme.palette.secondary.dark, 0.2) 
+                  : '#f7f0ff', 
+                height: '100%' 
+              }}>
                 <Typography variant="subtitle2" gutterBottom>
                   Mixed Hearing Loss
                 </Typography>
@@ -278,7 +301,14 @@ const TutorialPage: React.FC = () => {
             because of its testing pattern.
           </Typography>
           
-          <Box sx={{ bgcolor: '#f5f5f5', p: 2, borderRadius: 2, mb: 3 }}>
+          <Box sx={{ 
+            bgcolor: theme.palette.mode === 'dark' 
+              ? alpha(theme.palette.background.paper, 0.6) 
+              : '#f5f5f5', 
+            p: 2, 
+            borderRadius: 2, 
+            mb: 3 
+          }}>
             <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold' }}>
               Basic Procedure:
             </Typography>
@@ -371,7 +401,11 @@ const TutorialPage: React.FC = () => {
           <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold', mt: 3 }}>
             Practical Demonstration: Up 5, Down 10 Procedure
           </Typography>
-          <Paper elevation={2} sx={{ p: 2, mb: 3 }}>
+          <Paper elevation={2} sx={{ 
+            p: 2, 
+            mb: 3,
+            bgcolor: theme.palette.background.paper 
+          }}>
             <Typography variant="body2" paragraph>
               Click the buttons below to hear how the Hughson-Westlake procedure works in practice. This demonstrates the "up 5 dB, down 10 dB" approach, starting with an audible tone and finding threshold.
             </Typography>
@@ -589,7 +623,14 @@ const TutorialPage: React.FC = () => {
               </Grid>
             </Grid>
             
-            <Box sx={{ mt: 2, p: 2, bgcolor: '#f9f9f9', borderRadius: 1 }}>
+            <Box sx={{ 
+              mt: 2, 
+              p: 2, 
+              bgcolor: theme.palette.mode === 'dark' 
+                ? alpha(theme.palette.background.paper, 0.6) 
+                : '#f9f9f9', 
+              borderRadius: 1 
+            }}>
               <Typography variant="subtitle2" gutterBottom>
                 Key Hughson-Westlake Principles:
               </Typography>
@@ -610,7 +651,11 @@ const TutorialPage: React.FC = () => {
           <Typography variant="subtitle1" gutterBottom sx={{ mt: 2, fontWeight: 'bold' }}>
             Frequency Samples - What Do Different Tones Sound Like?
           </Typography>
-          <Paper elevation={2} sx={{ p: 2, mb: 2 }}>
+          <Paper elevation={2} sx={{ 
+            p: 2, 
+            mb: 2,
+            bgcolor: theme.palette.background.paper 
+          }}>
             <Typography variant="body2" paragraph>
               Click on the buttons below to hear sample tones at different frequencies. Understanding how different frequencies sound will help you identify them during testing.
             </Typography>
@@ -784,7 +829,15 @@ const TutorialPage: React.FC = () => {
             hearing the test sounds.
           </Typography>
           
-          <Box sx={{ bgcolor: theme.palette.error.light, color: theme.palette.error.contrastText, p: 2, borderRadius: 2, mb: 3 }}>
+          <Box sx={{ 
+            bgcolor: theme.palette.mode === 'dark' 
+              ? alpha(theme.palette.error.dark, 0.2) 
+              : theme.palette.error.light, 
+            color: theme.palette.error.contrastText, 
+            p: 2, 
+            borderRadius: 2, 
+            mb: 3 
+          }}>
             <Typography variant="subtitle1" sx={{ display: 'flex', alignItems: 'center' }}>
               <WarningAmber sx={{ mr: 1 }} />
               When is masking necessary?
@@ -819,7 +872,14 @@ const TutorialPage: React.FC = () => {
             Masking Procedure:
           </Typography>
           
-          <Box sx={{ bgcolor: '#f5f5f5', p: 2, borderRadius: 2, mb: 3 }}>
+          <Box sx={{ 
+            bgcolor: theme.palette.mode === 'dark' 
+              ? alpha(theme.palette.background.paper, 0.6) 
+              : '#f5f5f5', 
+            p: 2, 
+            borderRadius: 2, 
+            mb: 3 
+          }}>
             <List>
               <ListItem>
                 <ListItemIcon>
@@ -865,7 +925,11 @@ const TutorialPage: React.FC = () => {
           
           <Grid container spacing={2} sx={{ mb: 3 }}>
             <Grid item xs={12} sm={6}>
-              <Paper elevation={1} sx={{ p: 2, height: '100%' }}>
+              <Paper elevation={1} sx={{ 
+                p: 2, 
+                height: '100%',
+                bgcolor: theme.palette.background.paper 
+              }}>
                 <Typography variant="subtitle2" gutterBottom>
                   False Responses
                 </Typography>
@@ -876,7 +940,11 @@ const TutorialPage: React.FC = () => {
               </Paper>
             </Grid>
             <Grid item xs={12} sm={6}>
-              <Paper elevation={1} sx={{ p: 2, height: '100%' }}>
+              <Paper elevation={1} sx={{ 
+                p: 2, 
+                height: '100%',
+                bgcolor: theme.palette.background.paper 
+              }}>
                 <Typography variant="subtitle2" gutterBottom>
                   Patient Fatigue
                 </Typography>
@@ -887,7 +955,11 @@ const TutorialPage: React.FC = () => {
               </Paper>
             </Grid>
             <Grid item xs={12} sm={6}>
-              <Paper elevation={1} sx={{ p: 2, height: '100%' }}>
+              <Paper elevation={1} sx={{ 
+                p: 2, 
+                height: '100%',
+                bgcolor: theme.palette.background.paper 
+              }}>
                 <Typography variant="subtitle2" gutterBottom>
                   Asymmetrical Hearing Loss
                 </Typography>
@@ -898,7 +970,11 @@ const TutorialPage: React.FC = () => {
               </Paper>
             </Grid>
             <Grid item xs={12} sm={6}>
-              <Paper elevation={1} sx={{ p: 2, height: '100%' }}>
+              <Paper elevation={1} sx={{ 
+                p: 2, 
+                height: '100%',
+                bgcolor: theme.palette.background.paper 
+              }}>
                 <Typography variant="subtitle2" gutterBottom>
                   Background Noise
                 </Typography>
@@ -921,7 +997,14 @@ const TutorialPage: React.FC = () => {
             the Hughson-Westlake procedure, it's time to practice with virtual patients.
           </Typography>
           
-          <Paper elevation={0} sx={{ bgcolor: '#e3f2fd', p: 3, borderRadius: 2, mb: 3 }}>
+          <Paper elevation={0} sx={{ 
+            bgcolor: theme.palette.mode === 'dark' 
+              ? alpha(theme.palette.primary.dark, 0.2) 
+              : '#e3f2fd', 
+            p: 3, 
+            borderRadius: 2, 
+            mb: 3 
+          }}>
             <Typography variant="h6" gutterBottom>
               Practice with Virtual Patients
             </Typography>
@@ -1054,7 +1137,11 @@ const TutorialPage: React.FC = () => {
       
       <Grid container spacing={4} sx={{ mt: 1 }}>
         <Grid item xs={12} md={8}>
-          <Paper elevation={3} sx={{ p: 3, mb: 4 }}>
+          <Paper elevation={3} sx={{ 
+            p: 3, 
+            mb: 4,
+            bgcolor: theme.palette.background.paper 
+          }}>
             <Stepper activeStep={activeStep} orientation="vertical">
               {steps.map((step, index) => (
                 <Step key={step.label} completed={completed[index]}>
@@ -1096,7 +1183,11 @@ const TutorialPage: React.FC = () => {
         </Grid>
         
         <Grid item xs={12} md={4}>
-          <Paper elevation={3} sx={{ p: 3, mb: 4 }}>
+          <Paper elevation={3} sx={{ 
+            p: 3, 
+            mb: 4,
+            bgcolor: theme.palette.background.paper 
+          }}>
             <Typography variant="h6" gutterBottom>
               Frequently Asked Questions
             </Typography>
@@ -1124,7 +1215,7 @@ const TutorialPage: React.FC = () => {
             ))}
           </Paper>
           
-          <Card variant="outlined" sx={{ mb: 4 }}>
+          <Card variant="outlined" sx={{ mb: 4, bgcolor: theme.palette.background.paper }}>
             <CardContent>
               <Typography variant="subtitle1" gutterBottom fontWeight="bold">
                 Key Terms to Know
