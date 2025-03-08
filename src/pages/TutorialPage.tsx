@@ -351,7 +351,7 @@ const TutorialPage: React.FC = () => {
               • Retest 1000 Hz (to verify reliability)
             </Typography>
           </Box>
-          
+{/*           
           <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
             <Button 
               variant="outlined" 
@@ -379,7 +379,7 @@ const TutorialPage: React.FC = () => {
           </Box>
           <Typography variant="caption" align="center" display="block">
             Click to hear sample tones (at 40 dB HL)
-          </Typography>
+          </Typography> */}
         </>
       ),
     },
@@ -588,13 +588,31 @@ const TutorialPage: React.FC = () => {
               Further Learning Resources:
             </Typography>
             <List>
-              <ListItem component="a" href="#" sx={{ color: 'primary.main', textDecoration: 'none' }}>
+              <ListItem 
+                component="a" 
+                href="https://www.asha.org/practice-portal/clinical-topics/adult-hearing-screening/" 
+                target="_blank"
+                rel="noopener noreferrer"
+                sx={{ color: 'primary.main', textDecoration: 'none' }}
+              >
                 American Speech-Language-Hearing Association (ASHA) Guidelines
               </ListItem>
-              <ListItem component="a" href="#" sx={{ color: 'primary.main', textDecoration: 'none' }}>
+              <ListItem 
+                component="a" 
+                href="https://www.thebsa.org.uk/resources/pure-tone-air-bone-conduction-threshold-audiometry-with-without-masking/" 
+                target="_blank"
+                rel="noopener noreferrer"
+                sx={{ color: 'primary.main', textDecoration: 'none' }}
+              >
                 British Society of Audiology Recommended Procedures
               </ListItem>
-              <ListItem component="a" href="#" sx={{ color: 'primary.main', textDecoration: 'none' }}>
+              <ListItem 
+                component="a" 
+                href="https://www.audiology.org/publications-resources/journal-american-academy-audiology/" 
+                target="_blank"
+                rel="noopener noreferrer"
+                sx={{ color: 'primary.main', textDecoration: 'none' }}
+              >
                 Journal of the American Academy of Audiology
               </ListItem>
             </List>
