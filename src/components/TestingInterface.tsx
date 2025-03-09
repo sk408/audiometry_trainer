@@ -886,9 +886,9 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
       const totalCount = responseCounts[frequency][ear][currentLevel].total;
       
       // Hughson-Westlake requires at least 2 out of 3 responses at the same level
-      if (totalCount >= 3 && heardCount >= 2) {
+      if (totalCount >= 2 && heardCount >= 2) {
         return { isValid: true, message: 'Valid threshold established.' };
-      } else if (totalCount < 3) {
+      } else if (totalCount < 2) {
         return { 
           isValid: false, 
           message: `Need more responses at this level (${heardCount}/${totalCount} so far).` 
