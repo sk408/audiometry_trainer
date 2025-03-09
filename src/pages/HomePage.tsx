@@ -22,7 +22,8 @@ import {
   HearingOutlined,
   ArrowForward,
   Help,
-  Info
+  Info,
+  HearingDisabled
 } from '@mui/icons-material';
 
 const HomePage: React.FC = () => {
@@ -284,7 +285,7 @@ const HomePage: React.FC = () => {
           Ready to Get Started?
         </Typography>
         <Grid container spacing={3}>
-          <Grid item xs={12} sm={6}>
+          <Grid item xs={12} sm={6} md={4}>
             <Card elevation={2} sx={{ height: '100%' }}>
               <CardContent sx={{ p: { xs: 2, md: 3 } }}>
                 <Help color="primary" sx={{ fontSize: { xs: 30, md: 40 }, mb: 2 }} />
@@ -308,7 +309,7 @@ const HomePage: React.FC = () => {
               </CardActions>
             </Card>
           </Grid>
-          <Grid item xs={12} sm={6}>
+          <Grid item xs={12} sm={6} md={4}>
             <Card elevation={2} sx={{ height: '100%' }}>
               <CardContent sx={{ p: { xs: 2, md: 3 } }}>
                 <Info color="secondary" sx={{ fontSize: { xs: 30, md: 40 }, mb: 2 }} />
@@ -328,6 +329,30 @@ const HomePage: React.FC = () => {
                   fullWidth
                 >
                   Select a Patient
+                </Button>
+              </CardActions>
+            </Card>
+          </Grid>
+          <Grid item xs={12} sm={6} md={4}>
+            <Card elevation={2} sx={{ height: '100%' }}>
+              <CardContent sx={{ p: { xs: 2, md: 3 } }}>
+                <HearingDisabled color="info" sx={{ fontSize: { xs: 30, md: 40 }, mb: 2 }} />
+                <Typography variant="h5" component="h3" gutterBottom>
+                  Hearing Aid Follow-Up
+                </Typography>
+                <Typography variant="body1" color="text.secondary">
+                  Learn how to conduct effective hearing aid follow-up appointments. Practice the key steps
+                  of patient interviews, device checks, and making adjustments.
+                </Typography>
+              </CardContent>
+              <CardActions sx={{ p: { xs: 1.5, md: 2 } }}>
+                <Button
+                  component={RouterLink}
+                  to="/followup"
+                  color="info"
+                  fullWidth
+                >
+                  Follow-Up Guide
                 </Button>
               </CardActions>
             </Card>
@@ -391,4 +416,4 @@ const HomePage: React.FC = () => {
   );
 };
 
-export default HomePage; 
+export default HomePage;
