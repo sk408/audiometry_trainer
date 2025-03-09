@@ -2,7 +2,7 @@
   "name": "audiometry-trainer",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://sk408.github.io/apprentice",
+  "homepage": "https://sk408.github.io/audiometry_trainer",
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",

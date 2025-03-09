@@ -89,7 +89,7 @@ const HEARING_AID_BRANDS: HearingAidBrand[] = [
   {
     id: 'jabra',
     name: 'Jabra Enhance Pro 20',
-    logo: '/apprentice/assets/images/jabra-logo.png',
+    logo: '/audiometry_trainer/assets/images/jabra-logo.png',
     manualUrl: 'https://www.jabra.com/supportpages/jabra-enhance-plus/hsb001/documentation',
     pairingVideoUrl: 'https://www.youtube.com/watch?v=8rQWLSfpIw4',
     cleaningVideoUrl: 'https://www.youtube.com/watch?v=_KhxAOxoRkU',
@@ -99,7 +99,7 @@ const HEARING_AID_BRANDS: HearingAidBrand[] = [
   {
     id: 'rexton',
     name: 'Rexton Reach',
-    logo: '/apprentice/assets/images/rexton-logo.png',
+    logo: '/audiometry_trainer/assets/images/rexton-logo.png',
     manualUrl: 'https://www.rexton.com/en-us/help/user-guides',
     pairingVideoUrl: 'https://www.youtube.com/watch?v=8KU-g_xCY3I',
     cleaningVideoUrl: 'https://www.youtube.com/watch?v=f0KlA_HWz6M',
@@ -109,7 +109,7 @@ const HEARING_AID_BRANDS: HearingAidBrand[] = [
   {
     id: 'philips',
     name: 'Philips 9050',
-    logo: '/apprentice/assets/images/philips-logo.png',
+    logo: '/audiometry_trainer/assets/images/philips-logo.png',
     manualUrl: 'https://www.hearingsolutions.philips.com/en-us/support-for-professionals/user-guides',
     pairingVideoUrl: 'https://www.youtube.com/watch?v=pxfJWR8EcTQ',
     cleaningVideoUrl: 'https://www.youtube.com/watch?v=zTH5PoneoIU',
@@ -460,7 +460,7 @@ const TroubleshootingGuidePage: React.FC = () => {
       
       // Save a copy to the public directory for access via URL
       // This is typically handled server-side, but we'll assume it's saved to the right location
-      const publicPath = `/apprentice/assets/guides/${filename}`;
+      const publicPath = `/audiometry_trainer/assets/guides/${filename}`;
       
       // Open the preview dialog
       setPreviewDialogOpen(true);
@@ -642,7 +642,7 @@ const TroubleshootingGuidePage: React.FC = () => {
                   const brand = findBrandById(selectedBrand);
                   if (brand) {
                     const filename = `${brand.name.replace(/\s+/g, '_')}_troubleshooting_guide.html`;
-                    window.open(`/apprentice/assets/guides/${filename}`, '_blank');
+                    window.open(`/audiometry_trainer/assets/guides/${filename}`, '_blank');
                   }
                 }}
               >

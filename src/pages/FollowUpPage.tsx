@@ -909,7 +909,7 @@ const FollowUpPage: React.FC = () => {
                 Resources
               </Typography>
               <List>
-                <ListItem component="a" href="/apprentice/assets/follow_up_checklist.html" target="_blank">
+                <ListItem component="a" href="/audiometry_trainer/assets/follow_up_checklist.html" target="_blank">
                   <ListItemIcon><Assignment color="primary" /></ListItemIcon>
                   <ListItemText primary="Follow-Up Appointment Checklist" />
                 </ListItem>
