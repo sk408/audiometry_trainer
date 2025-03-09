@@ -749,7 +749,48 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
     }
   }, [currentStep, session, trainerMode, procedurePhase]);
 
-  // Handle skipping the current step
+  // Add a helper function to preserve thresholds when retrieving updated session data
+  const preserveThresholds = useCallback((updatedSession: TestSession): TestSession => {
+    // Return early if there's no current session
+    if (!session) return updatedSession;
+    
+    // Create a deep copy to avoid mutating the input
+    const sessionCopy = JSON.parse(JSON.stringify(updatedSession)) as TestSession;
+    
+    // Find all steps with stored thresholds in the current session
+    const thresholdSteps = session.testSequence.filter(
+      step => step.completed && step.responseStatus === 'threshold'
+    );
+    
+    console.log(`Preserving ${thresholdSteps.length} thresholds from current session:`, 
+      thresholdSteps.map(s => `${s.frequency}Hz ${s.ear} ear at ${s.currentLevel}dB`).join(', '));
+    
+    // Update the new session with the stored thresholds
+    if (thresholdSteps.length > 0) {
+      thresholdSteps.forEach(storedStep => {
+        // Find the matching step in the new session
+        const matchingIndex = sessionCopy.testSequence.findIndex(
+          step => step.frequency === storedStep.frequency && 
+                 step.ear === storedStep.ear &&
+                 step.testType === storedStep.testType
+        );
+        
+        if (matchingIndex !== -1) {
+          // Preserve the threshold data in the new session
+          sessionCopy.testSequence[matchingIndex] = {
+            ...sessionCopy.testSequence[matchingIndex],
+            completed: true,
+            responseStatus: 'threshold',
+            currentLevel: storedStep.currentLevel
+          };
+        }
+      });
+    }
+    
+    return sessionCopy;
+  }, [session]);
+
+  // Modified handleSkipStep to use preserveThresholds
   const handleSkipStep = useCallback(() => {
     try {
       console.log('⏭️ handleSkipStep called - skipping to next frequency');
@@ -763,57 +804,32 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
         console.log('Reset phase to: initial for next frequency');
       }
       
-      // Store current session thresholds before updating
-      const currentThresholds: TestStep[] = session 
-        ? session.testSequence
-            .filter((step) => step.completed && step.responseStatus === 'threshold') 
-        : [];
-      
       // Use TestingService to skip to the next step
       const nextStep = testingService.skipCurrentStep();
       console.log('Next step from TestingService:', nextStep);
       
       if (nextStep) {
-        // Let's make sure our session state is in sync with TestingService
+        // Get updated session from TestingService
         const updatedSession = testingService.getCurrentSession();
         
         if (updatedSession) {
-          // Make a deep copy to ensure we're not modifying the original reference
-          const sessionCopy = JSON.parse(JSON.stringify(updatedSession)) as TestSession;
+          // Use our helper function to ensure thresholds are preserved
+          const preservedSession = preserveThresholds(updatedSession);
+          setSession(preservedSession);
           
-          // Preserve all existing thresholds from the current session
-          if (currentThresholds.length > 0) {
-            // For each completed threshold in our current session state
-            currentThresholds.forEach((completedStep: TestStep) => {
-              // Find the same step in the updated session
-              const matchingStepIndex = sessionCopy.testSequence.findIndex(
-                (step: TestStep) => 
-                  step.frequency === completedStep.frequency && 
-                  step.ear === completedStep.ear &&
-                  step.testType === completedStep.testType
-              );
-              
-              if (matchingStepIndex !== -1) {
-                // Preserve the threshold data
-                sessionCopy.testSequence[matchingStepIndex] = {
-                  ...sessionCopy.testSequence[matchingStepIndex],
-                  completed: true,
-                  responseStatus: 'threshold',
-                  currentLevel: completedStep.currentLevel
-                };
-                console.log(`Preserved threshold for ${completedStep.frequency}Hz ${completedStep.ear} ear at ${completedStep.currentLevel}dB`);
-              }
-            });
+          // Get the current step with any preserved data
+          const currentStepIndex = preservedSession.currentStep;
+          const currentStepData = preservedSession.testSequence[currentStepIndex];
+          
+          if (currentStepData) {
+            // Make a deep copy to ensure we don't modify by reference
+            const currentStepCopy = JSON.parse(JSON.stringify(currentStepData));
+            setCurrentStep(currentStepCopy);
+            console.log('Moving to next frequency:', currentStepCopy.frequency);
+          } else {
+            console.error('Current step data not found in updated session');
+            setErrorMessage('Error navigating to next frequency.');
           }
-          
-          // Set the updated session and step
-          setSession(sessionCopy);
-          
-          // Make sure we preserve any existing thresholds in the session
-          const currentSessionCopy = JSON.parse(JSON.stringify(nextStep));
-          setCurrentStep(currentSessionCopy);
-          
-          console.log('Moving to next frequency:', nextStep.frequency);
         } else {
           console.error('Failed to get updated session from TestingService');
           setErrorMessage('Failed to update session data.');
@@ -826,16 +842,20 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
           setTestProgress(100);
           console.log('Test completed, progress set to 100%');
           
-          onComplete(finalSession);
+          // Make sure we're passing a session with preserved thresholds to onComplete
+          const preservedFinalSession = preserveThresholds(finalSession);
+          onComplete(preservedFinalSession);
         }
       }
     } catch (error) {
-      console.error("Error skipping step:", error);
-      setErrorMessage('Failed to skip to next step. Please try again.');
+      console.error("Error skipping to next step:", error);
+      setErrorMessage('Failed to go to next step. Please try again.');
     }
-  }, [testingService, trainerMode, onComplete, setProcedurePhase, setLastResponseLevel, setSuggestedAction, setCurrentGuidance, setErrorMessage, setSession, setCurrentStep]);
+  }, [trainerMode, testingService, session, setSession, setCurrentStep, 
+      setProcedurePhase, setLastResponseLevel, setSuggestedAction, 
+      setCurrentGuidance, setErrorMessage, setTestProgress, onComplete, preserveThresholds]);
 
-  // Add a new function to handle going to the previous frequency
+  // Modified handlePreviousStep to use preserveThresholds
   const handlePreviousStep = useCallback(() => {
     try {
       console.log('⏮️ handlePreviousStep called - going to previous frequency');
@@ -870,22 +890,34 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
           
           console.log('📊 Going back to step:', updatedSession.currentStep, 'with frequency:', previousStep.frequency);
           
-          // Update session and current step states with fresh objects
-          setSession(updatedSession);
+          // Use preserveThresholds to ensure consistent threshold data
+          const preservedSession = preserveThresholds(updatedSession);
+          setSession(preservedSession);
           
-          const freshStep = JSON.parse(JSON.stringify(previousStep));
-          setCurrentStep(freshStep);
+          // Get the fresh step data from the preserved session
+          const currentStepIndex = preservedSession.currentStep;
+          const currentStepData = preservedSession.testSequence[currentStepIndex];
+          
+          if (currentStepData) {
+            // Make a deep copy to ensure we don't modify by reference
+            const freshStep = JSON.parse(JSON.stringify(currentStepData));
+            setCurrentStep(freshStep);
+          } else {
+            console.error('Current step data not found in preserved session');
+            setErrorMessage('Error navigating to previous frequency.');
+            return;
+          }
 
           // CRITICAL FIX: Update the TestingService's internal state to match our navigation
           // This ensures that any audio played will use the correct frequency
           const currentSession = testingService.getCurrentSession();
           if (currentSession) {
             // Store the session in a variable first to avoid TypeScript null error
-            currentSession.currentStep = updatedSession.currentStep;
-            console.log(`🔄 Explicitly updated TestingService step to ${updatedSession.currentStep} with frequency ${previousStep.frequency}Hz`);
+            currentSession.currentStep = preservedSession.currentStep;
+            console.log(`🔄 Explicitly updated TestingService step to ${preservedSession.currentStep} with frequency ${currentStepData.frequency}Hz`);
           }
           
-          console.log('Moving to previous frequency:', previousStep.frequency);
+          console.log('Moving to previous frequency:', currentStepData.frequency);
         } else {
           console.log('Already at the first frequency, cannot go back further');
           setErrorMessage('Already at the first frequency.');
@@ -898,7 +930,9 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
       console.error("Error going to previous step:", error);
       setErrorMessage('Failed to go to previous step. Please try again.');
     }
-  }, [session, trainerMode, setSession, setCurrentStep, setProcedurePhase, setLastResponseLevel, setSuggestedAction, setCurrentGuidance, setErrorMessage]);
+  }, [session, trainerMode, setSession, setCurrentStep, setProcedurePhase, 
+      setLastResponseLevel, setSuggestedAction, setCurrentGuidance, 
+      setErrorMessage, testingService, preserveThresholds]);
 
   // Validate threshold according to Hughson-Westlake protocol
   const validateThreshold = useCallback((): { isValid: boolean; message: string } => {
@@ -1332,6 +1366,9 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
     
     console.log('Implementing suggested action:', suggestedAction);
     
+    // Save current state before making any changes to ensure thresholds are preserved
+    const originalSession = session ? JSON.parse(JSON.stringify(session)) : null;
+    
     switch (suggestedAction) {
       case 'increase':
         // Implement the 5 dB increase according to Hughson-Westlake
@@ -1401,8 +1438,20 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
       default:
         console.log('Unknown suggested action:', suggestedAction);
     }
+    
+    // For any action, ensure we preserve thresholds if the session has changed
+    if (originalSession && session && JSON.stringify(originalSession) !== JSON.stringify(session)) {
+      console.log('Session changed after action, ensuring thresholds are preserved...');
+      // Use preserveThresholds to maintain threshold consistency
+      const preservedSession = preserveThresholds(session);
+      if (JSON.stringify(preservedSession) !== JSON.stringify(session)) {
+        console.log('Updating session with preserved thresholds');
+        setSession(preservedSession);
+      }
+    }
   }, [suggestedAction, procedurePhase, currentStep, handleAdjustLevel, handleStoreThreshold, 
-      handleSkipStep, validateThreshold, setCurrentGuidance, setErrorMessage, setProcedurePhase, session]);
+      handleSkipStep, validateThreshold, setCurrentGuidance, setErrorMessage, setProcedurePhase, 
+      session, preserveThresholds, setSession]);
 
   // Add thresholds definition before handleAdjustFrequency
   // Memoize the thresholds calculation to prevent infinite re-renders
