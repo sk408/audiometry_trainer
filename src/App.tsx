@@ -48,6 +48,9 @@ import TutorialPage from './pages/TutorialPage';
 import PatientsPage from './pages/PatientsPage';
 // import SettingsPage from './pages/SettingsPage';
 
+// Import logo for splash screen
+import logo from './public/logo512.png';
+
 // Load settings from localStorage
 const loadSettings = () => {
   try {
@@ -69,6 +72,17 @@ function App() {
   const [fontSize, setFontSize] = useState('medium');
   const [includeAirConduction, setIncludeAirConduction] = useState<boolean>(true);
   const [includeBoneConduction, setIncludeBoneConduction] = useState<boolean>(true);
+  // Add state for the splash screen
+  const [showSplash, setShowSplash] = useState(true);
+
+  // Show splash screen for 500ms
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowSplash(false);
+    }, 500);
+    
+    return () => clearTimeout(timer);
+  }, []);
 
   // Load settings on mount
   useEffect(() => {
@@ -289,6 +303,37 @@ function App() {
       </Box>
     );
   };
+
+  // If splash screen should be shown, render it
+  if (showSplash) {
+    return (
+      <Box
+        sx={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: darkMode ? '#121212' : '#ffffff',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 9999,
+        }}
+      >
+        <Box
+          component="img"
+          src={logo}
+          alt="Audiometry Trainer Logo"
+          sx={{
+            width: '80%',
+            height: '80%',
+            objectFit: 'contain',
+          }}
+        />
+      </Box>
+    );
+  }
 
   return (
     <ThemeProvider theme={appTheme}>
