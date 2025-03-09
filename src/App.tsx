@@ -49,7 +49,7 @@ import PatientsPage from './pages/PatientsPage';
 // import SettingsPage from './pages/SettingsPage';
 
 // Import logo for splash screen
-import logo from './public/logo512.png';
+import logo from './logo512.png';
 
 // Load settings from localStorage
 const loadSettings = () => {
@@ -79,7 +79,7 @@ function App() {
   useEffect(() => {
     const timer = setTimeout(() => {
       setShowSplash(false);
-    }, 500);
+    }, 1000);
     
     return () => clearTimeout(timer);
   }, []);
