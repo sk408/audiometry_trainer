@@ -48,6 +48,7 @@ import HomePage from './pages/HomePage';
 import TutorialPage from './pages/TutorialPage';
 import PatientsPage from './pages/PatientsPage';
 import FollowUpPage from './pages/FollowUpPage';
+import TroubleshootingGuidePage from './pages/TroubleshootingGuidePage';
 // import SettingsPage from './pages/SettingsPage';
 
 // Import logo for splash screen
@@ -229,6 +230,7 @@ function App() {
     { text: 'Tutorial', icon: <SchoolIcon />, path: '/tutorial' },
     { text: 'Patients', icon: <PersonIcon />, path: '/patients' },
     { text: 'Follow-Up', icon: <HearingDisabled />, path: '/followup' },
+    { text: 'Troubleshooting', icon: <HelpIcon />, path: '/troubleshooting' },
     // { text: 'Settings', icon: <SettingsIcon />, path: '/settings' },
   ];
 
@@ -433,6 +435,7 @@ function App() {
               <Route path="/tutorial" element={<TutorialPage />} />
               <Route path="/patients" element={<PatientsPage />} />
               <Route path="/followup" element={<FollowUpPage />} />
+              <Route path="/troubleshooting" element={<TroubleshootingGuidePage />} />
               {/* <Route path="/settings" element={<SettingsPage />} /> */}
             </Routes>
           </Box>
@@ -463,6 +466,9 @@ function App() {
                   </Link>
                   <Link to="/followup" style={{ color: 'inherit' }}>
                     Follow-Up
+                  </Link>
+                  <Link to="/troubleshooting" style={{ color: 'inherit' }}>
+                    Troubleshooting
                   </Link>
                   {/* <Link to="/settings" style={{ color: 'inherit' }}>
                     Settings

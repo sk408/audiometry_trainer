@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hearing Aid Follow-Up Appointment Checklist</title>
+  <style>
+    @media print {
+      @page {
+        size: letter;
+        margin: 0.5in;
+      }
+      body {
+        font-size: 12pt;
+      }
+      .no-print {
+        display: none;
+      }
+      .page-break {
+        page-break-after: always;
+      }
+    }
+
+    body {
+      font-family: 'Arial', sans-serif;
+      line-height: 1.5;
+      color: #333;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 20px;
+      border-bottom: 2px solid #2c3e50;
+      padding-bottom: 15px;
+    }
+
+    .logo {
+      max-height: 60px;
+      margin-bottom: 10px;
+    }
+
+    h1 {
+      color: #2c3e50;
+      margin: 0;
+      font-size: 24pt;
+    }
+
+    h2 {
+      color: #3498db;
+      font-size: 16pt;
+      margin-top: 25px;
+      margin-bottom: 10px;
+      border-bottom: 1px solid #3498db;
+      padding-bottom: 5px;
+    }
+
+    .patient-info {
+      border: 1px solid #ddd;
+      padding: 15px;
+      margin-bottom: 20px;
+      background-color: #f9f9f9;
+    }
+
+    .patient-info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .field {
+      margin-bottom: 10px;
+    }
+
+    .field-label {
+      font-weight: bold;
+      display: block;
+      margin-bottom: 3px;
+    }
+
+    .field-input {
+      border-bottom: 1px solid #999;
+      padding-bottom: 3px;
+      min-height: 18px;
+    }
+
+    .checkbox-item {
+      display: flex;
+      align-items: flex-start;
+      margin-bottom: 10px;
+    }
+
+    .checkbox {
+      height: 18px;
+      width: 18px;
+      border: 1px solid #666;
+      margin-right: 10px;
+      flex-shrink: 0;
+      margin-top: 3px;
+    }
+
+    .checkbox-label {
+      flex-grow: 1;
+    }
+
+    .notes {
+      border: 1px solid #ddd;
+      min-height: 80px;
+      margin-top: 5px;
+      padding: 5px;
+    }
+
+    .signature-section {
+      margin-top: 30px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 30px;
+    }
+
+    .signature-line {
+      border-top: 1px solid #666;
+      margin-top: 40px;
+      padding-top: 5px;
+      font-weight: bold;
+    }
+
+    .print-button {
+      display: block;
+      margin: 20px auto;
+      padding: 10px 20px;
+      background-color: #3498db;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    footer {
+      margin-top: 30px;
+      text-align: center;
+      font-size: 10pt;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <!-- Logo placeholder - replace with actual logo -->
+    <h1>Hearing Aid Follow-Up Appointment Checklist</h1>
+  </div>
+
+  <div class="patient-info">
+    <div class="patient-info-grid">
+      <div class="field">
+        <div class="field-label">Patient Name:</div>
+        <div class="field-input"></div>
+      </div>
+      <div class="field">
+        <div class="field-label">Date:</div>
+        <div class="field-input"></div>
+      </div>
+      <div class="field">
+        <div class="field-label">Hearing Aid Model(s):</div>
+        <div class="field-input"></div>
+      </div>
+      <div class="field">
+        <div class="field-label">Date of Fitting:</div>
+        <div class="field-input"></div>
+      </div>
+      <div class="field">
+        <div class="field-label">Clinician:</div>
+        <div class="field-input"></div>
+      </div>
+      <div class="field">
+        <div class="field-label">Duration Since Initial Fitting:</div>
+        <div class="field-input"></div>
+      </div>
+    </div>
+  </div>
+
+  <h2>1. Patient Interview</h2>
+  <div class="checkbox-item">
+    <div class="checkbox"></div>
+    <div class="checkbox-label">Daily wear time assessment (hours per day: ______)</div>
+  </div>
+  <div class="checkbox-item">
+    <div class="checkbox"></div>
+    <div class="checkbox-label">Listening environments assessment (home, work, social, etc.)</div>
+  </div>
+  <div class="checkbox-item">
+    <div class="checkbox"></div>
+    <div class="checkbox-label">Overall satisfaction rating (1-10): _______</div>
+  </div>
+  <div class="checkbox-item">
+    <div class="checkbox"></div>
+    <div class="checkbox-label">Specific difficulties identified</div>
+  </div>
+  <div class="field">
+    <div class="field-label">Notes:</div>
+    <div class="notes"></div>
+  </div>
+
+  <h2>2. Physical Inspection</h2>
+  <div class="checkbox-item">
+    <div class="checkbox"></div>
+    <div class="checkbox-label">Device casing (check for cracks, damage)</div>
+  </div>
+  <div class="checkbox-item">
+    <div class="checkbox"></div>
+    <div class="checkbox-label">Battery door function</div>
+  </div>
+  <div class="checkbox-item">
+    <div class="checkbox"></div>
+    <div class="checkbox-label">Tubing/wires (check for damage, stiffening, discoloration)</div>
+  </div>
+  <div class="checkbox-item">
+    <div class="checkbox"></div>
+    <div class="checkbox-label">Earmold/dome (check for wax buildup, proper fit, damage)</div>
+  </div>
+  <div class="checkbox-item">
+    <div class="checkbox"></div>
+    <div class="checkbox-label">Microphone ports (cleaned)</div>
+  </div>
+  <div class="checkbox-item">
+    <div class="checkbox"></div>
+    <div class="checkbox-label">Receiver openings (cleaned and free of debris)</div>
+  </div>
+  <div class="checkbox-item">
+    <div class="checkbox"></div>
+    <div class="checkbox-label">Wax guards/filters replaced</div>
+  </div>
+  <div class="field">
+    <div class="field-label">Replacement parts provided:</div>
+    <div class="field-input"></div>
+  </div>
+
+  <h2>3. Performance Verification</h2>
+  <div class="checkbox-item">
+    <div class="checkbox"></div>
+    <div class="checkbox-label">Listening check performed</div>
+  </div>
+  <div class="checkbox-item">
+    <div class="checkbox"></div>
+    <div class="checkbox-label">Battery function verified (or charging system for rechargeable)</div>
+  </div>
+  <div class="checkbox-item">
+    <div class="checkbox"></div>
+    <div class="checkbox-label">Program settings reviewed and verified</div>
+  </div>
+  <div class="checkbox-item">
+    <div class="checkbox"></div>
+    <div class="checkbox-label">Volume control function checked</div>
+  </div>
+  <div class="checkbox-item">
+    <div class="checkbox"></div>
+    <div class="checkbox-label">Feedback test performed</div>
+  </div>
+  <div class="checkbox-item">
+    <div class="checkbox"></div>
+    <div class="checkbox-label">Real-ear verification (if indicated)</div>
+  </div>
+
+  <h2>4. Programming Adjustments</h2>
+  <div class="checkbox-item">
+    <div class="checkbox"></div>
+    <div class="checkbox-label">Volume adjustments made</div>
+  </div>
+  <div class="checkbox-item">
+    <div class="checkbox"></div>
+    <div class="checkbox-label">Frequency response adjustments</div>
+  </div>
+  <div class="checkbox-item">
+    <div class="checkbox"></div>
+    <div class="checkbox-label">Program settings modified</div>
+  </div>
+  <div class="checkbox-item">
+    <div class="checkbox"></div>
+    <div class="checkbox-label">Additional programs added</div>
+  </div>
+  <div class="checkbox-item">
+    <div class="checkbox"></div>
+    <div class="checkbox-label">Feature adjustments (noise reduction, directionality, etc.)</div>
+  </div>
+  <div class="field">
+    <div class="field-label">Details of adjustments:</div>
+    <div class="notes"></div>
+  </div>
+
+  <div class="page-break"></div>
+
+  <h2>5. Common Complaint Resolution</h2>
+  <div class="checkbox-item">
+    <div class="checkbox"></div>
+    <div class="checkbox-label">Own voice perception issues addressed</div>
+  </div>
+  <div class="checkbox-item">
+    <div class="checkbox"></div>
+    <div class="checkbox-label">Loudness/sound tolerance issues addressed</div>
+  </div>
+  <div class="checkbox-item">
+    <div class="checkbox"></div>
+    <div class="checkbox-label">Hearing in noisy situations strategies provided</div>
+  </div>
+  <div class="checkbox-item">
+    <div class="checkbox"></div>
+    <div class="checkbox-label">Environmental sounds management discussed (water, dishes, etc.)</div>
+  </div>
+  <div class="checkbox-item">
+    <div class="checkbox"></div>
+    <div class="checkbox-label">Feedback/whistling issues resolved</div>
+  </div>
+  <div class="field">
+    <div class="field-label">Specific solutions implemented:</div>
+    <div class="notes"></div>
+  </div>
+
+  <h2>6. Patient Education</h2>
+  <div class="checkbox-item">
+    <div class="checkbox"></div>
+    <div class="checkbox-label">Cleaning and maintenance reviewed</div>
+  </div>
+  <div class="checkbox-item">
+    <div class="checkbox"></div>
+    <div class="checkbox-label">Battery/charging instructions reviewed</div>
+  </div>
+  <div class="checkbox-item">
+    <div class="checkbox"></div>
+    <div class="checkbox-label">Program and feature usage explained</div>
+  </div>
+  <div class="checkbox-item">
+    <div class="checkbox"></div>
+    <div class="checkbox-label">Communication strategies discussed</div>
+  </div>
+  <div class="checkbox-item">
+    <div class="checkbox"></div>
+    <div class="checkbox-label">Realistic expectations reinforced</div>
+  </div>
+  <div class="checkbox-item">
+    <div class="checkbox"></div>
+    <div class="checkbox-label">Resources provided (user guides, etc.)</div>
+  </div>
+
+  <h2>7. Follow-Up Plan</h2>
+  <div class="checkbox-item">
+    <div class="checkbox"></div>
+    <div class="checkbox-label">Next appointment scheduled</div>
+  </div>
+  <div class="field">
+    <div class="field-label">Date/Time:</div>
+    <div class="field-input"></div>
+  </div>
+  <div class="checkbox-item">
+    <div class="checkbox"></div>
+    <div class="checkbox-label">Additional testing recommended</div>
+  </div>
+  <div class="checkbox-item">
+    <div class="checkbox"></div>
+    <div class="checkbox-label">Referrals made</div>
+  </div>
+  <div class="field">
+    <div class="field-label">Additional recommendations:</div>
+    <div class="notes"></div>
+  </div>
+
+  <div class="signature-section">
+    <div>
+      <div class="signature-line">Clinician Signature</div>
+    </div>
+    <div>
+      <div class="signature-line">Patient Signature</div>
+    </div>
+  </div>
+
+  <button class="print-button no-print" onclick="window.print()">Print Checklist</button>
+
+  <footer>
+    <p>© 2025 Stephen Kanney. All rights reserved.</p>
+  </footer>
+
+  <script>
+    // Add current date to the date field
+    document.addEventListener('DOMContentLoaded', function() {
+      const dateFields = document.querySelectorAll('.field-label');
+      dateFields.forEach(field => {
+        if (field.textContent === 'Date:') {
+          const today = new Date();
+          const dateStr = today.toLocaleDateString('en-US', { 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+          });
+          const inputDiv = field.nextElementSibling;
+          if (inputDiv) {
+            inputDiv.textContent = dateStr;
+          }
+        }
+      });
+    });
+  </script>
+</body>
+</html> 
