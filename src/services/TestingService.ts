@@ -137,8 +137,9 @@ class TestingService {
   /**
    * Play the current tone based on the current step
    * @param durationMs - Optional duration in milliseconds
+   * @param isPulsed - Whether to play as a pulsed tone
    */
-  public playCurrentTone(durationMs?: number): void {
+  public playCurrentTone(durationMs?: number, isPulsed: boolean = true): void {
     const currentStep = this.getCurrentStep();
     if (!currentStep) return;
     
@@ -150,7 +151,8 @@ class TestingService {
       currentLevel,
       ear,
       durationMs,
-      testType // Pass the test type to the playTone method
+      testType, // Pass the test type to the playTone method
+      isPulsed  // Use pulsed tone by default
     );
   }
 
@@ -634,6 +636,22 @@ class TestingService {
     this.activeSessions = [];
     this.completedSessions = [];
     this.currentSession = null;
+  }
+
+  /**
+   * Calculate progress percentage of the current test session
+   * @returns Progress as a percentage from 0-100
+   */
+  public calculateProgress(): number {
+    if (!this.currentSession) return 0;
+    
+    const totalSteps = this.currentSession.testSequence.length;
+    if (totalSteps === 0) return 0;
+    
+    const currentStepIndex = this.currentSession.currentStep;
+    
+    // Calculate progress as percentage
+    return Math.round((currentStepIndex / totalSteps) * 100);
   }
 }
 

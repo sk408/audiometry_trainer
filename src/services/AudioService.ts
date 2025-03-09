@@ -14,6 +14,9 @@ class AudioService {
   private panNode: StereoPannerNode | null = null;
   private currentFrequency: number = 0;
   private debugMode: boolean = true; // Enable debug logs
+  private pulseInterval: number | null = null; // For pulsing tone
+  private pulseDuration: number = 200; // Default pulse duration in ms
+  private pauseDuration: number = 200; // Default pause between pulses in ms
   
   constructor() {
     this.initializeAudioContext();
@@ -90,14 +93,21 @@ class AudioService {
    * @param ear - Ear to present to
    * @param durationMs - Duration in milliseconds
    * @param testType - Type of test (air or bone conduction)
+   * @param isPulsed - Whether to play as a pulsed tone
    */
   public playTone(
     frequency: Frequency, 
     dBHL: HearingLevel, 
     ear: Ear, 
     durationMs: number = 1000,
-    testType: 'air' | 'bone' | 'masked_air' | 'masked_bone' = 'air'
+    testType: 'air' | 'bone' | 'masked_air' | 'masked_bone' = 'air',
+    isPulsed: boolean = false
   ): void {
+    if (isPulsed) {
+      this.playPulsedTone(frequency, dBHL, ear, testType);
+      return;
+    }
+
     if (!this.audioContext) {
       this.initializeAudioContext();
     }
@@ -214,6 +224,12 @@ class AudioService {
    * Stop the currently playing tone
    */
   public stopTone(): void {
+    // Clear pulse interval if active
+    if (this.pulseInterval !== null) {
+      clearInterval(this.pulseInterval);
+      this.pulseInterval = null;
+    }
+    
     // Save the frequency for debugging
     const freqBeforeStop = this.currentFrequency;
     
@@ -314,6 +330,52 @@ class AudioService {
   public stopMaskingNoise(): void {
     // Implementation to stop masking noise would go here
     console.log('Stopping masking noise');
+  }
+
+  /**
+   * Play a pulsed tone that alternates between on and off
+   * @param frequency - Frequency in Hz
+   * @param dBHL - Hearing level in dB
+   * @param ear - Ear to present to
+   * @param testType - Type of test (air or bone conduction)
+   */
+  public playPulsedTone(
+    frequency: Frequency,
+    dBHL: HearingLevel,
+    ear: Ear,
+    testType: 'air' | 'bone' | 'masked_air' | 'masked_bone' = 'air'
+  ): void {
+    // Stop any existing pulsed tone
+    this.stopTone();
+    
+    // Store current frequency
+    this.currentFrequency = frequency;
+    
+    // Play the first tone immediately
+    this.playTone(frequency, dBHL, ear, this.pulseDuration, testType);
+    
+    // Set up interval for pulsing
+    this.pulseInterval = window.setInterval(() => {
+      this.playTone(frequency, dBHL, ear, this.pulseDuration, testType);
+    }, this.pulseDuration + this.pauseDuration);
+    
+    if (this.debugMode) {
+      console.log(`Playing pulsed ${testType} tone: ${frequency}Hz at ${dBHL}dB HL to ${ear} ear`);
+    }
+  }
+
+  /**
+   * Set pulse and pause durations for pulsed tones
+   * @param pulseDuration - Duration of each pulse in ms
+   * @param pauseDuration - Duration of pause between pulses in ms
+   */
+  public setPulseTiming(pulseDuration: number, pauseDuration: number): void {
+    this.pulseDuration = pulseDuration;
+    this.pauseDuration = pauseDuration;
+    
+    if (this.debugMode) {
+      console.log(`Pulse timing set: ${pulseDuration}ms on, ${pauseDuration}ms off`);
+    }
   }
 
   /**

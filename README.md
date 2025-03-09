@@ -19,8 +19,8 @@ A professional web application for Pure Tone Audiometry Training designed for au
 
 ### Prerequisites
 
-- Node.js (v14.0.0 or higher)
-- npm (v6.0.0 or higher)
+- Node.js (v16.0.0 or higher)
+- npm (v8.0.0 or higher)
 
 ### Installation
 
@@ -69,9 +69,11 @@ Select a virtual patient from the patients page to begin practicing. Each patien
 
 ### Built With
 
-- [React](https://reactjs.org/) - Frontend framework
+- [React](https://reactjs.org/) - Frontend framework (v19.0.0)
 - [TypeScript](https://www.typescriptlang.org/) - Type-safe JavaScript
-- [Material UI](https://mui.com/) - UI component library
+- [Material UI](https://mui.com/) - UI component library (v6.4.6)
+- [Chart.js](https://www.chartjs.org/) - Charting library for the audiogram
+- [React Router](https://reactrouter.com/) - Navigation and routing (v7.2.0)
 - [Web Audio API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API) - Audio generation and processing
 
 ### Architecture
@@ -83,6 +85,7 @@ The application follows a component-based architecture with the following struct
 - **Services**: Business logic and data handling
 - **Interfaces**: TypeScript type definitions
 - **Constants**: Application-wide constants and configuration
+- **Assets**: Images, sounds, and other static files
 
 ### Local Storage
 
@@ -112,7 +115,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the Custom Open Source License - see the [LICENSE](./LICENSE) file for details. The license allows for open-source use, modification, and distribution while the original author retains all commercial rights.
 
 ## Acknowledgments
 
