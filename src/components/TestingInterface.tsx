@@ -791,6 +791,10 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
         // No more steps, complete the session
         const finalSession = testingService.completeSession();
         if (finalSession) {
+          // Set progress to 100% on completion
+          setTestProgress(100);
+          console.log('Test completed, progress set to 100%');
+          
           onComplete(finalSession);
         }
       }
@@ -1063,6 +1067,10 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
         setSession(newSession);
         setCurrentStep(testingService.getCurrentStep());
         
+        // Initialize progress to 0
+        setTestProgress(0);
+        console.log('New test session started, progress initialized to 0%');
+        
         // We don't want to reset responseCounts here as it will clear any stored thresholds
         // keeping the existing responseCounts which stores thresholds per frequency/ear
       });
@@ -1273,7 +1281,7 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
         });
       }
     }
-  }, [currentStep, session, trainerMode, setSession, setProcedurePhase, setSuggestedAction, setCurrentGuidance, setErrorMessage]);
+  }, [currentStep, session, trainerMode, setSession, setProcedurePhase, setSuggestedAction, setCurrentGuidance]);
 
   // Add this function to handle audiogram position clicks
   const handleAudiogramClick = (frequency: number, level: number) => {
@@ -1387,6 +1395,16 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
     // Convert the map values back to an array
     return Array.from(uniqueThresholds.values());
   }, [session]);
+
+  // Update test progress when current step changes
+  useEffect(() => {
+    if (session) {
+      // Calculate and update the progress percentage
+      const progress = testingService.calculateProgress();
+      setTestProgress(progress);
+      console.log(`Test progress updated: ${progress}%`);
+    }
+  }, [session, currentStep, testingService]);
 
   if (!session || !currentStep) {
     return (

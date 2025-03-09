@@ -39,13 +39,15 @@ import {
   Help as HelpIcon,
   Brightness4 as DarkModeIcon,
   Brightness7 as LightModeIcon,
-  KeyboardArrowDown
+  KeyboardArrowDown,
+  HearingDisabled
 } from '@mui/icons-material';
 
 // Import pages
 import HomePage from './pages/HomePage';
 import TutorialPage from './pages/TutorialPage';
 import PatientsPage from './pages/PatientsPage';
+import FollowUpPage from './pages/FollowUpPage';
 // import SettingsPage from './pages/SettingsPage';
 
 // Import logo for splash screen
@@ -226,6 +228,7 @@ function App() {
     { text: 'Home', icon: <HomeIcon />, path: '/' },
     { text: 'Tutorial', icon: <SchoolIcon />, path: '/tutorial' },
     { text: 'Patients', icon: <PersonIcon />, path: '/patients' },
+    { text: 'Follow-Up', icon: <HearingDisabled />, path: '/followup' },
     // { text: 'Settings', icon: <SettingsIcon />, path: '/settings' },
   ];
 
@@ -429,6 +432,7 @@ function App() {
               <Route path="/" element={<HomePage />} />
               <Route path="/tutorial" element={<TutorialPage />} />
               <Route path="/patients" element={<PatientsPage />} />
+              <Route path="/followup" element={<FollowUpPage />} />
               {/* <Route path="/settings" element={<SettingsPage />} /> */}
             </Routes>
           </Box>
@@ -456,6 +460,9 @@ function App() {
                   </Link>
                   <Link to="/patients" style={{ color: 'inherit' }}>
                     Practice
+                  </Link>
+                  <Link to="/followup" style={{ color: 'inherit' }}>
+                    Follow-Up
                   </Link>
                   {/* <Link to="/settings" style={{ color: 'inherit' }}>
                     Settings
