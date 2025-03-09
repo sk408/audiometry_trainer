@@ -763,6 +763,12 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
         console.log('Reset phase to: initial for next frequency');
       }
       
+      // Store current session thresholds before updating
+      const currentThresholds: TestStep[] = session 
+        ? session.testSequence
+            .filter((step) => step.completed && step.responseStatus === 'threshold') 
+        : [];
+      
       // Use TestingService to skip to the next step
       const nextStep = testingService.skipCurrentStep();
       console.log('Next step from TestingService:', nextStep);
@@ -773,7 +779,32 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
         
         if (updatedSession) {
           // Make a deep copy to ensure we're not modifying the original reference
-          const sessionCopy = JSON.parse(JSON.stringify(updatedSession));
+          const sessionCopy = JSON.parse(JSON.stringify(updatedSession)) as TestSession;
+          
+          // Preserve all existing thresholds from the current session
+          if (currentThresholds.length > 0) {
+            // For each completed threshold in our current session state
+            currentThresholds.forEach((completedStep: TestStep) => {
+              // Find the same step in the updated session
+              const matchingStepIndex = sessionCopy.testSequence.findIndex(
+                (step: TestStep) => 
+                  step.frequency === completedStep.frequency && 
+                  step.ear === completedStep.ear &&
+                  step.testType === completedStep.testType
+              );
+              
+              if (matchingStepIndex !== -1) {
+                // Preserve the threshold data
+                sessionCopy.testSequence[matchingStepIndex] = {
+                  ...sessionCopy.testSequence[matchingStepIndex],
+                  completed: true,
+                  responseStatus: 'threshold',
+                  currentLevel: completedStep.currentLevel
+                };
+                console.log(`Preserved threshold for ${completedStep.frequency}Hz ${completedStep.ear} ear at ${completedStep.currentLevel}dB`);
+              }
+            });
+          }
           
           // Set the updated session and step
           setSession(sessionCopy);
@@ -1335,9 +1366,10 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
         // Validate threshold before storing
         const { isValid, message } = validateThreshold();
         if (isValid) {
+          // Call handleStoreThreshold which already handles setting the procedure phase
+          // and other state updates correctly
           handleStoreThreshold();
-          setProcedurePhase('complete');
-          console.log('Updated phase to: complete after storing threshold');
+          console.log('Stored threshold using suggested action');
         } else {
           // Show error for invalid threshold
           setErrorMessage(message);
@@ -1345,8 +1377,19 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
         }
         break;
       case 'next':
+        // First make sure we've stored all thresholds correctly
+        if (procedurePhase === 'complete' && session) {
+          // If we're in complete phase, check that the current step is properly marked as completed
+          const { isValid } = validateThreshold();
+          if (isValid && currentStep && !currentStep.completed) {
+            console.log('Current step has valid threshold but is not marked completed - calling handleStoreThreshold');
+            handleStoreThreshold();
+          }
+        }
+        
+        // Now handle moving to the next step while preserving thresholds
         handleSkipStep();
-        // Reset to initial phase for the next frequency - don't reset responseCounts
+        // Reset to initial phase for the next frequency
         setProcedurePhase('initial');
         console.log('Reset phase to: initial for next frequency');
         break;
@@ -1359,7 +1402,7 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
         console.log('Unknown suggested action:', suggestedAction);
     }
   }, [suggestedAction, procedurePhase, currentStep, handleAdjustLevel, handleStoreThreshold, 
-      handleSkipStep, validateThreshold, setCurrentGuidance, setErrorMessage, setProcedurePhase]);
+      handleSkipStep, validateThreshold, setCurrentGuidance, setErrorMessage, setProcedurePhase, session]);
 
   // Add thresholds definition before handleAdjustFrequency
   // Memoize the thresholds calculation to prevent infinite re-renders
