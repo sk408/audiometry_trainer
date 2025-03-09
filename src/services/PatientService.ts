@@ -284,7 +284,8 @@ class PatientService {
    * Generate thresholds for asymmetrical sensorineural hearing loss
    */
   private generateAsymmetricalLoss(): ThresholdPoint[] {
-    const frequencies = [250, 500, 1000, 2000, 3000, 4000, 8000] as const;
+    // UPDATED: Added 1500Hz to ensure all UI frequencies are covered
+    const frequencies = [250, 500, 750, 1000, 1500, 2000, 3000, 4000, 6000, 8000] as const;
     const thresholds: ThresholdPoint[] = [];
 
     frequencies.forEach(freq => {
@@ -348,7 +349,8 @@ class PatientService {
    * Generate thresholds for mixed hearing loss
    */
   private generateMixedLoss(): ThresholdPoint[] {
-    const frequencies = [250, 500, 1000, 2000, 3000, 4000, 8000] as const;
+    // UPDATED: Added 1500Hz to ensure all UI frequencies are covered
+    const frequencies = [250, 500, 750, 1000, 1500, 2000, 3000, 4000, 6000, 8000] as const;
     const thresholds: ThresholdPoint[] = [];
     
     // Air-bone gap of approximately 20-30 dB
@@ -414,7 +416,8 @@ class PatientService {
    * Generate thresholds for severe-profound sensorineural hearing loss
    */
   private generateSevereProfoundLoss(): ThresholdPoint[] {
-    const frequencies = [250, 500, 1000, 2000, 3000, 4000, 8000] as const;
+    // UPDATED: Added 1500Hz to ensure all UI frequencies are covered
+    const frequencies = [250, 500, 750, 1000, 1500, 2000, 3000, 4000, 6000, 8000] as const;
     const thresholds: ThresholdPoint[] = [];
 
     frequencies.forEach(freq => {
@@ -512,4 +515,4 @@ class PatientService {
 
 // Create a singleton instance
 const patientService = new PatientService();
-export default patientService; 
+export default patientService;

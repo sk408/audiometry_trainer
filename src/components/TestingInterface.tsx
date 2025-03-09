@@ -957,16 +957,16 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
       const updatedSession = { ...session };
       
       // Find the specific test step for the current frequency and ear
-      // We need to look by ID, frequency and ear to ensure we're modifying the correct step
+      // FIXED: Don't require ID match which breaks when changing frequencies
+      // Instead, just rely on matching frequency, ear and testType
       const stepIndex = updatedSession.testSequence.findIndex(
-        step => step.id === currentStep.id && 
-               step.frequency === currentStep.frequency && 
+        step => step.frequency === currentStep.frequency && 
                step.ear === currentStep.ear &&
                step.testType === currentStep.testType
       );
       
       if (stepIndex === -1) {
-        console.error('Could not find matching test step in session');
+        console.error('Could not find matching test step in session for frequency:', currentStep.frequency, 'ear:', currentStep.ear);
         setErrorMessage('Failed to store threshold: test step not found.');
         return;
       }
@@ -1188,7 +1188,7 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
   }, [currentStep, processAutomaticResponse, toneActive, simulatePatientResponse, patientResponse, procedurePhase]);
 
   // Add handleAdjustFrequency function - place this near the handleAdjustLevel function
-  const handleAdjustFrequency = (direction: number) => {
+  const handleAdjustFrequency = useCallback((direction: number) => {
     if (!currentStep) return;
     
     const availableFrequencies: Frequency[] = [125, 250, 500, 750, 1000, 1500, 2000, 3000, 4000, 6000, 8000];
@@ -1206,12 +1206,74 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
     // Only update if the frequency would actually change
     if (newIndex !== currentIndex) {
       const newFrequency = availableFrequencies[newIndex];
-      setCurrentStep({
-        ...currentStep,
-        frequency: newFrequency
-      });
+      
+      console.log(`Changing frequency from ${currentFreq}Hz to ${newFrequency}Hz`);
+      
+      // CRITICAL FIX: We need to find the appropriate step in the test sequence
+      // that matches the target frequency and ear, then navigate to that step
+      if (session) {
+        // Find the step index for the target frequency and ear combination
+        const targetStepIndex = session.testSequence.findIndex(
+          step => step.frequency === newFrequency && 
+                 step.ear === currentStep.ear &&
+                 step.testType === currentStep.testType
+        );
+        
+        if (targetStepIndex !== -1) {
+          // Found a matching step in the sequence
+          console.log(`Found matching step for ${newFrequency}Hz at index ${targetStepIndex}`);
+          
+          // Create a deep copy of the session to avoid mutating the original
+          const updatedSession = JSON.parse(JSON.stringify(session));
+          
+          // Update the current step index in the session
+          updatedSession.currentStep = targetStepIndex;
+          
+          // Get reference to the target step
+          const targetStep = updatedSession.testSequence[targetStepIndex];
+          
+          console.log(`Navigating to step with ID ${targetStep.id}, frequency ${targetStep.frequency}Hz`);
+          
+          // Update session and current step states with fresh objects
+          setSession(updatedSession);
+          
+          // Create a fresh copy of the target step to avoid reference issues
+          const freshStep = JSON.parse(JSON.stringify(targetStep));
+          setCurrentStep(freshStep);
+          
+          // CRITICAL: Also update the TestingService's internal state to match our navigation
+          const currentSession = testingService.getCurrentSession();
+          if (currentSession) {
+            currentSession.currentStep = updatedSession.currentStep;
+            console.log(`Explicitly updated TestingService step to ${updatedSession.currentStep} with frequency ${targetStep.frequency}Hz`);
+          }
+          
+          // Reset UI state for the new frequency
+          if (trainerMode) {
+            // Check if this frequency has a stored threshold already
+            if (targetStep.completed && targetStep.responseStatus === 'threshold') {
+              setProcedurePhase('complete');
+              setSuggestedAction('next');
+              setCurrentGuidance(`This frequency already has a threshold stored at ${targetStep.currentLevel} dB. You can proceed to the next frequency or adjust the level to retest.`);
+            } else {
+              setProcedurePhase('initial');
+              setSuggestedAction('present');
+              setCurrentGuidance(`Now testing at ${newFrequency} Hz. Begin at a comfortable level (30-40 dB).`);
+            }
+          }
+        } else {
+          console.error(`Could not find matching step for frequency ${newFrequency}Hz and ear ${currentStep.ear}`);
+          setErrorMessage(`Could not navigate to frequency ${newFrequency}Hz. Please try a different frequency.`);
+        }
+      } else {
+        // No session available - just update the local currentStep (fallback)
+        setCurrentStep({
+          ...currentStep,
+          frequency: newFrequency
+        });
+      }
     }
-  };
+  }, [currentStep, session, trainerMode, setSession, setProcedurePhase, setSuggestedAction, setCurrentGuidance, setErrorMessage]);
 
   // Add this function to handle audiogram position clicks
   const handleAudiogramClick = (frequency: number, level: number) => {

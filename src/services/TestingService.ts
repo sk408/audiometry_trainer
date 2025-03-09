@@ -23,10 +23,12 @@ class TestingService {
   private completedSessions: TestSession[] = [];
 
   // Standard test frequencies in Hz (from low to high)
-  private testFrequencies: Frequency[] = [1000, 2000, 4000, 8000, 1000, 500, 250];
+  // UPDATED: Added 1500Hz to match UI selector options
+  private testFrequencies: Frequency[] = [1000, 2000, 4000, 8000, 1000, 500, 250, 1500, 3000, 6000];
   
   // Bone conduction test frequencies (typically 250-4000 Hz)
-  private boneTestFrequencies: Frequency[] = [1000, 2000, 4000, 1000, 500, 250];
+  // UPDATED: Added 1500Hz to match UI selector options
+  private boneTestFrequencies: Frequency[] = [1000, 2000, 4000, 1000, 500, 250, 1500, 3000];
   
   // Test types to include in sequence
   private testTypes: ('air' | 'bone')[] = ['air', 'bone'];
@@ -637,4 +639,4 @@ class TestingService {
 
 // Create a singleton instance
 const testingService = new TestingService();
-export default testingService; 
+export default testingService;
