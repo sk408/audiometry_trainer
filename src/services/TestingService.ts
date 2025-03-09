@@ -24,11 +24,11 @@ class TestingService {
 
   // Standard test frequencies in Hz (from low to high)
   // UPDATED: Added 1500Hz to match UI selector options
-  private testFrequencies: Frequency[] = [1000, 2000, 4000, 8000, 1000, 500, 250, 1500, 3000, 6000];
+  private testFrequencies: Frequency[] = [1000, 2000, 4000, 8000, 1000, 750, 500, 250, 1500, 3000, 6000];
   
   // Bone conduction test frequencies (typically 250-4000 Hz)
   // UPDATED: Added 1500Hz to match UI selector options
-  private boneTestFrequencies: Frequency[] = [1000, 2000, 4000, 1000, 500, 250, 1500, 3000];
+  private boneTestFrequencies: Frequency[] = [1000, 2000, 4000, 1000, 750, 500, 250, 1500, 3000];
   
   // Test types to include in sequence
   private testTypes: ('air' | 'bone')[] = ['air', 'bone'];
