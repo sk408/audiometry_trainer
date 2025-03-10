@@ -1833,6 +1833,15 @@ const EarAnatomyPage: React.FC = () => {
               <Typography fontWeight="bold">Auditory Neural Pathway</Typography>
             </AccordionSummary>
             <AccordionDetails>
+              <Paper elevation={0} sx={{ p: 2, mb: 3, bgcolor: alpha(theme.palette.info.light, 0.15), borderRadius: 1 }}>
+                <Typography variant="subtitle1" fontWeight="bold" color="info.dark">
+                  Advanced Content - Outside the Scope of Basic Hearing Aid Fittings
+                </Typography>
+                <Typography variant="body2">
+                  This section covers advanced neuroanatomy of the auditory system. While fascinating, this level of detail is not required for performing standard hearing aid fittings. It is provided for those interested in a deeper understanding of auditory processing.
+                </Typography>
+              </Paper>
+              
               <Typography paragraph>
                 The neural pathway for hearing transmits signals from the cochlea to the auditory cortex in the brain.
                 This complex pathway involves multiple processing stations that progressively extract and analyze different 
@@ -2018,6 +2027,69 @@ const EarAnatomyPage: React.FC = () => {
                   <ListItemText 
                     primary="Efferent System" 
                     secondary="The superior olivary complex also contains the cell bodies of the olivocochlear bundle, which provides feedback to the cochlea, modulating outer hair cell function and protecting the ear from acoustic trauma." 
+                  />
+                </ListItem>
+                <ListItem>
+                  <ListItemIcon>
+                    <NavigateNext color="primary" fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText 
+                    primary="Olivocochlear Bundle" 
+                    secondary="Projections from superior olivary complex to the cochlea. The medial component regulates outer hair cell activity, while the lateral component modulates inner hair cell output." 
+                  />
+                </ListItem>
+                <ListItem>
+                  <ListItemIcon>
+                    <NavigateNext color="primary" fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText 
+                    primary="Protective Mechanisms" 
+                    secondary="These efferent pathways are essential for protecting the auditory system from damage. Dysfunction in these protective systems may contribute to increased susceptibility to noise-induced hearing loss and could be a target for therapeutic interventions." 
+                  />
+                </ListItem>
+              </List>
+              
+              <Typography variant="subtitle2" gutterBottom fontWeight="bold" color="primary" sx={{ mt: 2 }}>
+                Protective Role of the Efferent System Against Acoustic Trauma
+              </Typography>
+              <Typography paragraph>
+                The efferent auditory system plays a crucial protective role against damaging sounds:
+              </Typography>
+              <List dense>
+                <ListItem>
+                  <ListItemIcon>
+                    <NavigateNext color="primary" fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText 
+                    primary="Olivocochlear Reflex" 
+                    secondary="When exposed to loud sounds, the medial olivocochlear (MOC) neurons are activated and release acetylcholine onto outer hair cells. This hyperpolarizes the cells and reduces their motility, decreasing the amplification of loud sounds and preventing damage." 
+                  />
+                </ListItem>
+                <ListItem>
+                  <ListItemIcon>
+                    <NavigateNext color="primary" fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText 
+                    primary="Middle Ear Muscle Reflex" 
+                    secondary="The efferent system coordinates with the acoustic reflex, which contracts the stapedius muscle to stiffen the ossicular chain and reduce sound transmission to the inner ear during exposure to loud sounds." 
+                  />
+                </ListItem>
+                <ListItem>
+                  <ListItemIcon>
+                    <NavigateNext color="primary" fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText 
+                    primary="Anti-Excitotoxic Effects" 
+                    secondary="By reducing glutamate release at inner hair cell synapses during intense stimulation, the lateral olivocochlear system helps prevent excitotoxic damage to auditory nerve fibers." 
+                  />
+                </ListItem>
+                <ListItem>
+                  <ListItemIcon>
+                    <NavigateNext color="primary" fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText 
+                    primary="Noise Conditioning" 
+                    secondary="Prior activation of the efferent system through moderate sound exposure can enhance its protective capability against subsequent intense noise exposure, potentially explaining why some individuals are more resistant to noise-induced hearing loss." 
                   />
                 </ListItem>
               </List>
@@ -2351,6 +2423,53 @@ const EarAnatomyPage: React.FC = () => {
                 These descending pathways allow for dynamic, experience-dependent modulation of auditory processing, 
                 enabling selective attention, noise suppression, and protection from acoustic trauma.
               </Typography>
+              
+              <Paper elevation={0} sx={{ p: 2, mb: 2, bgcolor: alpha(theme.palette.success.light, 0.15), borderRadius: 1 }}>
+                <Typography variant="subtitle1" fontWeight="bold" color="success.dark" gutterBottom>
+                  Clinical Relevance: Efferent Protection Against Noise-Induced Hearing Loss
+                </Typography>
+                <Typography paragraph>
+                  The efferent system's protective role has significant clinical implications:
+                </Typography>
+                <List dense>
+                  <ListItem>
+                    <ListItemIcon>
+                      <NavigateNext color="success" fontSize="small" />
+                    </ListItemIcon>
+                    <ListItemText 
+                      primary="Time-Limited Protection" 
+                      secondary="The olivocochlear reflex can only provide protection for limited durations. Prolonged noise exposure eventually overwhelms this mechanism, leading to permanent damage." 
+                    />
+                  </ListItem>
+                  <ListItem>
+                    <ListItemIcon>
+                      <NavigateNext color="success" fontSize="small" />
+                    </ListItemIcon>
+                    <ListItemText 
+                      primary="Individual Variation" 
+                      secondary="Strength of efferent protection varies between individuals, potentially explaining different susceptibilities to noise-induced hearing loss despite similar exposures." 
+                    />
+                  </ListItem>
+                  <ListItem>
+                    <ListItemIcon>
+                      <NavigateNext color="success" fontSize="small" />
+                    </ListItemIcon>
+                    <ListItemText 
+                      primary="Therapeutic Potential" 
+                      secondary="Research is exploring ways to enhance efferent system function as a preventative measure against hearing loss in high-risk populations." 
+                    />
+                  </ListItem>
+                  <ListItem>
+                    <ListItemIcon>
+                      <NavigateNext color="success" fontSize="small" />
+                    </ListItemIcon>
+                    <ListItemText 
+                      primary="Relevance to Hearing Aids" 
+                      secondary="Hearing aid fittings should consider preserving the user's remaining efferent function by avoiding over-amplification that could overwhelm these protective mechanisms." 
+                    />
+                  </ListItem>
+                </List>
+              </Paper>
               
               <Typography paragraph sx={{ fontStyle: 'italic', mt: 2 }}>
                 Pro Tip: Understanding the hierarchical organization of the auditory pathway helps explain why different 
