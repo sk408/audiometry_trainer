@@ -49,6 +49,7 @@ import TutorialPage from './pages/TutorialPage';
 import PatientsPage from './pages/PatientsPage';
 import FollowUpPage from './pages/FollowUpPage';
 import TroubleshootingGuidePage from './pages/TroubleshootingGuidePage';
+import RealEarMeasurementPage from './pages/RealEarMeasurementPage';
 // import SettingsPage from './pages/SettingsPage';
 
 // Import logo for splash screen
@@ -231,6 +232,7 @@ function App() {
     { text: 'Patients', icon: <PersonIcon />, path: '/patients' },
     { text: 'Follow-Up', icon: <HearingDisabled />, path: '/followup' },
     { text: 'Troubleshooting', icon: <HelpIcon />, path: '/troubleshooting' },
+    { text: 'Real Ear', icon: <HearingIcon />, path: '/real-ear-measurement' },
     // { text: 'Settings', icon: <SettingsIcon />, path: '/settings' },
   ];
 
@@ -436,6 +438,7 @@ function App() {
               <Route path="/patients" element={<PatientsPage />} />
               <Route path="/followup" element={<FollowUpPage />} />
               <Route path="/troubleshooting" element={<TroubleshootingGuidePage />} />
+              <Route path="/real-ear-measurement" element={<RealEarMeasurementPage />} />
               {/* <Route path="/settings" element={<SettingsPage />} /> */}
             </Routes>
           </Box>
