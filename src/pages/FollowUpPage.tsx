@@ -316,6 +316,45 @@ const FollowUpPage: React.FC = () => {
               <Typography variant="body2" gutterBottom>
                 Adjust overall gain or specific frequency regions based on patient feedback.
               </Typography>
+              
+              <Paper variant="outlined" sx={{ p: 2, mb: 3, mt: 2, bgcolor: 'info.light', color: 'info.contrastText' }}>
+                <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 'bold' }}>
+                  Frequency Adjustment Guidelines for New Students
+                </Typography>
+                <Typography variant="body2" component="div">
+                  <ul style={{ paddingLeft: '1.5rem', marginTop: '0.5rem', marginBottom: '0.5rem' }}>
+                    <li><strong>Low Frequencies (250-1000 Hz):</strong> Adjust when patient reports:
+                      <ul>
+                        <li>Own voice sounds "boomy" or "hollow" (reduce)</li>
+                        <li>Difficulty with vowel sounds (increase)</li>
+                        <li>Environmental sounds like traffic too loud (reduce)</li>
+                        <li>Speech lacks "fullness" or warmth (increase)</li>
+                      </ul>
+                    </li>
+                    <li><strong>Mid Frequencies (1000-3000 Hz):</strong> Adjust when patient reports:
+                      <ul>
+                        <li>Speech sounds unclear or muffled (increase)</li>
+                        <li>Consonants like "s", "t", "f" hard to distinguish (increase)</li>
+                        <li>Women's and children's voices difficult to understand (increase)</li>
+                        <li>Speech sounds harsh or mechanical (reduce)</li>
+                      </ul>
+                    </li>
+                    <li><strong>High Frequencies (3000-8000 Hz):</strong> Adjust when patient reports:
+                      <ul>
+                        <li>Environmental sounds (paper rustling, water running) too sharp (reduce)</li>
+                        <li>Difficulty hearing in background noise (carefully increase)</li>
+                        <li>Consonants like "s", "sh", "f" sound too harsh (reduce)</li>
+                        <li>Music or singing lacks clarity (increase)</li>
+                      </ul>
+                    </li>
+                  </ul>
+                </Typography>
+                <Typography variant="body2" sx={{ mt: 1, fontStyle: 'italic' }}>
+                  Note: Always make small adjustments (2-3 dB) and verify with the patient before making additional changes. 
+                  Frequency adjustments may have impacts across multiple perceptual domains.
+                </Typography>
+              </Paper>
+              
               <Box sx={{ width: '100%', mt: 2 }}>
                 <Typography id="low-freq-slider" gutterBottom>
                   Low Frequencies (250-1000 Hz)

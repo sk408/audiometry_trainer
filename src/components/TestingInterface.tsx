@@ -19,7 +19,8 @@ import {
   Snackbar,
   Tabs,
   Tab,
-  Badge
+  Badge,
+  Collapse
 } from '@mui/material';
 import {
   VolumeUp,
@@ -35,7 +36,12 @@ import {
   Person,
   MenuBook,
   ArrowBackIosNew,
-  ArrowForwardIos
+  ArrowForwardIos,
+  Info as InfoIcon,
+  Hearing as HearingIcon,
+  Check as CheckIcon,
+  ExpandMore as ExpandMoreIcon,
+  ExpandLess as ExpandLessIcon
 } from '@mui/icons-material';
 import { TestSession, TestStep, HearingProfile, ThresholdPoint, HearingLevel, Frequency } from '../interfaces/AudioTypes';
 import testingService from '../services/TestingService';
@@ -125,8 +131,19 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
 
   // Add state for active tab
   const [activeTab, setActiveTab] = useState(0);
+  // Add state for showing guidance on main screen
+  const [showMainGuidance, setShowMainGuidance] = useState(true);
 
   const theme = useTheme();
+
+  // Define action map for suggested actions
+  const actionMap: Record<string, { label: string }> = {
+    present: { label: 'Present Tone' },
+    increase: { label: 'Increase Level (+5 dB)' },
+    decrease: { label: 'Decrease Level (-10 dB)' },
+    store_threshold: { label: 'Store Threshold' },
+    next: { label: 'Next Frequency' }
+  };
 
   // Handle tab change
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
@@ -1565,6 +1582,77 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
           </Paper>
         </Grid>
 
+        {/* Current Guidance Panel - Added below audiogram */}
+        <Grid item xs={12}>
+          <Paper 
+            elevation={3} 
+            sx={{ 
+              p: 2, 
+              mb: 2,
+              borderLeft: showResponseIndicator && Boolean(patientResponse) ? '4px solid #4caf50' : '4px solid #3f51b5'
+            }}
+          >
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <InfoIcon color="primary" sx={{ mr: 1, fontSize: 20 }} />
+                <Typography variant="subtitle1" fontWeight="500">
+                  Current Guidance
+                </Typography>
+                <IconButton 
+                  size="small" 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowMainGuidance(!showMainGuidance);
+                  }}
+                  sx={{ ml: 1 }}
+                >
+                  {showMainGuidance ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
+                </IconButton>
+              </Box>
+              <Box>
+                {showMainGuidance && suggestedAction === 'store_threshold' && (
+                  <Button
+                    variant="contained"
+                    color="success"
+                    size="small"
+                    startIcon={<CheckIcon />}
+                    disabled={!canStoreThreshold()}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleStoreThreshold();
+                    }}
+                  >
+                    Store Threshold
+                  </Button>
+                )}
+                {showMainGuidance && suggestedAction !== 'store_threshold' && (
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    size="small"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSuggestedAction();
+                    }}
+                  >
+                    {actionMap[suggestedAction]?.label || 'Apply Suggestion'}
+                  </Button>
+                )}
+              </Box>
+            </Box>
+            <Collapse in={showMainGuidance}>
+              <Typography variant="body2" sx={{ mb: 1 }}>
+                {currentGuidance}
+              </Typography>
+              {showResponseIndicator && Boolean(patientResponse) && (
+                <Alert severity="success" sx={{ mt: 1, py: 0.5 }} icon={<HearingIcon />}>
+                  Patient responded to the tone
+                </Alert>
+              )}
+            </Collapse>
+          </Paper>
+        </Grid>
+
         {/* Tabbed interface below the audiogram */}
         <Grid item xs={12}>
           <Paper elevation={3} sx={{ p: 0, mb: 2 }}>
@@ -1612,7 +1700,7 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
 
             {/* Testing Tab */}
             <TabPanel value={activeTab} index={0}>
-              <Box sx={{ p: { xs: 1, sm: 2 } }}>
+              <Box sx={{ p: { xs: 1, sm: 2 }, touchAction: 'manipulation' }}>
                 {/* Current level display */}
                 <Box sx={{ mb: 3, textAlign: 'center' }}>
                   <Typography variant="body1" gutterBottom>
@@ -1697,22 +1785,66 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
                 </Box>
 
                 {/* Present tone button */}
-                <Box sx={{ 
-                  display: 'flex', 
-                  justifyContent: 'center', 
-                  alignItems: 'center',
-                  mb: 2
-                }}>
+                <Box 
+                  sx={{ 
+                    display: 'flex', 
+                    justifyContent: 'center', 
+                    alignItems: 'center',
+                    mb: 2,
+                    touchAction: 'manipulation',
+                    position: 'relative'
+                  }}
+                  className="tone-button-container"
+                >
+                  {/* Mouse event capture layer for reliable press-and-hold */}
+                  {toneActive && (
+                    <Box
+                      sx={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        zIndex: 9999,
+                        cursor: 'pointer'
+                      }}
+                      onMouseUp={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (toneActive) stopTone();
+                      }}
+                      onTouchEnd={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (toneActive) stopTone();
+                      }}
+                    />
+                  )}
                   <Button
                     color="primary"
                     variant="contained"
                     size="large"
                     disabled={!currentStep}
-                    onMouseDown={startTone}
-                    onMouseUp={stopTone}
-                    onMouseLeave={() => toneActive && stopTone()}
-                    onTouchStart={startTone}
-                    onTouchEnd={() => toneActive && stopTone()}
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (!toneActive) startTone();
+                    }}
+                    onMouseUp={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (toneActive) stopTone();
+                    }}
+                    onTouchStart={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (!toneActive) startTone();
+                    }}
+                    onTouchEnd={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (toneActive) stopTone();
+                    }}
                     startIcon={<VolumeUp />}
                     fullWidth
                     sx={{ 
@@ -1721,10 +1853,17 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
                       backgroundColor: toneActive ? 'success.main' : 'primary.main',
                       '&:hover': {
                         backgroundColor: toneActive ? 'success.dark' : 'primary.dark',
-                      }
+                      },
+                      '&:active': {
+                        outline: 'none'
+                      },
+                      userSelect: 'none',
+                      touchAction: 'manipulation',
+                      position: 'relative',
+                      zIndex: 1
                     }}
                   >
-                    Present Tone
+                    {toneActive ? 'Tone Playing...' : 'Present Tone'}
                   </Button>
                 </Box>
                 
