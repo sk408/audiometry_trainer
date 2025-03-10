@@ -52,6 +52,7 @@ import PatientsPage from './pages/PatientsPage';
 import FollowUpPage from './pages/FollowUpPage';
 import TroubleshootingGuidePage from './pages/TroubleshootingGuidePage';
 import RealEarMeasurementPage from './pages/RealEarMeasurementPage';
+import EarAnatomyPage from './pages/EarAnatomyPage';
 // import SettingsPage from './pages/SettingsPage';
 
 // Import logo for splash screen
@@ -241,6 +242,7 @@ function App() {
   const menuItems = [
     { text: 'Home', icon: <HomeIcon />, path: '/' },
     { text: 'Tutorial', icon: <SchoolIcon />, path: '/tutorial' },
+    { text: 'Ear Anatomy', icon: <HearingIcon />, path: '/ear-anatomy' },
     { text: 'Patients', icon: <PersonIcon />, path: '/patients' },
     { text: 'Follow-Up', icon: <HearingDisabled />, path: '/followup' },
     { text: 'Troubleshooting', icon: <HelpIcon />, path: '/troubleshooting' },
@@ -475,6 +477,7 @@ function App() {
               <Route path="/followup" element={<FollowUpPage />} />
               <Route path="/troubleshooting" element={<TroubleshootingGuidePage />} />
               <Route path="/real-ear-measurement" element={<RealEarMeasurementPage />} />
+              <Route path="/ear-anatomy" element={<EarAnatomyPage />} />
               {/* <Route path="/settings" element={<SettingsPage />} /> */}
             </Routes>
           </Box>
@@ -499,6 +502,9 @@ function App() {
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: { xs: 1, sm: 2 } }}>
                   <Link to="/tutorial" style={{ color: 'inherit', textDecoration: 'none' }}>
                     Tutorial
+                  </Link>
+                  <Link to="/ear-anatomy" style={{ color: 'inherit', textDecoration: 'none' }}>
+                    Ear Anatomy
                   </Link>
                   <Link to="/patients" style={{ color: 'inherit', textDecoration: 'none' }}>
                     Practice
