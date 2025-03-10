@@ -1,7 +1,7 @@
 import { 
   REMType, REMFrequency, REMSignalType, REMLevel, 
   ProbePosition, REMCurve, REMTarget, VirtualHearingAid,
-  REMSession, REMErrorType, REMMeasurementPoint 
+  REMSession, REMErrorType, REMMeasurementPoint, VentType 
 } from '../interfaces/RealEarMeasurementTypes';
 
 /**
@@ -117,23 +117,24 @@ class RealEarMeasurementService {
 
   // Create a new REM session
   public createSession(patientId: string, hearingAidId: string): REMSession {
-    // Initialize a new session with default values
-    const newSession: REMSession = {
+    // Create a new REM session
+    const session: REMSession = {
       id: this.generateUniqueId(),
       patientId,
       hearingAidId,
       startTime: new Date().toISOString(),
       completed: false,
       probeTubePosition: ProbePosition.NOT_INSERTED,
+      ventType: VentType.OCCLUDED, // Default to occluded
       measurements: [],
       targets: [],
       currentStep: 'REUR',
       errors: [],
       accuracy: 0
     };
-
-    this.currentSession = newSession;
-    return newSession;
+    
+    this.currentSession = session;
+    return session;
   }
 
   // Generate a unique ID for session
@@ -244,20 +245,65 @@ class RealEarMeasurementService {
             gain = 3 + randomFactor;
           } else if (freq < 3000) {
             gain = 10 + randomFactor;  // Peak around 2.7kHz
-          } else {
+          } else if (freq < 6000) {
             gain = 5 + randomFactor;
+          } else {
+            // Ensure 6kHz and higher frequencies maintain appropriate response
+            gain = 3 + randomFactor;
           }
           break;
         
         case 'REOR': // Real Ear Occluded Response - with hearing aid in place but turned off
-          // Typically reduces high frequencies due to occlusion
-          if (freq < 500) {
-            gain = 5 + randomFactor; // Occlusion effect boosts low frequencies
-          } else if (freq < 1000) {
-            gain = 2 + randomFactor;
-          } else {
-            gain = -3 + randomFactor; // Reduces high frequencies
+          // Factor to blend between REUR and occluded response based on vent size
+          let ventFactor = 0; // 0 = fully occluded, 1 = fully open (like REUR)
+          
+          // Set ventFactor based on vent type
+          if (this.currentSession && this.currentSession.ventType) {
+            switch (this.currentSession.ventType) {
+              case VentType.OCCLUDED:
+                ventFactor = 0;
+                break;
+              case VentType.SMALL_VENT:
+                ventFactor = 0.25;
+                break;
+              case VentType.MEDIUM_VENT:
+                ventFactor = 0.5;
+                break;
+              case VentType.LARGE_VENT:
+                ventFactor = 0.75;
+                break;
+              case VentType.OPEN_DOME:
+                ventFactor = 0.9; // Nearly open but still some effect
+                break;
+            }
           }
+          
+          // Calculate REUR response (to blend with)
+          let reurGain = 0;
+          if (freq < 1000) {
+            reurGain = 0 + randomFactor;
+          } else if (freq < 2000) {
+            reurGain = 3 + randomFactor;
+          } else if (freq < 3000) {
+            reurGain = 10 + randomFactor;
+          } else if (freq < 6000) {
+            reurGain = 5 + randomFactor;
+          } else {
+            reurGain = 3 + randomFactor;
+          }
+          
+          // Calculate fully occluded response
+          let occludedGain = 0;
+          if (freq < 500) {
+            occludedGain = 5 + randomFactor; // Occlusion effect boosts low frequencies
+          } else if (freq < 1000) {
+            occludedGain = 2 + randomFactor;
+          } else {
+            occludedGain = -3 + randomFactor; // Reduces high frequencies
+          }
+          
+          // Blend between REUR and occluded based on vent factor
+          gain = (reurGain * ventFactor) + (occludedGain * (1 - ventFactor));
           break;
         
         case 'REAR': // Real Ear Aided Response - with hearing aid on

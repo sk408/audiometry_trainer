@@ -14,6 +14,15 @@ export type REMSignalType = 'pure_tone_sweep' | 'speech_noise' | 'pink_noise' | 
 // Signal levels for REM
 export type REMLevel = 50 | 55 | 60 | 65 | 70 | 75 | 80 | 85 | 90;
 
+// Earmold/Dome vent types
+export enum VentType {
+  OCCLUDED = 'occluded',
+  SMALL_VENT = 'small_vent',
+  MEDIUM_VENT = 'medium_vent',
+  LARGE_VENT = 'large_vent',
+  OPEN_DOME = 'open_dome'
+}
+
 // Probe tube positioning status
 export enum ProbePosition {
   TOO_SHALLOW = 'too_shallow',
@@ -70,6 +79,7 @@ export interface REMSession {
   completed: boolean;
   hearingAidId: string;
   probeTubePosition: ProbePosition;
+  ventType: VentType;
   measurements: REMCurve[];
   targets: REMTarget[];
   currentStep: REMType;

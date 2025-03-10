@@ -45,7 +45,8 @@ import {
   REMCurve,
   REMTarget,
   VirtualHearingAid,
-  REMSession
+  REMSession,
+  VentType
 } from '../interfaces/RealEarMeasurementTypes';
 
 // Sample patient data
@@ -124,6 +125,7 @@ const RealEarMeasurementPage: React.FC = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [measurementType, setMeasurementType] = useState<REMType>('REUR');
   const [prescriptionMethod, setPrescriptionMethod] = useState<'NAL-NL2' | 'DSL' | 'NAL-NL1' | 'custom'>('NAL-NL2');
+  const [selectedVentType, setSelectedVentType] = useState<VentType>(VentType.OCCLUDED);
   
   // New state for adjustable REAR
   const [adjustedREAR, setAdjustedREAR] = useState<REMCurve | null>(null);
@@ -206,15 +208,19 @@ const RealEarMeasurementPage: React.FC = () => {
   
   // Perform measurement
   const performMeasurement = async () => {
-    if (!remService || !session) {
-      setError('Session not initialized');
-      return;
-    }
+    if (!remService || !session) return;
     
     setIsLoading(true);
     setError(null);
     
     try {
+      // For REOR measurements, make sure the vent type is set in the session
+      if (measurementType === 'REOR') {
+        const updatedSession = { ...session, ventType: selectedVentType };
+        setSession(updatedSession);
+      }
+      
+      // Perform the measurement
       const measurement = await remService.performMeasurement(
         measurementType,
         selectedEar,
@@ -222,26 +228,35 @@ const RealEarMeasurementPage: React.FC = () => {
         inputLevel
       );
       
+      // Add the measurement to the session
+      const updatedMeasurements = [...session.measurements.filter(m => m.type !== measurementType), measurement];
+      
+      const updatedSession = {
+        ...session,
+        measurements: updatedMeasurements,
+        currentStep: measurementType
+      };
+      
+      setAllMeasurements(updatedMeasurements);
       setCurrentMeasurement(measurement);
-      
-      // Update allMeasurements array, replacing any existing measurement of the same type
-      setAllMeasurements(prevMeasurements => {
-        // Filter out any existing measurement of the same type
-        const filteredMeasurements = prevMeasurements.filter(m => m.type !== measurement.type);
-        // Add the new measurement
-        return [...filteredMeasurements, measurement];
-      });
-      
+      setSession(updatedSession);
       setSuccess(`${measurementType} measurement completed successfully`);
       
-      // If we have a target, calculate accuracy
-      if (currentTarget && currentTarget.type === measurementType) {
-        const accuracy = remService.calculateAccuracy(measurement, currentTarget);
-        setSuccess(`${measurementType} measurement completed. Accuracy: ${accuracy.toFixed(1)}%`);
+      // Move to the next step if we are in the measurement steps (2, 3, 4)
+      if (activeStep >= 2 && activeStep <= 4) {
+        setActiveStep(activeStep + 1);
+        
+        // Update the measurement type for the next step
+        if (activeStep === 2) { // After REUR, go to REOR
+          setMeasurementType('REOR');
+        } else if (activeStep === 3) { // After REOR, go to REAR
+          setMeasurementType('REAR');
+        } else if (activeStep === 4) { // After REAR, go to REIG
+          setMeasurementType('REIG');
+        }
       }
-      
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unknown error occurred');
+      setError(err instanceof Error ? err.message : 'An unknown error occurred during measurement');
     } finally {
       setIsLoading(false);
     }
@@ -433,6 +448,22 @@ const RealEarMeasurementPage: React.FC = () => {
     initializeAdjustableREAR();
     setMatchAccuracy(null);
     setAdjustmentFeedback(null);
+  };
+  
+  // Set vent type in the service
+  useEffect(() => {
+    if (remService && session && measurementType === 'REOR') {
+      // Only update if ventType is different to avoid infinite loop
+      if (session.ventType !== selectedVentType) {
+        const updatedSession = { ...session, ventType: selectedVentType };
+        setSession(updatedSession);
+      }
+    }
+  }, [selectedVentType, remService, session, measurementType]);
+  
+  // Handle vent type change
+  const handleVentTypeChange = (event: SelectChangeEvent) => {
+    setSelectedVentType(event.target.value as VentType);
   };
   
   // Render different steps based on activeStep
@@ -638,16 +669,54 @@ const RealEarMeasurementPage: React.FC = () => {
                   </Typography>
                   <Box sx={{ p: 2, bgcolor: 'background.paper', borderRadius: 1 }}>
                     {measurementType === 'REUR' && (
-                      <Typography variant="body2">
-                        Real Ear Unaided Response measures the natural resonance of the ear canal without a hearing aid. 
-                        This is an important baseline measurement.
-                      </Typography>
+                      <>
+                        <Typography variant="body2" sx={{ mb: 2 }}>
+                          Real Ear Unaided Response measures the natural resonance of the ear canal without a hearing aid. 
+                          This is an important baseline measurement.
+                        </Typography>
+                        <Alert severity="info" sx={{ mb: 1 }}>
+                          <Typography variant="body2">
+                            <strong>Tips for proper REUR response:</strong>
+                          </Typography>
+                          <Typography variant="body2" component="div">
+                            <ul>
+                              <li>The resonance peak should be around 2.7kHz-3kHz</li>
+                              <li>The 6kHz response should not drop below 0 dB</li>
+                              <li>Typical gain at peak should be around 10-15 dB</li>
+                              <li>The response should be smooth without sharp peaks or valleys</li>
+                            </ul>
+                          </Typography>
+                        </Alert>
+                      </>
                     )}
                     {measurementType === 'REOR' && (
-                      <Typography variant="body2">
-                        Real Ear Occluded Response measures the response with the hearing aid in place but turned off. 
-                        This shows the impact of blocking the ear canal.
-                      </Typography>
+                      <>
+                        <Typography variant="body2" sx={{ mb: 2 }}>
+                          Real Ear Occluded Response measures the response with the hearing aid in place but turned off. 
+                          This shows the impact of blocking the ear canal.
+                        </Typography>
+                        <FormControl fullWidth sx={{ mb: 2 }}>
+                          <InputLabel>Dome/Earmold Vent Type</InputLabel>
+                          <Select
+                            value={selectedVentType}
+                            onChange={handleVentTypeChange}
+                            label="Dome/Earmold Vent Type"
+                          >
+                            <MenuItem value={VentType.OCCLUDED}>Occluded (No Vent)</MenuItem>
+                            <MenuItem value={VentType.SMALL_VENT}>Small Vent</MenuItem>
+                            <MenuItem value={VentType.MEDIUM_VENT}>Medium Vent</MenuItem>
+                            <MenuItem value={VentType.LARGE_VENT}>Large Vent</MenuItem>
+                            <MenuItem value={VentType.OPEN_DOME}>Open Dome</MenuItem>
+                          </Select>
+                        </FormControl>
+                        <Alert severity="info">
+                          <Typography variant="body2">
+                            Vent size affects the sound pressure at the ear drum. More open fittings (larger vents) will 
+                            result in a response closer to REUR, while more closed fittings will show greater occlusion 
+                            effect at low frequencies and more high-frequency attenuation.
+                          </Typography>
+                        </Alert>
+                      </>
                     )}
                     {measurementType === 'REAR' && (
                       <Typography variant="body2">
@@ -791,7 +860,7 @@ const RealEarMeasurementPage: React.FC = () => {
               </Typography>
               
               <Alert severity="info" sx={{ mb: 2 }}>
-                You should adjust the REAR response to match the REIG target (dotted line). This represents the ideal insertion gain needed to achieve the prescribed amplification for the patient.
+                You should adjust the REAR response to match the REAR target (dotted line). This represents the ideal response needed to achieve the prescribed amplification for the patient.
               </Alert>
               
               <Box sx={{ mt: 3, width: '100%', overflowX: 'auto' }}>
