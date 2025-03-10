@@ -42,7 +42,8 @@ import {
   Brightness4 as DarkModeIcon,
   Brightness7 as LightModeIcon,
   KeyboardArrowDown,
-  HearingDisabled
+  HearingDisabled,
+  ZoomIn
 } from '@mui/icons-material';
 
 // Import pages
@@ -53,6 +54,7 @@ import FollowUpPage from './pages/FollowUpPage';
 import TroubleshootingGuidePage from './pages/TroubleshootingGuidePage';
 import RealEarMeasurementPage from './pages/RealEarMeasurementPage';
 import EarAnatomyPage from './pages/EarAnatomyPage';
+import OtoscopyPage from './pages/OtoscopyPage';
 // import SettingsPage from './pages/SettingsPage';
 
 // Import logo for splash screen
@@ -243,6 +245,7 @@ function App() {
     { text: 'Home', icon: <HomeIcon />, path: '/' },
     { text: 'Tutorial', icon: <SchoolIcon />, path: '/tutorial' },
     { text: 'Ear Anatomy', icon: <HearingIcon />, path: '/ear-anatomy' },
+    { text: 'Otoscopy', icon: <ZoomIn />, path: '/otoscopy' },
     { text: 'Patients', icon: <PersonIcon />, path: '/patients' },
     { text: 'Follow-Up', icon: <HearingDisabled />, path: '/followup' },
     { text: 'Troubleshooting', icon: <HelpIcon />, path: '/troubleshooting' },
@@ -478,6 +481,7 @@ function App() {
               <Route path="/troubleshooting" element={<TroubleshootingGuidePage />} />
               <Route path="/real-ear-measurement" element={<RealEarMeasurementPage />} />
               <Route path="/ear-anatomy" element={<EarAnatomyPage />} />
+              <Route path="/otoscopy" element={<OtoscopyPage />} />
               {/* <Route path="/settings" element={<SettingsPage />} /> */}
             </Routes>
           </Box>
