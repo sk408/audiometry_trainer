@@ -355,6 +355,69 @@ const FollowUpPage: React.FC = () => {
                 </Typography>
               </Paper>
               
+              <Paper variant="outlined" sx={{ p: 2, mb: 3, mt: 3, bgcolor: 'warning.light', color: 'warning.contrastText' }}>
+                <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 'bold' }}>
+                  Input-Level Gain Adjustment Guidelines
+                </Typography>
+                <Typography variant="body2" paragraph>
+                  Most modern hearing aids allow adjustment of gain separately for different input levels:
+                </Typography>
+                <Typography variant="body2" component="div">
+                  <ul style={{ paddingLeft: '1.5rem', marginTop: '0.5rem', marginBottom: '0.5rem' }}>
+                    <li><strong>Soft Gain (50dB input):</strong> Adjust when patient reports:
+                      <ul>
+                        <li>Cannot hear soft speech or whispers (increase)</li>
+                        <li>Background noises like refrigerator hum too noticeable (reduce)</li>
+                        <li>Difficulty hearing conversation partners at a distance (increase)</li>
+                        <li>Own breathing or swallowing sounds too loud (reduce)</li>
+                      </ul>
+                    </li>
+                    <li><strong>Medium Gain (65dB input):</strong> Adjust when patient reports:
+                      <ul>
+                        <li>Normal conversational speech too soft (increase) or too loud (reduce)</li>
+                        <li>TV volume needs to be set higher than others prefer (increase)</li>
+                        <li>Voices sound unnatural or mechanical (adjust frequency response, not just overall gain)
+                          <ul style={{ fontSize: '0.95em', marginTop: '0.5rem' }}>
+                            <li><em>Robotic/tinny voice</em>: Reduce gain in 2-4kHz range; increase in 500-1000Hz</li>
+                            <li><em>Hollow/echoey voice</em>: Reduce gain in 250-500Hz; increase in 1-2kHz</li>
+                            <li><em>Nasal voice quality</em>: Reduce gain in 1-2kHz range; slight increase in 500Hz and 3kHz</li>
+                            <li><em>Sharp/harsh voice</em>: Reduce gain in 3-6kHz range; smooth transition slopes between bands</li>
+                            <li><em>Muffled voice</em>: Increase gain in 1-4kHz range; ensure 4-6kHz isn't over-amplified</li>
+                            <li><em>Thin/weak voice</em>: Increase gain in 250-750Hz range for more fullness</li>
+                            <li><em>Note</em>: When adjusting for voice quality, make small changes (2-3dB) and check with live voice or recorded speech samples</li>
+                          </ul>
+                        </li>
+                        <li>Reports fatigue from listening at average volumes (consider reducing)</li>
+                      </ul>
+                    </li>
+                    <li><strong>Loud Gain (80dB input):</strong> Adjust when patient reports:
+                      <ul>
+                        <li>Loud sounds cause discomfort or pain (reduce)</li>
+                        <li>Dynamic sounds like music lack richness or seem compressed (increase)</li>
+                        <li>Can't tell difference between medium and loud sounds (adjust compression ratio)</li>
+                        <li>Sounds distorted at high volumes (check MPO settings and reduce if needed)</li>
+                      </ul>
+                    </li>
+                  </ul>
+                </Typography>
+                <Typography variant="body2" sx={{ fontWeight: 'bold', mt: 1 }}>
+                  Common Adjustment Patterns for Specific Complaints:
+                </Typography>
+                <Typography variant="body2" component="div">
+                  <ul style={{ paddingLeft: '1.5rem', marginTop: '0.5rem' }}>
+                    <li><strong>"Everything sounds too loud"</strong> → Decrease gain across all input levels, starting with loud</li>
+                    <li><strong>"I can hear in quiet but not in noise"</strong> → Increase soft gain, verify noise reduction settings</li>
+                    <li><strong>"I jump at sudden sounds"</strong> → Reduce loud gain, check attack time settings</li>
+                    <li><strong>"People sound like they're mumbling"</strong> → Increase gain in mid-frequencies for medium inputs</li>
+                    <li><strong>"My voice echoes/sounds hollow"</strong> → Reduce low frequency gain, especially for soft/medium inputs</li>
+                  </ul>
+                </Typography>
+                <Typography variant="body2" sx={{ mt: 1, fontStyle: 'italic' }}>
+                  Note: When adjusting gain for specific input levels, consider the impact on the overall compression characteristics. 
+                  For example, reducing gain for loud inputs while maintaining gain for soft inputs effectively increases the compression ratio.
+                </Typography>
+              </Paper>
+              
               <Box sx={{ width: '100%', mt: 2 }}>
                 <Typography id="low-freq-slider" gutterBottom>
                   Low Frequencies (250-1000 Hz)
