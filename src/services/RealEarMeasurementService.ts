@@ -419,12 +419,22 @@ class RealEarMeasurementService {
 
   // Calculate accuracy between measurement and target
   public calculateAccuracy(measurement: REMCurve, target: REMTarget): number {
-    if (measurement.type !== target.type || measurement.ear !== target.ear) {
-      return 0; // Incompatible types
+    // Allow REAR measurements to be compared against REIG targets
+    if (measurement.ear !== target.ear) {
+      return 0; // Incompatible ears
     }
     
-    let totalDifference = 0;
-    let pointCount = 0;
+    // If types don't match, only allow the REAR vs REIG comparison
+    if (measurement.type !== target.type) {
+      // Only allow REAR measurements to be compared against REIG targets
+      if (!(measurement.type === 'REAR' && target.type === 'REIG')) {
+        return 0; // Other incompatible types
+      }
+      // If we're comparing REAR to REIG, we can continue
+    }
+    
+    let totalWeightedScore = 0;
+    let totalWeight = 0;
     
     // For each measurement point, find the corresponding target point
     measurement.measurementPoints.forEach(measPoint => {
@@ -433,19 +443,47 @@ class RealEarMeasurementService {
       if (targetPoint) {
         // Calculate absolute difference
         const difference = Math.abs(measPoint.gain - targetPoint.gain);
-        totalDifference += difference;
-        pointCount++;
+        
+        // Define frequency bands and their clinical tolerances and weights
+        let tolerance: number;
+        let weight: number;
+        
+        // Speech frequencies (1000-4000 Hz) have tighter tolerances and higher weights
+        if (measPoint.frequency >= 1000 && measPoint.frequency <= 4000) {
+          tolerance = 3; // ±3 dB for speech frequencies
+          weight = 3;    // Higher weight for speech range
+        } 
+        // Low frequencies (125-750 Hz)
+        else if (measPoint.frequency < 1000) {
+          tolerance = 5; // ±5 dB for low frequencies
+          weight = 2;    // Medium weight
+        } 
+        // High frequencies (6000-8000 Hz)
+        else {
+          tolerance = 8; // ±8 dB for high frequencies
+          weight = 1;    // Lower weight
+        }
+        
+        // Calculate score for this frequency (100% if within tolerance, decreasing otherwise)
+        let pointScore: number;
+        if (difference <= tolerance) {
+          pointScore = 100; // Full score if within tolerance
+        } else {
+          // Gradually decrease score as difference increases beyond tolerance
+          // Score decreases to 0 when difference is 3x the tolerance
+          pointScore = Math.max(0, 100 - ((difference - tolerance) / (tolerance * 2) * 100));
+        }
+        
+        // Add weighted score
+        totalWeightedScore += pointScore * weight;
+        totalWeight += weight;
       }
     });
     
-    if (pointCount === 0) return 0;
+    if (totalWeight === 0) return 0;
     
-    // Calculate average difference
-    const avgDifference = totalDifference / pointCount;
-    
-    // Convert to a percentage score (lower difference = higher score)
-    // A difference of 0dB = 100%, a difference of 10dB or more = 0%
-    const accuracy = Math.max(0, 100 - (avgDifference * 10));
+    // Calculate weighted average score
+    const accuracy = totalWeightedScore / totalWeight;
     
     // Update session accuracy
     if (this.currentSession) {

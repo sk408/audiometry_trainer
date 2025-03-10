@@ -55,6 +55,45 @@ const SAMPLE_PATIENTS = [
   { id: 'p3', name: 'Robert Davis', age: 52, hearingLoss: 'Moderate conductive' },
 ];
 
+// Measurement legend component for consistency
+const MeasurementLegend: React.FC<{ measurements: REMCurve[] }> = ({ measurements }) => (
+  <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column' }}>
+    <Typography variant="subtitle1" gutterBottom>Completed Measurements:</Typography>
+    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+      {measurements.map((measurement) => (
+        <Box 
+          key={measurement.type} 
+          sx={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            bgcolor: 'background.paper',
+            p: 1,
+            borderRadius: 1,
+            border: '1px solid',
+            borderColor: 'divider'
+          }}
+        >
+          <Box 
+            sx={{ 
+              width: 16, 
+              height: 16, 
+              bgcolor: measurement.type === 'REUR' ? '#2196F3' : 
+                       measurement.type === 'REOR' ? '#FF9800' : 
+                       measurement.type === 'REAR' ? '#4CAF50' : 
+                       measurement.type === 'REIG' ? '#9C27B0' :
+                       measurement.type === 'RECD' ? '#F44336' : 
+                       '#795548',
+              mr: 1,
+              borderRadius: '50%'
+            }} 
+          />
+          <Typography variant="body2">{measurement.type}</Typography>
+        </Box>
+      ))}
+    </Box>
+  </Box>
+);
+
 /**
  * RealEarMeasurementPage - Interactive page for practicing real ear measurements
  */
@@ -80,10 +119,16 @@ const RealEarMeasurementPage: React.FC = () => {
   const [signalType, setSignalType] = useState<REMSignalType>('pure_tone_sweep');
   const [inputLevel, setInputLevel] = useState<REMLevel>(65);
   const [currentMeasurement, setCurrentMeasurement] = useState<REMCurve | null>(null);
+  const [allMeasurements, setAllMeasurements] = useState<REMCurve[]>([]);
   const [currentTarget, setCurrentTarget] = useState<REMTarget | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [measurementType, setMeasurementType] = useState<REMType>('REUR');
   const [prescriptionMethod, setPrescriptionMethod] = useState<'NAL-NL2' | 'DSL' | 'NAL-NL1' | 'custom'>('NAL-NL2');
+  
+  // New state for adjustable REAR
+  const [adjustedREAR, setAdjustedREAR] = useState<REMCurve | null>(null);
+  const [matchAccuracy, setMatchAccuracy] = useState<number | null>(null);
+  const [adjustmentFeedback, setAdjustmentFeedback] = useState<string | null>(null);
   
   // Steps for the REM procedure
   const remSteps = [
@@ -94,23 +139,29 @@ const RealEarMeasurementPage: React.FC = () => {
     'REAR Measurement',
     'REIG Calculation',
     'Compare to Target',
-    'Adjustments'
+    'Adjust Frequency Response'
   ];
   
   // Initialize services
   useEffect(() => {
-    const remServiceInstance = new RealEarMeasurementService();
-    setRemService(remServiceInstance);
+    const service = new RealEarMeasurementService();
+    setRemService(service);
     
     // Get available hearing aids
-    setHearingAids(remServiceInstance.getHearingAids());
-    
+    setHearingAids(service.getHearingAids());
+
     return () => {
-      if (remServiceInstance) {
-        remServiceInstance.dispose();
-      }
+      service.dispose();
     };
   }, []);
+  
+  // Initialize adjustable REAR when on adjustment step
+  useEffect(() => {
+    if (activeStep === 7 && !adjustedREAR) {
+      initializeAdjustableREAR();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeStep, adjustedREAR]);
   
   // Initialize a new session
   const startNewSession = () => {
@@ -172,6 +223,15 @@ const RealEarMeasurementPage: React.FC = () => {
       );
       
       setCurrentMeasurement(measurement);
+      
+      // Update allMeasurements array, replacing any existing measurement of the same type
+      setAllMeasurements(prevMeasurements => {
+        // Filter out any existing measurement of the same type
+        const filteredMeasurements = prevMeasurements.filter(m => m.type !== measurement.type);
+        // Add the new measurement
+        return [...filteredMeasurements, measurement];
+      });
+      
       setSuccess(`${measurementType} measurement completed successfully`);
       
       // If we have a target, calculate accuracy
@@ -238,6 +298,11 @@ const RealEarMeasurementPage: React.FC = () => {
         setMeasurementType('REAR');
       } else if (newStep === 5) {
         setMeasurementType('REIG');
+      } else if (newStep === 7) {
+        // Initialize adjustable REAR when reaching the adjustment step
+        setMatchAccuracy(null);
+        setAdjustmentFeedback(null);
+        initializeAdjustableREAR();
       }
       
       return newStep;
@@ -280,6 +345,94 @@ const RealEarMeasurementPage: React.FC = () => {
   
   const handlePrescriptionMethodChange = (event: SelectChangeEvent) => {
     setPrescriptionMethod(event.target.value as 'NAL-NL2' | 'DSL' | 'NAL-NL1' | 'custom');
+  };
+  
+  // Create a copy of the REAR measurement for adjustments
+  const initializeAdjustableREAR = () => {
+    if (allMeasurements.length > 0) {
+      // Find the REAR measurement
+      const rearMeasurement = allMeasurements.find(m => m.type === 'REAR');
+      if (rearMeasurement) {
+        // Create a copy for adjustments
+        const adjustable: REMCurve = {
+          ...rearMeasurement,
+          type: 'REAR', // ensure it's REAR type
+          timestamp: new Date().toISOString(),
+          // Make a copy of measurement points to avoid modifying the original
+          measurementPoints: [...rearMeasurement.measurementPoints.map(p => ({...p}))]
+        };
+        setAdjustedREAR(adjustable);
+        return adjustable;
+      }
+    }
+    return null;
+  };
+  
+  // Adjust gain at a specific frequency
+  const adjustGainAtFrequency = (frequency: REMFrequency, adjustment: number) => {
+    if (!adjustedREAR) {
+      const initialized = initializeAdjustableREAR();
+      if (!initialized) return;
+    }
+    
+    setAdjustedREAR(prevAdjusted => {
+      if (!prevAdjusted) return null;
+      
+      // Create a new adjusted measurement
+      const newAdjusted: REMCurve = {
+        ...prevAdjusted,
+        measurementPoints: prevAdjusted.measurementPoints.map(point => {
+          if (point.frequency === frequency) {
+            return {
+              ...point,
+              gain: Math.max(0, Math.min(80, point.gain + adjustment)) // Clamp between 0-80 dB
+            };
+          }
+          return point;
+        }),
+        timestamp: new Date().toISOString()
+      };
+      
+      return newAdjusted;
+    });
+  };
+  
+  // Check if adjustments match the target
+  const checkTargetMatch = () => {
+    if (remService && adjustedREAR && session) {
+      // Look for REIG target specifically, which is most commonly used for matching
+      let targetToCompare = currentTarget;
+      
+      // If available, use the REIG target from session
+      const reigTarget = session.targets.find(t => t.type === 'REIG');
+      if (reigTarget) {
+        targetToCompare = reigTarget;
+      }
+      
+      if (targetToCompare) {
+        const accuracy = remService.calculateAccuracy(adjustedREAR, targetToCompare);
+        setMatchAccuracy(accuracy);
+        
+        // Provide feedback based on accuracy
+        if (accuracy >= 90) {
+          setAdjustmentFeedback("Excellent match! The adjustments are within clinical standards.");
+          setSuccess("Target match successful!");
+        } else if (accuracy >= 80) {
+          setAdjustmentFeedback("Good match, but some frequencies could be adjusted further for optimal results.");
+        } else if (accuracy >= 70) {
+          setAdjustmentFeedback("Acceptable match, but consider further adjustments, especially in the speech frequencies (1000-4000 Hz).");
+        } else {
+          setAdjustmentFeedback("Poor match to target. Significant adjustments are needed across multiple frequencies.");
+        }
+      }
+    }
+  };
+  
+  // Reset adjustments
+  const resetAdjustments = () => {
+    initializeAdjustableREAR();
+    setMatchAccuracy(null);
+    setAdjustmentFeedback(null);
   };
   
   // Render different steps based on activeStep
@@ -511,12 +664,14 @@ const RealEarMeasurementPage: React.FC = () => {
               <Typography variant="h6" gutterBottom>Measurement Results</Typography>
               <Box sx={{ width: '100%', overflowX: 'auto' }}>
                 <REMChart 
-                  measurement={currentMeasurement} 
+                  measurements={allMeasurements.length > 0 ? allMeasurements : null}
                   target={currentTarget}
                   height={300}
                   width={window.innerWidth < 600 ? window.innerWidth - 50 : 700}
                 />
               </Box>
+              
+              {allMeasurements.length > 0 && <MeasurementLegend measurements={allMeasurements} />}
             </Paper>
           </Box>
         );
@@ -543,7 +698,7 @@ const RealEarMeasurementPage: React.FC = () => {
               
               <Box sx={{ mt: 3, width: '100%', overflowX: 'auto' }}>
                 <REMChart 
-                  measurement={currentMeasurement} 
+                  measurements={allMeasurements.length > 0 ? allMeasurements : null}
                   target={currentTarget}
                   height={300}
                   width={window.innerWidth < 600 ? window.innerWidth - 50 : 700}
@@ -607,47 +762,167 @@ const RealEarMeasurementPage: React.FC = () => {
               
               <Box sx={{ mt: 3, width: '100%', overflowX: 'auto' }}>
                 <REMChart 
-                  measurement={currentMeasurement} 
+                  measurements={allMeasurements.length > 0 ? allMeasurements : null}
                   target={currentTarget}
                   height={300}
                   width={window.innerWidth < 600 ? window.innerWidth - 50 : 700}
                 />
               </Box>
+              
+              {allMeasurements.length > 0 && <MeasurementLegend measurements={allMeasurements} />}
             </Paper>
           </Box>
         );
       
-      case 7: // Adjustments
+      case 7: // Adjust Frequency Response
+        // Get the frequencies array for controls
+        const frequencies: REMFrequency[] = [125, 250, 500, 750, 1000, 1500, 2000, 3000, 4000, 6000, 8000];
+        
+        // Find REIG target if available
+        const reigTarget = session?.targets.find(t => t.type === 'REIG') || null;
+        
         return (
           <Box>
-            <Typography variant="h6">Adjustments</Typography>
+            <Typography variant="h6">Adjust Frequency Response</Typography>
             <Paper sx={{ p: { xs: 2, sm: 3 }, mt: 2 }}>
               <Typography gutterBottom>
-                Based on the comparison between measured values and targets, 
-                adjustments would typically be made to the hearing aid settings.
+                Adjust the REAR response to match the target by using the up and down buttons for each frequency.
+                These adjustments simulate the process of fine-tuning a hearing aid's frequency response.
               </Typography>
               
-              <Alert severity="info" sx={{ mt: 2 }}>
-                In a real clinical setting, you would now adjust the hearing aid parameters
-                to better match the prescriptive targets. For this simulation, we'll consider
-                the process complete.
+              <Alert severity="info" sx={{ mb: 2 }}>
+                You should adjust the REAR response to match the REIG target (dotted line). This represents the ideal insertion gain needed to achieve the prescribed amplification for the patient.
               </Alert>
               
-              <Button
-                variant="contained"
-                color="success"
-                sx={{ mt: 3 }}
-                onClick={() => {
-                  setSuccess("REM procedure completed successfully!");
-                  if (session) {
-                    // Mark session as completed
-                    const updatedSession = {...session, completed: true};
-                    setSession(updatedSession);
+              <Box sx={{ mt: 3, width: '100%', overflowX: 'auto' }}>
+                <REMChart 
+                  measurements={
+                    adjustedREAR 
+                      ? [...allMeasurements.filter(m => m.type !== 'REAR'), adjustedREAR] 
+                      : allMeasurements
                   }
+                  target={reigTarget || currentTarget}
+                  height={300}
+                  width={window.innerWidth < 600 ? window.innerWidth - 50 : 700}
+                />
+              </Box>
+              
+              <Typography variant="subtitle1" sx={{ mt: 3, mb: 2 }}>
+                Adjust Gain at Each Frequency (dB)
+              </Typography>
+              
+              <Box 
+                sx={{ 
+                  display: 'grid', 
+                  gridTemplateColumns: { xs: 'repeat(3, 1fr)', sm: 'repeat(4, 1fr)', md: 'repeat(6, 1fr)', lg: 'repeat(11, 1fr)' }, 
+                  gap: 2,
+                  mb: 3
                 }}
               >
-                Complete REM Procedure
-              </Button>
+                {frequencies.map((freq) => {
+                  const currentGain = adjustedREAR?.measurementPoints.find(p => p.frequency === freq)?.gain || 0;
+                  
+                  return (
+                    <Box key={freq} sx={{ textAlign: 'center' }}>
+                      <Typography variant="body2" fontWeight="bold">
+                        {freq} Hz
+                      </Typography>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                        <IconButton 
+                          size="small" 
+                          color="primary"
+                          onClick={() => adjustGainAtFrequency(freq, 1)}
+                        >
+                          <Box sx={{ fontSize: '1.5rem' }}>↑</Box>
+                        </IconButton>
+                        
+                        <Typography variant="body1" fontWeight="bold">
+                          {currentGain.toFixed(1)}
+                        </Typography>
+                        
+                        <IconButton 
+                          size="small" 
+                          color="primary"
+                          onClick={() => adjustGainAtFrequency(freq, -1)}
+                        >
+                          <Box sx={{ fontSize: '1.5rem' }}>↓</Box>
+                        </IconButton>
+                      </Box>
+                    </Box>
+                  );
+                })}
+              </Box>
+              
+              <Box sx={{ display: 'flex', gap: 2, mt: 3, flexWrap: 'wrap' }}>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={checkTargetMatch}
+                  disabled={!adjustedREAR}
+                >
+                  Check Target Match
+                </Button>
+                
+                <Button
+                  variant="outlined"
+                  onClick={resetAdjustments}
+                  disabled={!adjustedREAR}
+                >
+                  Reset Adjustments
+                </Button>
+                
+                {matchAccuracy !== null && (
+                  <Button
+                    variant="contained"
+                    color="success"
+                    onClick={() => {
+                      setSuccess("REM procedure completed successfully!");
+                      if (session) {
+                        // Save adjusted REAR to session and mark as completed
+                        const updatedMeasurements = [...allMeasurements.filter(m => m.type !== 'REAR')];
+                        if (adjustedREAR) {
+                          updatedMeasurements.push(adjustedREAR);
+                          setAllMeasurements(updatedMeasurements);
+                        }
+                        
+                        const updatedSession = {
+                          ...session, 
+                          completed: true,
+                          measurements: updatedMeasurements,
+                          accuracy: matchAccuracy || 0
+                        };
+                        setSession(updatedSession);
+                      }
+                    }}
+                  >
+                    Complete REM Procedure
+                  </Button>
+                )}
+              </Box>
+              
+              {adjustmentFeedback && (
+                <Alert 
+                  severity={matchAccuracy && matchAccuracy >= 80 ? "success" : matchAccuracy && matchAccuracy >= 70 ? "info" : "warning"} 
+                  sx={{ mt: 3 }}
+                >
+                  {adjustmentFeedback}
+                  {matchAccuracy !== null && (
+                    <Typography variant="body2" sx={{ mt: 1 }}>
+                      Accuracy score: {matchAccuracy.toFixed(1)}%
+                    </Typography>
+                  )}
+                </Alert>
+              )}
+              
+              <Alert severity="info" sx={{ mt: 3 }}>
+                <Typography variant="subtitle2">Clinical best practices for target matching:</Typography>
+                <ul>
+                  <li>Speech frequencies (1000-4000 Hz) should be within ±3 dB of target</li>
+                  <li>Low frequencies (125-750 Hz) should be within ±5 dB of target</li>
+                  <li>High frequencies (6000-8000 Hz) should be within ±8 dB of target</li>
+                  <li>Overall RMS difference should be less than 5 dB for an optimal fit</li>
+                </ul>
+              </Alert>
             </Paper>
           </Box>
         );

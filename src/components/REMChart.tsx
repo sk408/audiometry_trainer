@@ -28,7 +28,8 @@ ChartJS.register(
 );
 
 interface REMChartProps {
-  measurement?: REMCurve | null;
+  measurements?: REMCurve[] | null;
+  measurement?: REMCurve | null; // Keep for backward compatibility
   target?: REMTarget | null;
   title?: string;
   showLegend?: boolean;
@@ -36,11 +37,22 @@ interface REMChartProps {
   width?: number;
 }
 
+// Define colors for different measurement types
+const MEASUREMENT_COLORS = {
+  'REUR': '#2196F3', // Blue
+  'REOR': '#FF9800', // Orange
+  'REAR': '#4CAF50', // Green
+  'REIG': '#9C27B0', // Purple
+  'RECD': '#F44336', // Red
+  'RESR': '#795548'  // Brown
+};
+
 /**
  * REMChart - Component for displaying Real Ear Measurement data
  */
 const REMChart: React.FC<REMChartProps> = ({
-  measurement,
+  measurements = null,
+  measurement = null, // For backward compatibility
   target,
   title = 'Real Ear Measurement',
   showLegend = true,
@@ -49,23 +61,41 @@ const REMChart: React.FC<REMChartProps> = ({
 }) => {
   const theme = useTheme();
   
-  // Generate chart data based on measurement and target
+  // Generate chart data based on measurements and target
   const getChartData = () => {
     const labels = ['125', '250', '500', '750', '1000', '1500', '2000', '3000', '4000', '6000', '8000'];
     
     const datasets = [];
     
-    // Add measurement data if available
+    // Add individual measurement if provided (backward compatibility)
     if (measurement && measurement.measurementPoints.length > 0) {
       datasets.push({
         label: `${measurement.type} Measurement`,
         data: measurement.measurementPoints.map(point => point.gain),
-        borderColor: theme.palette.primary.main,
+        borderColor: MEASUREMENT_COLORS[measurement.type] || theme.palette.primary.main,
         backgroundColor: 'rgba(0, 0, 0, 0)',
         borderWidth: 2,
         pointRadius: 4,
-        pointBackgroundColor: theme.palette.primary.main,
+        pointBackgroundColor: MEASUREMENT_COLORS[measurement.type] || theme.palette.primary.main,
         tension: 0.3
+      });
+    }
+    
+    // Add multiple measurements if provided
+    if (measurements && measurements.length > 0) {
+      measurements.forEach(meas => {
+        if (meas && meas.measurementPoints.length > 0) {
+          datasets.push({
+            label: `${meas.type} Measurement`,
+            data: meas.measurementPoints.map(point => point.gain),
+            borderColor: MEASUREMENT_COLORS[meas.type] || theme.palette.primary.main,
+            backgroundColor: 'rgba(0, 0, 0, 0)',
+            borderWidth: 2,
+            pointRadius: 4,
+            pointBackgroundColor: MEASUREMENT_COLORS[meas.type] || theme.palette.primary.main,
+            tension: 0.3
+          });
+        }
       });
     }
     
@@ -134,7 +164,7 @@ const REMChart: React.FC<REMChartProps> = ({
   
   return (
     <Box sx={{ height: height, width: width, maxWidth: '100%' }}>
-      {(!measurement && !target) ? (
+      {(!measurement && !measurements?.length && !target) ? (
         <Typography variant="body1" align="center" sx={{ mt: 8 }}>
           No measurement data available. Complete a measurement to see results.
         </Typography>
