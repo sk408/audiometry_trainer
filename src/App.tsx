@@ -26,7 +26,9 @@ import {
   FormLabel,
   FormGroup,
   FormControlLabel,
-  Checkbox
+  Checkbox,
+  Paper,
+  GlobalStyles
 } from '@mui/material';
 import {
   Menu as MenuIcon,
@@ -189,6 +191,16 @@ function App() {
               },
             },
           },
+          MuiLink: {
+            styleOverrides: {
+              root: {
+                color: 'inherit',
+                '&:visited': {
+                  color: 'inherit',
+                },
+              },
+            },
+          },
         },
       }),
     [darkMode, highContrastMode, fontSize]
@@ -252,7 +264,20 @@ function App() {
       <Divider />
       <List>
         {menuItems.map((item) => (
-          <ListItem key={item.text} component={Link} to={item.path}>
+          <ListItem 
+            key={item.text} 
+            component={Link} 
+            to={item.path}
+            sx={{ 
+              color: 'text.primary',
+              '&:visited': { 
+                color: 'text.primary' 
+              },
+              '&:hover': {
+                backgroundColor: 'action.hover'
+              }
+            }}
+          >
             <ListItemIcon>{item.icon}</ListItemIcon>
             <ListItemText primary={item.text} />
           </ListItem>
@@ -345,6 +370,17 @@ function App() {
   return (
     <ThemeProvider theme={appTheme}>
       <CssBaseline />
+      <GlobalStyles
+        styles={{
+          'a': {
+            color: 'inherit',
+            textDecoration: 'none',
+          },
+          'a:visited': {
+            color: 'inherit',
+          },
+        }}
+      />
       <Router>
         <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
           <AppBar position="static">
@@ -461,19 +497,19 @@ function App() {
               </Typography>
               <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 1 }}>
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: { xs: 1, sm: 2 } }}>
-                  <Link to="/tutorial" style={{ color: 'inherit' }}>
+                  <Link to="/tutorial" style={{ color: 'inherit', textDecoration: 'none' }}>
                     Tutorial
                   </Link>
-                  <Link to="/patients" style={{ color: 'inherit' }}>
+                  <Link to="/patients" style={{ color: 'inherit', textDecoration: 'none' }}>
                     Practice
                   </Link>
-                  <Link to="/followup" style={{ color: 'inherit' }}>
+                  <Link to="/followup" style={{ color: 'inherit', textDecoration: 'none' }}>
                     Follow-Up
                   </Link>
-                  <Link to="/troubleshooting" style={{ color: 'inherit' }}>
+                  <Link to="/troubleshooting" style={{ color: 'inherit', textDecoration: 'none' }}>
                     Troubleshooting
                   </Link>
-                  {/* <Link to="/settings" style={{ color: 'inherit' }}>
+                  {/* <Link to="/settings" style={{ color: 'inherit', textDecoration: 'none' }}>
                     Settings
                   </Link> */}
                 </Box>
