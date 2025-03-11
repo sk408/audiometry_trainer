@@ -717,7 +717,6 @@ const OtoscopyPage: React.FC = () => {
                     <Button
                       variant="contained"
                       onClick={handleNext}
-                      disabled={index === steps.length - 1}
                       endIcon={<NavigateNext />}
                     >
                       {index === steps.length - 1 ? 'Finish' : 'Continue'}

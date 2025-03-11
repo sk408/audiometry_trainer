@@ -620,7 +620,7 @@ const RealEarMeasurementPage: React.FC = () => {
                       <MenuItem value="speech_noise">Speech Noise</MenuItem>
                       <MenuItem value="pink_noise">Pink Noise</MenuItem>
                       <MenuItem value="white_noise">White Noise</MenuItem>
-                      <MenuItem value="ICRA_noise">ICRA Noise</MenuItem>
+                      <MenuItem value="ISTS_noise">ISTS Noise</MenuItem>
                     </Select>
                   </FormControl>
                   
@@ -1809,7 +1809,6 @@ const RealEarMeasurementPage: React.FC = () => {
                 disabled={
                   (activeStep === 0 && !session) ||
                   (activeStep === 1 && probePosition !== ProbePosition.CORRECT) ||
-                  (activeStep === remSteps.length - 1) ||
                   isLoading
                 }
               >

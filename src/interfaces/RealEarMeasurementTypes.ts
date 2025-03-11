@@ -9,7 +9,7 @@ export type REMType = 'REUR' | 'REOR' | 'RECD' | 'REAR' | 'REIG' | 'RESR';
 export type REMFrequency = 125 | 250 | 500 | 750 | 1000 | 1500 | 2000 | 3000 | 4000 | 6000 | 8000;
 
 // Input signal types for REM
-export type REMSignalType = 'pure_tone_sweep' | 'speech_noise' | 'pink_noise' | 'white_noise' | 'ICRA_noise';
+export type REMSignalType = 'pure_tone_sweep' | 'speech_noise' | 'pink_noise' | 'white_noise' | 'ISTS_noise';
 
 // Signal levels for REM
 export type REMLevel = 50 | 55 | 60 | 65 | 70 | 75 | 80 | 85 | 90;

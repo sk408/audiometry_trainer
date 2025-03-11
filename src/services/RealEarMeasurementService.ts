@@ -573,7 +573,7 @@ class RealEarMeasurementService {
         case 'speech_noise':
         case 'pink_noise':
         case 'white_noise':
-        case 'ICRA_noise':
+        case 'ISTS_noise':
           // For simplicity, we'll use white noise for all noise types
           // In a real implementation, these would be different noise types
           this.oscillator.disconnect();

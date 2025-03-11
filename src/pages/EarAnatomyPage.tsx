@@ -23,7 +23,12 @@ import {
   AccordionDetails,
   useTheme,
   alpha,
-  Stack
+  Stack,
+  Drawer,
+  Fab,
+  IconButton,
+  InputBase,
+  Tooltip
 } from '@mui/material';
 import {
   Hearing,
@@ -31,8 +36,14 @@ import {
   KeyboardArrowDown,
   VolumeUp,
   Waves,
-  BrokenImage
+  BrokenImage,
+  MenuBook,
+  Search,
+  Close,
+  ArrowBack,
+  ThreeDRotation
 } from '@mui/icons-material';
+import EarModel3D from '../components/EarModel3D';
 
 // Placeholder for actual images
 const outerEarImg = "https://placeholder.com/ear-outer";
@@ -45,6 +56,38 @@ const EarAnatomyPage: React.FC = () => {
   const theme = useTheme();
   const [activeStep, setActiveStep] = useState(0);
   const [expanded, setExpanded] = useState<string | false>(false);
+  
+  // Glossary state
+  const [glossaryOpen, setGlossaryOpen] = useState(false);
+  const [glossarySearchTerm, setGlossarySearchTerm] = useState('');
+
+  // Knowledge Check state
+  const [selectedAnswers, setSelectedAnswers] = useState<Record<string, string | null>>({
+    'question1': null,
+    'question2': null,
+    'question3': null
+  });
+  const [showAnswers, setShowAnswers] = useState<Record<string, boolean>>({
+    'question1': false,
+    'question2': false,
+    'question3': false
+  });
+
+  // Handle answer selection
+  const handleAnswerSelect = (questionId: string, answer: string) => {
+    setSelectedAnswers(prev => ({
+      ...prev,
+      [questionId]: answer
+    }));
+  };
+
+  // Handle revealing answer
+  const handleRevealAnswer = (questionId: string) => {
+    setShowAnswers(prev => ({
+      ...prev,
+      [questionId]: true
+    }));
+  };
 
   const handleNext = () => {
     setActiveStep((prevActiveStep) => prevActiveStep + 1);
@@ -61,6 +104,116 @@ const EarAnatomyPage: React.FC = () => {
   const handleAccordionChange = (panel: string) => (event: React.SyntheticEvent, isExpanded: boolean) => {
     setExpanded(isExpanded ? panel : false);
   };
+
+  // Toggle glossary drawer
+  const toggleGlossary = () => {
+    setGlossaryOpen(!glossaryOpen);
+  };
+
+  // Filter glossary terms based on search
+  const handleGlossarySearch = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setGlossarySearchTerm(event.target.value.toLowerCase());
+  };
+
+  // Glossary terms data
+  const glossaryTerms = [
+    {
+      term: 'Auricle (Pinna)',
+      definition: 'The visible part of the outer ear that collects sound waves and directs them into the ear canal.'
+    },
+    {
+      term: 'Cochlea',
+      definition: 'Snail-shaped structure in the inner ear that contains the sensory organ for hearing. Converts fluid vibrations into electrical signals.'
+    },
+    {
+      term: 'Conductive Hearing Loss',
+      definition: 'Hearing loss that occurs when sound cannot efficiently travel through the outer and middle ear to the inner ear.'
+    },
+    {
+      term: 'Endolymph',
+      definition: 'Fluid found in the scala media of the cochlea and in the vestibular labyrinth. Has a unique high potassium, low sodium composition.'
+    },
+    {
+      term: 'Eustachian Tube',
+      definition: 'A tube that connects the middle ear to the back of the throat, allowing pressure equalization and drainage.'
+    },
+    {
+      term: 'Hair Cells',
+      definition: 'Sensory cells in the cochlea with hair-like projections (stereocilia) that convert mechanical vibrations into electrical signals.'
+    },
+    {
+      term: 'Impedance Matching',
+      definition: 'The process by which the middle ear transforms sound energy in air to fluid vibrations in the inner ear, preventing energy loss.'
+    },
+    {
+      term: 'Incus',
+      definition: 'The middle bone of the three ossicles in the middle ear, shaped like an anvil, connects the malleus to the stapes.'
+    },
+    {
+      term: 'Malleus',
+      definition: 'The first and largest of the three ossicles in the middle ear, shaped like a hammer, attached to the eardrum.'
+    },
+    {
+      term: 'Organ of Corti',
+      definition: 'The sensory epithelium in the cochlea containing hair cells that detect sound vibrations.'
+    },
+    {
+      term: 'Ossicles',
+      definition: 'The three tiny bones in the middle ear (malleus, incus, and stapes) that transmit sound vibrations from the eardrum to the inner ear.'
+    },
+    {
+      term: 'Otitis Media',
+      definition: 'Inflammation of the middle ear, often with fluid accumulation, causing conductive hearing loss.'
+    },
+    {
+      term: 'Otosclerosis',
+      definition: 'Abnormal bone growth in the middle ear, typically fixating the stapes footplate, causing conductive hearing loss.'
+    },
+    {
+      term: 'Oval Window',
+      definition: 'Membrane-covered opening between the middle and inner ear where the stapes footplate attaches.'
+    },
+    {
+      term: 'Perilymph',
+      definition: 'Fluid found in the scala vestibuli and scala tympani of the cochlea. Similar in composition to cerebrospinal fluid.'
+    },
+    {
+      term: 'Round Window',
+      definition: 'A membrane-covered opening between the middle ear and inner ear that allows fluid displacement in the cochlea.'
+    },
+    {
+      term: 'Sensorineural Hearing Loss',
+      definition: 'Hearing loss resulting from damage to the inner ear (cochlea) or to the nerve pathways from the inner ear to the brain.'
+    },
+    {
+      term: 'Semicircular Canals',
+      definition: 'Three loop-shaped structures in the inner ear responsible for detecting rotational movements of the head.'
+    },
+    {
+      term: 'Stapes',
+      definition: 'The third and smallest ossicle in the middle ear, shaped like a stirrup, connects the incus to the oval window.'
+    },
+    {
+      term: 'Tonotopic Organization',
+      definition: 'The spatial arrangement of the cochlea where different frequencies are processed at different locations.'
+    },
+    {
+      term: 'Tympanic Membrane',
+      definition: 'The eardrum; a thin membrane that separates the outer ear from the middle ear and vibrates in response to sound waves.'
+    },
+    {
+      term: 'Vestibular System',
+      definition: 'The sensory system in the inner ear that provides the brain with information about motion, equilibrium, and spatial orientation.'
+    }
+  ];
+
+  // Filter terms based on search
+  const filteredTerms = glossarySearchTerm 
+    ? glossaryTerms.filter(item => 
+        item.term.toLowerCase().includes(glossarySearchTerm) || 
+        item.definition.toLowerCase().includes(glossarySearchTerm)
+      )
+    : glossaryTerms;
 
   // Tutorial steps content for ear anatomy
   const steps = [
@@ -183,6 +336,29 @@ const EarAnatomyPage: React.FC = () => {
             The outer ear plays a crucial role in localizing sound and collecting sound waves. The shape of the pinna helps determine 
             the direction of sounds, particularly those coming from in front or behind.
           </Typography>
+          
+          {/* Pro Tip Box */}
+          <Box sx={{ 
+            p: 2, 
+            mb: 3, 
+            bgcolor: alpha(theme.palette.success.light, 0.1), 
+            border: `1px dashed ${theme.palette.success.main}`,
+            borderRadius: 2 
+          }}>
+            <Typography variant="subtitle1" gutterBottom fontWeight="bold" color="success.dark">
+              Pro Tip: Pinna's Role in Sound Localization
+            </Typography>
+            <Typography variant="body2" paragraph>
+              The unique shape of each person's pinna creates distinctive sound filtering patterns called "head-related transfer functions" (HRTFs). 
+              These patterns help your brain determine if a sound is coming from above, below, front, or back—directions that can't be 
+              distinguished by time or level differences between the ears alone.
+            </Typography>
+            <Typography variant="body2" paragraph>
+              <strong>Clinical Application:</strong> When fitting behind-the-ear hearing aids, preserving the natural acoustics of the 
+              pinna is important for maintaining directional hearing. This is why many hearing aid fittings now use "open" fittings 
+              or place the receiver directly in the ear canal to maintain the natural resonance characteristics of the outer ear.
+            </Typography>
+          </Box>
         </>
       ),
     },
@@ -246,8 +422,7 @@ const EarAnatomyPage: React.FC = () => {
                         Clinical Description:
                       </Typography>
                       <Typography paragraph>
-                        The outermost curved margin of the auricle, extending from the superior attachment 
-                        of the ear to the termination of the cartilage at the lobule.
+                        The outermost curved margin of the ear, running from the top attachment down to the earlobe. Forms the visible rim of the auricle and provides structural support.
                       </Typography>
                     </Grid>
                   </Grid>
@@ -282,8 +457,7 @@ const EarAnatomyPage: React.FC = () => {
                         Clinical Description:
                       </Typography>
                       <Typography paragraph>
-                        A Y-shaped cartilaginous ridge anterior and roughly parallel to the helix, 
-                        separating the concha from the scapha and triangular fossa.
+                        A Y-shaped cartilage ridge located in front of and roughly parallel to the helix. It separates the concha (bowl area) from the scapha and triangular fossa.
                       </Typography>
                     </Grid>
                   </Grid>
@@ -319,9 +493,7 @@ const EarAnatomyPage: React.FC = () => {
                         Clinical Description:
                       </Typography>
                       <Typography paragraph>
-                        A small, rounded cartilaginous projection anterior to the external auditory meatus, 
-                        partially covering the entrance to the ear canal. Critical for behind-the-ear hearing 
-                        aid placement and acoustic coupling.
+                        A small, rounded cartilage projection in front of the ear canal opening that partially covers the entrance. Important for behind-the-ear hearing aid placement and acoustic coupling.
                       </Typography>
                     </Grid>
                   </Grid>
@@ -357,8 +529,7 @@ const EarAnatomyPage: React.FC = () => {
                         Clinical Description:
                       </Typography>
                       <Typography paragraph>
-                        A small tubercle of cartilage opposite to the tragus, separated from it by the 
-                        intertragic notch, marking the inferior boundary of the concha.
+                        A small cartilage bump opposite to the tragus, separated from it by the intertragic notch. It forms the lower boundary of the concha.
                       </Typography>
                     </Grid>
                   </Grid>
@@ -394,9 +565,7 @@ const EarAnatomyPage: React.FC = () => {
                         Clinical Description:
                       </Typography>
                       <Typography paragraph>
-                        A deep cavity of the external ear that leads to the external auditory meatus, 
-                        bounded anteriorly by the tragus, posteriorly by the antihelix, and inferiorly 
-                        by the antitragus. Key for in-the-ear hearing aid shell design.
+                        A deep cavity in the external ear that leads to the ear canal. It's bounded by the tragus (front), antihelix (back), and antitragus (below). Critical for in-the-ear hearing aid shell design.
                       </Typography>
                     </Grid>
                   </Grid>
@@ -432,9 +601,7 @@ const EarAnatomyPage: React.FC = () => {
                         Clinical Description:
                       </Typography>
                       <Typography paragraph>
-                        The soft, pendulous, non-cartilaginous portion at the inferior extremity of the 
-                        auricle, composed of fatty tissue and skin. May serve as an anchor point for some 
-                        hearing aid styles.
+                        The soft, fleshy, non-cartilaginous portion at the bottom of the ear, composed of fatty tissue and skin. May serve as an anchor point for some hearing aid styles.
                       </Typography>
                     </Grid>
                   </Grid>
@@ -815,6 +982,43 @@ const EarAnatomyPage: React.FC = () => {
             the tragus and antitragus are the gatekeepers to the tunnel (ear canal), and the lobule is the soft 
             plains below.
           </Typography>
+          
+          {/* Key Takeaways for Ear Landmarks */}
+          <Box sx={{ mt: 3, p: 3, bgcolor: alpha(theme.palette.info.light, 0.1), borderRadius: 2, border: `1px solid ${alpha(theme.palette.info.main, 0.3)}` }}>
+            <Typography variant="h6" gutterBottom fontWeight="bold" color="info.dark">
+              Key Takeaways: Pinna Landmarks & Hearing Aid Fitting
+            </Typography>
+            
+            <Grid container spacing={2}>
+              <Grid item xs={12} md={6}>
+                <Box sx={{ p: 2, bgcolor: 'background.paper', borderRadius: 1, height: '100%' }}>
+                  <Typography variant="subtitle2" fontWeight="bold" gutterBottom color="primary">
+                    Anatomical Understanding
+                  </Typography>
+                  <ul>
+                    <li>The pinna has distinct landmarks with specific names and functions</li>
+                    <li>Each landmark serves as a reference point for hearing aid fitting</li>
+                    <li>Understanding both simple and clinical terms helps communicate with patients and professionals</li>
+                    <li>The 3D relationships between landmarks determine hearing aid comfort and function</li>
+                  </ul>
+                </Box>
+              </Grid>
+              
+              <Grid item xs={12} md={6}>
+                <Box sx={{ p: 2, bgcolor: 'background.paper', borderRadius: 1, height: '100%' }}>
+                  <Typography variant="subtitle2" fontWeight="bold" gutterBottom color="primary">
+                    Clinical Application
+                  </Typography>
+                  <ul>
+                    <li>Different hearing aid styles interact with different landmarks</li>
+                    <li>Individual anatomical variations significantly impact device selection</li>
+                    <li>Special considerations (like collapsing canals) require modified approaches</li>
+                    <li>Proper landmark identification is essential for optimal hearing aid performance</li>
+                  </ul>
+                </Box>
+              </Grid>
+            </Grid>
+          </Box>
         </>
       ),
     },
@@ -926,11 +1130,13 @@ const EarAnatomyPage: React.FC = () => {
                       <Typography variant="subtitle2" color="primary" gutterBottom>
                         Function:
                       </Typography>
-                      <Typography>
-                        Acts as a lever system that amplifies the force of eardrum vibrations by about 1.3 times. 
-                        Combined with the area difference between the eardrum and oval window, this creates a 
-                        pressure gain of approximately 22 times (about 27 dB), essential for matching impedance between 
-                        air and fluid media.
+                      <Typography paragraph>
+                        Acts as a lever system that amplifies force. Key points:
+                        <ul>
+                          <li>Creates a mechanical advantage of about 1.3x</li>
+                          <li>When combined with the area difference between eardrum and oval window, produces approximately 22x pressure gain (27 dB)</li>
+                          <li>Essential for "impedance matching" between air and fluid environments</li>
+                        </ul>
                       </Typography>
                     </Grid>
                     <Grid item xs={12} md={4}>
@@ -974,9 +1180,12 @@ const EarAnatomyPage: React.FC = () => {
                         Function:
                       </Typography>
                       <Typography>
-                        Maintains an air-filled environment necessary for proper ossicle movement. 
-                        It must be at atmospheric pressure for optimal sound transmission, which is why pressure 
-                        equalization through the Eustachian tube is essential.
+                        Maintains an air-filled environment for proper ossicle movement. Three critical aspects:
+                        <ul>
+                          <li>Must stay at atmospheric pressure for optimal hearing</li>
+                          <li>Requires regular pressure equalization</li>
+                          <li>Provides low-resistance environment for ossicle vibration</li>
+                        </ul>
                       </Typography>
                     </Grid>
                     <Grid item xs={12} md={4}>
@@ -1020,9 +1229,12 @@ const EarAnatomyPage: React.FC = () => {
                         Function:
                       </Typography>
                       <Typography>
-                        Equalizes air pressure between the middle ear and the atmosphere. Also drains 
-                        fluid from the middle ear into the throat and protects the middle ear from 
-                        nasopharyngeal secretions and sound pressure.
+                        Connects the middle ear to the back of the throat (nasopharynx). Three main functions:
+                        <ul>
+                          <li>Equalizes air pressure when you yawn, swallow, or chew</li>
+                          <li>Drains fluid from the middle ear</li> 
+                          <li>Protects middle ear from throat secretions and extreme sound pressure</li>
+                        </ul>
                       </Typography>
                     </Grid>
                     <Grid item xs={12} md={4}>
@@ -1247,7 +1459,19 @@ const EarAnatomyPage: React.FC = () => {
               </ol>
             </Box>
             
-            <Typography variant="subtitle2" gutterBottom fontWeight="bold" color="warning.main">
+            <Typography variant="h6" gutterBottom fontWeight="bold" color="warning.main" sx={{ mt: 3 }}>
+              Key Takeaways:
+            </Typography>
+            <Box sx={{ p: 2, bgcolor: alpha(theme.palette.warning.light, 0.1), borderRadius: 1 }}>
+              <ul>
+                <li><strong>Size Matters:</strong> The ear uses size differences (eardrum vs. oval window) to concentrate force</li>
+                <li><strong>Leverage Works:</strong> The ossicles form a lever system that multiplies force</li>
+                <li><strong>Energy Must Flow:</strong> Sound energy travels from air → bone → fluid in a continuous path</li>
+                <li><strong>Efficient Design:</strong> Without the middle ear's amplification, we'd lose 99.9% of sound energy at the air-fluid boundary</li>
+              </ul>
+            </Box>
+            
+            <Typography variant="subtitle2" gutterBottom fontWeight="bold" color="warning.main" sx={{ mt: 3 }}>
               Clinical Significance:
             </Typography>
             <Typography paragraph>
@@ -1412,6 +1636,93 @@ const EarAnatomyPage: React.FC = () => {
             </Grid>
           </Grid>
           
+          {/* Visual Comparison of Hearing Loss Types */}
+          <Box sx={{ mb: 4, p: 2, border: `1px solid ${alpha(theme.palette.primary.main, 0.3)}`, borderRadius: 2 }}>
+            <Typography variant="subtitle1" gutterBottom fontWeight="bold" align="center" sx={{ mb: 2 }}>
+              Comparing Types of Hearing Loss
+            </Typography>
+            
+            <Grid container spacing={2}>
+              <Grid item xs={12} md={6}>
+                <Paper elevation={2} sx={{ p: 2, bgcolor: alpha(theme.palette.primary.light, 0.05), height: '100%' }}>
+                  <Typography variant="h6" gutterBottom fontWeight="bold" color="primary" align="center">
+                    Conductive Hearing Loss
+                  </Typography>
+                  <List dense>
+                    <ListItem>
+                      <ListItemIcon><NavigateNext color="primary" fontSize="small" /></ListItemIcon>
+                      <ListItemText primary="Location: Outer or middle ear" />
+                    </ListItem>
+                    <ListItem>
+                      <ListItemIcon><NavigateNext color="primary" fontSize="small" /></ListItemIcon>
+                      <ListItemText primary="Causes: Earwax, fluid, otosclerosis, perforations" />
+                    </ListItem>
+                    <ListItem>
+                      <ListItemIcon><NavigateNext color="primary" fontSize="small" /></ListItemIcon>
+                      <ListItemText primary="Audiogram: Air-bone gap present" />
+                    </ListItem>
+                    <ListItem>
+                      <ListItemIcon><NavigateNext color="primary" fontSize="small" /></ListItemIcon>
+                      <ListItemText primary="Pattern: Often flat across frequencies" />
+                    </ListItem>
+                    <ListItem>
+                      <ListItemIcon><NavigateNext color="primary" fontSize="small" /></ListItemIcon>
+                      <ListItemText primary="Treatment: Often medical/surgical options" />
+                    </ListItem>
+                    <ListItem>
+                      <ListItemIcon><NavigateNext color="primary" fontSize="small" /></ListItemIcon>
+                      <ListItemText primary="Amplification: Excellent results with hearing aids" />
+                    </ListItem>
+                  </List>
+                </Paper>
+              </Grid>
+              
+              <Grid item xs={12} md={6}>
+                <Paper elevation={2} sx={{ p: 2, bgcolor: alpha(theme.palette.secondary.light, 0.05), height: '100%' }}>
+                  <Typography variant="h6" gutterBottom fontWeight="bold" color="secondary" align="center">
+                    Sensorineural Hearing Loss
+                  </Typography>
+                  <List dense>
+                    <ListItem>
+                      <ListItemIcon><NavigateNext color="secondary" fontSize="small" /></ListItemIcon>
+                      <ListItemText primary="Location: Inner ear or nerve" />
+                    </ListItem>
+                    <ListItem>
+                      <ListItemIcon><NavigateNext color="secondary" fontSize="small" /></ListItemIcon>
+                      <ListItemText primary="Causes: Noise exposure, aging, ototoxicity" />
+                    </ListItem>
+                    <ListItem>
+                      <ListItemIcon><NavigateNext color="secondary" fontSize="small" /></ListItemIcon>
+                      <ListItemText primary="Audiogram: No air-bone gap" />
+                    </ListItem>
+                    <ListItem>
+                      <ListItemIcon><NavigateNext color="secondary" fontSize="small" /></ListItemIcon>
+                      <ListItemText primary="Pattern: Often worse in high frequencies" />
+                    </ListItem>
+                    <ListItem>
+                      <ListItemIcon><NavigateNext color="secondary" fontSize="small" /></ListItemIcon>
+                      <ListItemText primary="Treatment: Usually permanent (irreversible)" />
+                    </ListItem>
+                    <ListItem>
+                      <ListItemIcon><NavigateNext color="secondary" fontSize="small" /></ListItemIcon>
+                      <ListItemText primary="Amplification: Variable success with hearing aids" />
+                    </ListItem>
+                  </List>
+                </Paper>
+              </Grid>
+            </Grid>
+            
+            <Box sx={{ mt: 2, p: 2, bgcolor: alpha(theme.palette.warning.light, 0.1), borderRadius: 1, border: `1px dashed ${theme.palette.warning.main}` }}>
+              <Typography variant="subtitle2" fontWeight="bold">
+                Mixed Hearing Loss
+              </Typography>
+              <Typography variant="body2">
+                A combination of both conductive and sensorineural components. Shows both an air-bone gap AND 
+                bone conduction thresholds worse than 20 dB HL on audiograms.
+              </Typography>
+            </Box>
+          </Box>
+          
           <Box sx={{ bgcolor: alpha(theme.palette.warning.main, 0.1), p: 3, borderRadius: 1, border: `1px solid ${theme.palette.warning.main}`, mb: 2 }}>
             <Typography variant="subtitle1" gutterBottom fontWeight="bold">
               Audiometric Tests for Middle Ear Function:
@@ -1458,6 +1769,234 @@ const EarAnatomyPage: React.FC = () => {
             </Grid>
           </Box>
           
+          {/* Knowledge Check Component */}
+          <Paper elevation={3} sx={{ p: 3, mb: 3, bgcolor: alpha(theme.palette.primary.light, 0.05), border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}` }}>
+            <Typography variant="h6" gutterBottom fontWeight="bold" color="primary" align="center">
+              Quick Knowledge Check
+            </Typography>
+            
+            <Grid container spacing={2} sx={{ mb: 2 }}>
+              <Grid item xs={12}>
+                <Box sx={{ p: 2, border: `1px solid ${alpha(theme.palette.primary.main, 0.3)}`, borderRadius: 2 }}>
+                  <Typography variant="subtitle1" gutterBottom fontWeight="bold">
+                    1. Which of the following is the main purpose of the middle ear?
+                  </Typography>
+                  <Box sx={{ pl: 2 }}>
+                    {['a', 'b', 'c', 'd'].map((option, index) => (
+                      <Box 
+                        key={`q1-option-${option}`}
+                        onClick={() => handleAnswerSelect('question1', option)}
+                        sx={{ 
+                          mb: 1, 
+                          p: 1, 
+                          borderRadius: 1,
+                          cursor: 'pointer',
+                          bgcolor: selectedAnswers['question1'] === option ? alpha(theme.palette.primary.light, 0.3) : 'transparent',
+                          '&:hover': {
+                            bgcolor: alpha(theme.palette.primary.light, 0.1)
+                          }
+                        }}
+                      >
+                        <Typography variant="body2">
+                          {option}) {[
+                            'To collect sound waves from the environment',
+                            'To match impedance between air and fluid media',
+                            'To convert mechanical vibrations to electrical signals',
+                            'To detect head position and movement'
+                          ][index]}
+                        </Typography>
+                      </Box>
+                    ))}
+                    
+                    {selectedAnswers['question1'] !== null && !showAnswers['question1'] && (
+                      <Button 
+                        variant="outlined" 
+                        color="primary" 
+                        size="small" 
+                        onClick={() => handleRevealAnswer('question1')}
+                        sx={{ mt: 1 }}
+                      >
+                        Check Answer
+                      </Button>
+                    )}
+                    
+                    {showAnswers['question1'] && (
+                      <Box sx={{ mt: 2 }}>
+                        <Typography 
+                          variant="body2" 
+                          sx={{ 
+                            bgcolor: selectedAnswers['question1'] === 'b' 
+                              ? alpha(theme.palette.success.light, 0.2) 
+                              : alpha(theme.palette.error.light, 0.2), 
+                            p: 1, 
+                            borderRadius: 1 
+                          }}
+                        >
+                          <strong>Answer:</strong> b) To match impedance between air and fluid media. 
+                          The middle ear overcomes the impedance mismatch problem through area ratio and lever action.
+                          {selectedAnswers['question1'] !== 'b' && (
+                            <Typography variant="body2" sx={{ mt: 1, fontStyle: 'italic' }}>
+                              You selected {selectedAnswers['question1']}, which is incorrect. Try to remember this for future reference.
+                            </Typography>
+                          )}
+                        </Typography>
+                      </Box>
+                    )}
+                  </Box>
+                </Box>
+              </Grid>
+              
+              <Grid item xs={12}>
+                <Box sx={{ p: 2, border: `1px solid ${alpha(theme.palette.primary.main, 0.3)}`, borderRadius: 2 }}>
+                  <Typography variant="subtitle1" gutterBottom fontWeight="bold">
+                    2. Which structure directly connects the middle ear to the inner ear?
+                  </Typography>
+                  <Box sx={{ pl: 2 }}>
+                    {['a', 'b', 'c', 'd'].map((option, index) => (
+                      <Box 
+                        key={`q2-option-${option}`}
+                        onClick={() => handleAnswerSelect('question2', option)}
+                        sx={{ 
+                          mb: 1, 
+                          p: 1, 
+                          borderRadius: 1,
+                          cursor: 'pointer',
+                          bgcolor: selectedAnswers['question2'] === option ? alpha(theme.palette.primary.light, 0.3) : 'transparent',
+                          '&:hover': {
+                            bgcolor: alpha(theme.palette.primary.light, 0.1)
+                          }
+                        }}
+                      >
+                        <Typography variant="body2">
+                          {option}) {[
+                            'Eustachian tube',
+                            'Tympanic membrane (eardrum)',
+                            'Stapes footplate at the oval window',
+                            'Round window'
+                          ][index]}
+                        </Typography>
+                      </Box>
+                    ))}
+                    
+                    {selectedAnswers['question2'] !== null && !showAnswers['question2'] && (
+                      <Button 
+                        variant="outlined" 
+                        color="primary" 
+                        size="small" 
+                        onClick={() => handleRevealAnswer('question2')}
+                        sx={{ mt: 1 }}
+                      >
+                        Check Answer
+                      </Button>
+                    )}
+                    
+                    {showAnswers['question2'] && (
+                      <Box sx={{ mt: 2 }}>
+                        <Typography 
+                          variant="body2" 
+                          sx={{ 
+                            bgcolor: selectedAnswers['question2'] === 'c' 
+                              ? alpha(theme.palette.success.light, 0.2) 
+                              : alpha(theme.palette.error.light, 0.2), 
+                            p: 1, 
+                            borderRadius: 1 
+                          }}
+                        >
+                          <strong>Answer:</strong> c) Stapes footplate at the oval window. 
+                          The stapes is the final bone in the ossicular chain, and its footplate presses against the oval window, 
+                          transmitting vibrations from the middle ear to the fluid of the inner ear.
+                          {selectedAnswers['question2'] !== 'c' && (
+                            <Typography variant="body2" sx={{ mt: 1, fontStyle: 'italic' }}>
+                              You selected {selectedAnswers['question2']}, which is incorrect. Try to remember this for future reference.
+                            </Typography>
+                          )}
+                        </Typography>
+                      </Box>
+                    )}
+                  </Box>
+                </Box>
+              </Grid>
+              
+              <Grid item xs={12}>
+                <Box sx={{ p: 2, border: `1px solid ${alpha(theme.palette.primary.main, 0.3)}`, borderRadius: 2 }}>
+                  <Typography variant="subtitle1" gutterBottom fontWeight="bold">
+                    3. Which test would best identify otosclerosis?
+                  </Typography>
+                  <Box sx={{ pl: 2 }}>
+                    {['a', 'b', 'c', 'd'].map((option, index) => (
+                      <Box 
+                        key={`q3-option-${option}`}
+                        onClick={() => handleAnswerSelect('question3', option)}
+                        sx={{ 
+                          mb: 1, 
+                          p: 1, 
+                          borderRadius: 1,
+                          cursor: 'pointer',
+                          bgcolor: selectedAnswers['question3'] === option ? alpha(theme.palette.primary.light, 0.3) : 'transparent',
+                          '&:hover': {
+                            bgcolor: alpha(theme.palette.primary.light, 0.1)
+                          }
+                        }}
+                      >
+                        <Typography variant="body2">
+                          {option}) {[
+                            'Otoacoustic emissions',
+                            'Tympanometry',
+                            'Pure tone audiometry with bone conduction',
+                            'Vestibular evoked myogenic potentials'
+                          ][index]}
+                        </Typography>
+                      </Box>
+                    ))}
+                    
+                    {selectedAnswers['question3'] !== null && !showAnswers['question3'] && (
+                      <Button 
+                        variant="outlined" 
+                        color="primary" 
+                        size="small" 
+                        onClick={() => handleRevealAnswer('question3')}
+                        sx={{ mt: 1 }}
+                      >
+                        Check Answer
+                      </Button>
+                    )}
+                    
+                    {showAnswers['question3'] && (
+                      <Box sx={{ mt: 2 }}>
+                        <Typography 
+                          variant="body2" 
+                          sx={{ 
+                            bgcolor: selectedAnswers['question3'] === 'c' 
+                              ? alpha(theme.palette.success.light, 0.2) 
+                              : alpha(theme.palette.error.light, 0.2), 
+                            p: 1, 
+                            borderRadius: 1 
+                          }}
+                        >
+                          <strong>Answer:</strong> c) Pure tone audiometry with bone conduction. 
+                          This test would show a conductive hearing loss with an air-bone gap and often the characteristic "Carhart's notch" 
+                          in the bone conduction threshold around 2000 Hz.
+                          {selectedAnswers['question3'] !== 'c' && (
+                            <Typography variant="body2" sx={{ mt: 1, fontStyle: 'italic' }}>
+                              You selected {selectedAnswers['question3']}, which is incorrect. Try to remember this for future reference.
+                            </Typography>
+                          )}
+                        </Typography>
+                      </Box>
+                    )}
+                  </Box>
+                </Box>
+              </Grid>
+            </Grid>
+            
+            <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+              <Typography variant="body2" sx={{ fontStyle: 'italic', maxWidth: '80%', textAlign: 'center' }}>
+                These quick checks help reinforce your understanding of key concepts about the middle ear.
+                Remember these fundamental points as we move on to explore the inner ear.
+              </Typography>
+            </Box>
+          </Paper>
+          
           <Typography paragraph sx={{ fontStyle: 'italic' }}>
             Pro Tip: Remember that middle ear disorders typically affect lower frequencies as much as or more than 
             higher frequencies, creating a relatively flat hearing loss pattern. This contrasts with most sensorineural
@@ -1475,6 +2014,43 @@ const EarAnatomyPage: React.FC = () => {
             for both hearing (cochlea) and balance (vestibular system). This sophisticated structure is responsible 
             for transducing mechanical energy into electrical signals that can be interpreted by the brain.
           </Typography>
+          
+          <Box sx={{ p: 2, mb: 3, bgcolor: alpha(theme.palette.info.light, 0.1), borderRadius: 2, border: `1px dashed ${theme.palette.info.main}` }}>
+            <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+              Inner Ear Analogy: A Biological Microphone and Motion Sensor
+            </Typography>
+            <Typography paragraph>
+              Think of the inner ear as two amazing devices in one:
+            </Typography>
+            <Grid container spacing={2}>
+              <Grid item xs={12} md={6}>
+                <Paper elevation={1} sx={{ p: 2, height: '100%', bgcolor: alpha(theme.palette.primary.light, 0.05) }}>
+                  <Typography variant="subtitle2" fontWeight="bold" gutterBottom color="primary">
+                    The Cochlea: Nature's Microphone
+                  </Typography>
+                  <Typography variant="body2">
+                    Like a high-tech microphone that converts sound vibrations into electrical signals, the cochlea 
+                    transforms mechanical energy from the middle ear into precise neural signals that your brain 
+                    interprets as sound. Just as a microphone has different components for different frequencies, 
+                    the cochlea has different regions that respond to different pitches.
+                  </Typography>
+                </Paper>
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <Paper elevation={1} sx={{ p: 2, height: '100%', bgcolor: alpha(theme.palette.primary.light, 0.05) }}>
+                  <Typography variant="subtitle2" fontWeight="bold" gutterBottom color="primary">
+                    The Vestibular System: Your Built-in Motion Sensor
+                  </Typography>
+                  <Typography variant="body2">
+                    Like the motion sensor in your smartphone that detects orientation and movement, your vestibular 
+                    system constantly monitors your head position and movement in space. This biological gyroscope 
+                    and accelerometer helps you maintain balance, stabilize your vision, and know which way is up.
+                  </Typography>
+                </Paper>
+              </Grid>
+            </Grid>
+          </Box>
+          
           <Card sx={{ mb: 2 }}>
             <CardMedia
               component="img"
@@ -1572,6 +2148,79 @@ const EarAnatomyPage: React.FC = () => {
                 The cochlea is the primary auditory portion of the inner ear. This spiral-shaped structure contains 
                 three fluid-filled compartments (scalae):
               </Typography>
+              
+              {/* In Simple Terms Box */}
+              <Paper elevation={1} sx={{ p: 2, mb: 3, bgcolor: alpha(theme.palette.success.light, 0.1), borderRadius: 2 }}>
+                <Typography variant="subtitle2" gutterBottom color="primary" fontWeight="bold">
+                  In Simple Terms: The Cochlea is Like a Tiny Piano
+                </Typography>
+                <Typography variant="body2" paragraph>
+                  Think of the cochlea as a rolled-up piano keyboard inside your head, about the size of a pea. 
+                  Different notes (sound frequencies) activate different keys (regions) of this piano:
+                </Typography>
+                <Grid container spacing={2}>
+                  <Grid item xs={12} md={4}>
+                    <Box sx={{ 
+                      textAlign: 'center', 
+                      p: 1, 
+                      bgcolor: theme.palette.mode === 'dark' ? alpha(theme.palette.background.default, 0.4) : '#f9f9f9', 
+                      borderRadius: 1 
+                    }}>
+                      <Typography variant="body2" fontWeight="bold" color="error.main">
+                        High Notes (High Frequency)
+                      </Typography>
+                      <Typography variant="body2">
+                        Like the right side of a piano keyboard
+                      </Typography>
+                      <Typography variant="body2" fontStyle="italic" fontSize="small">
+                        Near the entrance of the cochlea
+                      </Typography>
+                    </Box>
+                  </Grid>
+                  <Grid item xs={12} md={4}>
+                    <Box sx={{ 
+                      textAlign: 'center', 
+                      p: 1, 
+                      bgcolor: theme.palette.mode === 'dark' ? alpha(theme.palette.background.default, 0.4) : '#f9f9f9', 
+                      borderRadius: 1 
+                    }}>
+                      <Typography variant="body2" fontWeight="bold" color="warning.main">
+                        Middle Notes (Mid Frequency)
+                      </Typography>
+                      <Typography variant="body2">
+                        Like the middle of a piano keyboard
+                      </Typography>
+                      <Typography variant="body2" fontStyle="italic" fontSize="small">
+                        In the middle of the cochlear spiral
+                      </Typography>
+                    </Box>
+                  </Grid>
+                  <Grid item xs={12} md={4}>
+                    <Box sx={{ 
+                      textAlign: 'center', 
+                      p: 1, 
+                      bgcolor: theme.palette.mode === 'dark' ? alpha(theme.palette.background.default, 0.4) : '#f9f9f9', 
+                      borderRadius: 1 
+                    }}>
+                      <Typography variant="body2" fontWeight="bold" color="success.main">
+                        Low Notes (Low Frequency)
+                      </Typography>
+                      <Typography variant="body2">
+                        Like the left side of a piano keyboard
+                      </Typography>
+                      <Typography variant="body2" fontStyle="italic" fontSize="small">
+                        Deep inside the cochlear spiral
+                      </Typography>
+                    </Box>
+                  </Grid>
+                </Grid>
+                <Typography variant="body2" sx={{ mt: 2 }}>
+                  The cochlea's remarkable ability to separate sounds by frequency is what allows you to pick out a friend's voice 
+                  in a noisy room or hear the different instruments in a song. When specific regions are damaged (like piano keys 
+                  that don't work), you lose hearing at those specific frequencies.
+                </Typography>
+              </Paper>
+              
               <List dense>
                 <ListItem>
                   <ListItemIcon>
@@ -1601,6 +2250,25 @@ const EarAnatomyPage: React.FC = () => {
                   />
                 </ListItem>
               </List>
+              
+              {/* Simple Fluid Chambers Explanation */}
+              <Box sx={{ 
+                p: 2, 
+                mb: 2, 
+                bgcolor: theme.palette.mode === 'dark' 
+                  ? alpha(theme.palette.background.paper, 0.6) 
+                  : '#f5f5f5', 
+                borderRadius: 1, 
+                border: `1px dashed ${theme.palette.mode === 'dark' ? alpha(theme.palette.primary.main, 0.3) : '#ccc'}`
+              }}>
+                <Typography variant="body2">
+                  <strong>Think of it like a tiny water slide:</strong> The cochlea has three parallel water channels that 
+                  spiral together like a three-lane water slide. Sound waves create ripples that move through these fluid-filled 
+                  channels, with the middle channel (scala media) containing the special sensors (organ of Corti) that detect 
+                  the motion.
+                </Typography>
+              </Box>
+              
               <Typography paragraph>
                 <strong>Energy Transmission:</strong> The cochlea converts mechanical energy (fluid waves) into 
                 electrical energy (neural impulses).
@@ -1611,8 +2279,8 @@ const EarAnatomyPage: React.FC = () => {
                     <NavigateNext color="primary" fontSize="small" />
                   </ListItemIcon>
                   <ListItemText 
-                    primary="Input Energy" 
-                    secondary="Mechanical vibrations from the stapes at the oval window" 
+                    primary="Input" 
+                    secondary="Vibrations from the stapes at the oval window create pressure waves in the fluid" 
                   />
                 </ListItem>
                 <ListItem>
@@ -1620,8 +2288,8 @@ const EarAnatomyPage: React.FC = () => {
                     <NavigateNext color="primary" fontSize="small" />
                   </ListItemIcon>
                   <ListItemText 
-                    primary="Transmission Medium" 
-                    secondary="Fluid waves in perilymph and endolymph" 
+                    primary="Processing" 
+                    secondary="These waves cause the basilar membrane to vibrate at specific locations based on frequency" 
                   />
                 </ListItem>
                 <ListItem>
@@ -1629,8 +2297,8 @@ const EarAnatomyPage: React.FC = () => {
                     <NavigateNext color="primary" fontSize="small" />
                   </ListItemIcon>
                   <ListItemText 
-                    primary="Processing Structure" 
-                    secondary="Basilar membrane and hair cells in the organ of Corti" 
+                    primary="Output" 
+                    secondary="Hair cells in the organ of Corti convert these vibrations into neural impulses" 
                   />
                 </ListItem>
                 <ListItem>
@@ -1638,44 +2306,29 @@ const EarAnatomyPage: React.FC = () => {
                     <NavigateNext color="primary" fontSize="small" />
                   </ListItemIcon>
                   <ListItemText 
-                    primary="Output Energy" 
-                    secondary="Electrochemical signals in the auditory nerve" 
+                    primary="Release" 
+                    secondary="The round window bulges outward to release pressure, completing the mechanical wave cycle" 
                   />
                 </ListItem>
               </List>
-              <Typography paragraph>
-                <strong>Tonotopic Organization:</strong> The basilar membrane varies in width and stiffness along 
-                its length, creating a frequency-specific response pattern:
-              </Typography>
-              <List dense>
-                <ListItem>
-                  <ListItemIcon>
-                    <NavigateNext color="primary" fontSize="small" />
-                  </ListItemIcon>
-                  <ListItemText 
-                    primary="Base of Cochlea (near oval window)" 
-                    secondary="Narrow and stiff; responds best to high-frequency sounds (20,000 Hz)" 
-                  />
-                </ListItem>
-                <ListItem>
-                  <ListItemIcon>
-                    <NavigateNext color="primary" fontSize="small" />
-                  </ListItemIcon>
-                  <ListItemText 
-                    primary="Middle of Cochlea" 
-                    secondary="Responds best to mid-frequency sounds (1,000-3,000 Hz)" 
-                  />
-                </ListItem>
-                <ListItem>
-                  <ListItemIcon>
-                    <NavigateNext color="primary" fontSize="small" />
-                  </ListItemIcon>
-                  <ListItemText 
-                    primary="Apex of Cochlea" 
-                    secondary="Wide and flexible; responds best to low-frequency sounds (20 Hz)" 
-                  />
-                </ListItem>
-              </List>
+              
+              {/* Key Takeaways Box */}
+              <Box sx={{ mt: 3, p: 2, bgcolor: alpha(theme.palette.success.light, 0.1), borderRadius: 2, border: `1px solid ${alpha(theme.palette.success.main, 0.3)}` }}>
+                <Typography variant="h6" gutterBottom fontWeight="bold" color="success.dark">
+                  Key Takeaways: The Cochlea
+                </Typography>
+                <ul>
+                  <li><strong>Structure:</strong> Three fluid-filled chambers (scalae) arranged in a spiral</li>
+                  <li><strong>Tonotopic Organization:</strong> Different frequencies are processed at different locations</li>
+                  <li><strong>Transduction:</strong> Hair cells convert mechanical energy to electrical signals</li>
+                  <li><strong>Amplification:</strong> Outer hair cells enhance sensitivity and frequency selectivity</li>
+                  <li><strong>Protection:</strong> Damage to hair cells is permanent and leads to hearing loss</li>
+                </ul>
+                <Typography variant="body2" sx={{ fontStyle: 'italic', mt: 1 }}>
+                  Remember: The cochlea's organization (base to apex) explains why high-frequency hearing loss 
+                  typically occurs first in noise exposure and aging.
+                </Typography>
+              </Box>
             </AccordionDetails>
           </Accordion>
 
@@ -3064,7 +3717,16 @@ const EarAnatomyPage: React.FC = () => {
                 </ListItem>
               </List>
               
-              <Box sx={{ bgcolor: '#f5f5f5', p: 2, borderRadius: 1, mt: 2, mb: 2 }}>
+              <Box sx={{ 
+                bgcolor: theme.palette.mode === 'dark' 
+                  ? alpha(theme.palette.background.paper, 0.6) 
+                  : '#f5f5f5', 
+                p: 2, 
+                borderRadius: 1, 
+                mt: 2, 
+                mb: 2,
+                border: `1px dashed ${theme.palette.mode === 'dark' ? alpha(theme.palette.primary.main, 0.3) : '#e0e0e0'}`
+              }}>
                 <Typography variant="subtitle1" gutterBottom>
                   <strong>Why This Happens:</strong> The Relationship to Characteristic Response
                 </Typography>
@@ -3720,6 +4382,195 @@ const EarAnatomyPage: React.FC = () => {
             the hearing process.
           </Typography>
           
+          {/* Comparison Table for Types of Hearing Loss */}
+          <Paper elevation={2} sx={{ p: 3, mb: 4, overflow: 'auto' }}>
+            <Typography variant="h6" gutterBottom fontWeight="bold" color="primary" align="center">
+              Types of Hearing Loss: A Comparison
+            </Typography>
+            
+            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 1 }}>
+              <Typography variant="body2" sx={{ fontStyle: 'italic' }}>
+                Scroll horizontally if needed to view the complete table
+              </Typography>
+            </Box>
+            
+            <Box sx={{ minWidth: 650, overflowX: 'auto' }}>
+              <Grid container>
+                {/* Header Row */}
+                <Grid item xs={3} sx={{ p: 1, borderBottom: 1, borderRight: 1, borderColor: 'divider', bgcolor: alpha(theme.palette.primary.main, 0.1) }}>
+                  <Typography variant="subtitle2" fontWeight="bold">
+                    Characteristic
+                  </Typography>
+                </Grid>
+                <Grid item xs={3} sx={{ p: 1, borderBottom: 1, borderRight: 1, borderColor: 'divider', bgcolor: alpha(theme.palette.info.light, 0.1) }}>
+                  <Typography variant="subtitle2" fontWeight="bold" color="info.dark">
+                    Conductive Hearing Loss
+                  </Typography>
+                </Grid>
+                <Grid item xs={3} sx={{ p: 1, borderBottom: 1, borderRight: 1, borderColor: 'divider', bgcolor: alpha(theme.palette.warning.light, 0.1) }}>
+                  <Typography variant="subtitle2" fontWeight="bold" color="warning.dark">
+                    Sensorineural Hearing Loss
+                  </Typography>
+                </Grid>
+                <Grid item xs={3} sx={{ p: 1, borderBottom: 1, borderColor: 'divider', bgcolor: alpha(theme.palette.error.light, 0.1) }}>
+                  <Typography variant="subtitle2" fontWeight="bold" color="error.dark">
+                    Mixed Hearing Loss
+                  </Typography>
+                </Grid>
+                
+                {/* Affected Areas Row */}
+                <Grid item xs={3} sx={{ p: 1, borderBottom: 1, borderRight: 1, borderColor: 'divider', bgcolor: alpha(theme.palette.primary.main, 0.05) }}>
+                  <Typography variant="body2" fontWeight="bold">
+                    Affected Areas
+                  </Typography>
+                </Grid>
+                <Grid item xs={3} sx={{ p: 1, borderBottom: 1, borderRight: 1, borderColor: 'divider' }}>
+                  <Typography variant="body2">
+                    Outer ear and/or middle ear
+                  </Typography>
+                </Grid>
+                <Grid item xs={3} sx={{ p: 1, borderBottom: 1, borderRight: 1, borderColor: 'divider' }}>
+                  <Typography variant="body2">
+                    Inner ear (cochlea) or auditory nerve
+                  </Typography>
+                </Grid>
+                <Grid item xs={3} sx={{ p: 1, borderBottom: 1, borderColor: 'divider' }}>
+                  <Typography variant="body2">
+                    Combination of outer/middle ear AND inner ear/nerve problems
+                  </Typography>
+                </Grid>
+                
+                {/* Audiometric Pattern Row */}
+                <Grid item xs={3} sx={{ p: 1, borderBottom: 1, borderRight: 1, borderColor: 'divider', bgcolor: alpha(theme.palette.primary.main, 0.05) }}>
+                  <Typography variant="body2" fontWeight="bold">
+                    Audiometric Pattern
+                  </Typography>
+                </Grid>
+                <Grid item xs={3} sx={{ p: 1, borderBottom: 1, borderRight: 1, borderColor: 'divider' }}>
+                  <Typography variant="body2">
+                    Air-bone gap present (normal bone conduction with reduced air conduction)
+                  </Typography>
+                </Grid>
+                <Grid item xs={3} sx={{ p: 1, borderBottom: 1, borderRight: 1, borderColor: 'divider' }}>
+                  <Typography variant="body2">
+                    No air-bone gap (both air and bone conduction equally reduced)
+                  </Typography>
+                </Grid>
+                <Grid item xs={3} sx={{ p: 1, borderBottom: 1, borderColor: 'divider' }}>
+                  <Typography variant="body2">
+                    Air-bone gap present, but bone conduction is also reduced
+                  </Typography>
+                </Grid>
+                
+                {/* Frequency Pattern */}
+                <Grid item xs={3} sx={{ p: 1, borderBottom: 1, borderRight: 1, borderColor: 'divider', bgcolor: alpha(theme.palette.primary.main, 0.05) }}>
+                  <Typography variant="body2" fontWeight="bold">
+                    Typical Frequency Pattern
+                  </Typography>
+                </Grid>
+                <Grid item xs={3} sx={{ p: 1, borderBottom: 1, borderRight: 1, borderColor: 'divider' }}>
+                  <Typography variant="body2">
+                    Often flat or affects low frequencies more; similar loss across frequencies
+                  </Typography>
+                </Grid>
+                <Grid item xs={3} sx={{ p: 1, borderBottom: 1, borderRight: 1, borderColor: 'divider' }}>
+                  <Typography variant="body2">
+                    Often worse in high frequencies (sloping configuration)
+                  </Typography>
+                </Grid>
+                <Grid item xs={3} sx={{ p: 1, borderBottom: 1, borderColor: 'divider' }}>
+                  <Typography variant="body2">
+                    Variable pattern depending on underlying causes
+                  </Typography>
+                </Grid>
+                
+                {/* Speech Understanding */}
+                <Grid item xs={3} sx={{ p: 1, borderBottom: 1, borderRight: 1, borderColor: 'divider', bgcolor: alpha(theme.palette.primary.main, 0.05) }}>
+                  <Typography variant="body2" fontWeight="bold">
+                    Speech Understanding
+                  </Typography>
+                </Grid>
+                <Grid item xs={3} sx={{ p: 1, borderBottom: 1, borderRight: 1, borderColor: 'divider' }}>
+                  <Typography variant="body2">
+                    Generally good if made loud enough; speech clarity maintained
+                  </Typography>
+                </Grid>
+                <Grid item xs={3} sx={{ p: 1, borderBottom: 1, borderRight: 1, borderColor: 'divider' }}>
+                  <Typography variant="body2">
+                    Often poor even when loud enough; "I can hear but can't understand"
+                  </Typography>
+                </Grid>
+                <Grid item xs={3} sx={{ p: 1, borderBottom: 1, borderColor: 'divider' }}>
+                  <Typography variant="body2">
+                    Poor, with elements of both types of problems
+                  </Typography>
+                </Grid>
+                
+                {/* Common Treatment */}
+                <Grid item xs={3} sx={{ p: 1, borderBottom: 1, borderRight: 1, borderColor: 'divider', bgcolor: alpha(theme.palette.primary.main, 0.05) }}>
+                  <Typography variant="body2" fontWeight="bold">
+                    Common Treatments
+                  </Typography>
+                </Grid>
+                <Grid item xs={3} sx={{ p: 1, borderBottom: 1, borderRight: 1, borderColor: 'divider' }}>
+                  <Typography variant="body2">
+                    • Medical/surgical intervention<br/>
+                    • Hearing aids if non-treatable
+                  </Typography>
+                </Grid>
+                <Grid item xs={3} sx={{ p: 1, borderBottom: 1, borderRight: 1, borderColor: 'divider' }}>
+                  <Typography variant="body2">
+                    • Hearing aids<br/>
+                    • Cochlear implants (for severe loss)<br/>
+                    • Assistive listening devices
+                  </Typography>
+                </Grid>
+                <Grid item xs={3} sx={{ p: 1, borderBottom: 1, borderColor: 'divider' }}>
+                  <Typography variant="body2">
+                    • Medical/surgical treatment of conductive component<br/>
+                    • Hearing aids for remaining loss
+                  </Typography>
+                </Grid>
+                
+                {/* Related Ear Structures */}
+                <Grid item xs={3} sx={{ p: 1, borderRight: 1, borderColor: 'divider', bgcolor: alpha(theme.palette.primary.main, 0.05) }}>
+                  <Typography variant="body2" fontWeight="bold">
+                    Related Ear Structures
+                  </Typography>
+                </Grid>
+                <Grid item xs={3} sx={{ p: 1, borderRight: 1, borderColor: 'divider' }}>
+                  <Typography variant="body2">
+                    • Tympanic membrane<br/>
+                    • Ossicular chain<br/>
+                    • Ear canal<br/>
+                    • Middle ear space
+                  </Typography>
+                </Grid>
+                <Grid item xs={3} sx={{ p: 1, borderRight: 1, borderColor: 'divider' }}>
+                  <Typography variant="body2">
+                    • Hair cells<br/>
+                    • Organ of Corti<br/>
+                    • Auditory nerve<br/>
+                    • Cochlear fluids
+                  </Typography>
+                </Grid>
+                <Grid item xs={3} sx={{ p: 1 }}>
+                  <Typography variant="body2">
+                    Any combination of structures from both conductive and sensorineural pathways
+                  </Typography>
+                </Grid>
+              </Grid>
+            </Box>
+            
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+              <Typography variant="body2" sx={{ maxWidth: '80%', textAlign: 'center', fontStyle: 'italic' }}>
+                Understanding the type of hearing loss is critical for appropriate treatment. Note that pure conductive 
+                hearing loss often has a better prognosis as the inner ear remains intact, while sensorineural hearing 
+                loss typically involves permanent damage to delicate sensory cells.
+              </Typography>
+            </Box>
+          </Paper>
+          
           <Accordion 
             expanded={expanded === 'panel1'} 
             onChange={handleAccordionChange('panel1')}
@@ -3856,56 +4707,172 @@ const EarAnatomyPage: React.FC = () => {
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Paper elevation={3} sx={{ p: { xs: 2, md: 4 } }}>
-        <Typography variant="h4" component="h1" gutterBottom align="center" color="primary">
-          Ear Anatomy Training Guide
-        </Typography>
-        <Typography variant="h6" gutterBottom align="center" color="text.secondary" sx={{ mb: 4 }}>
-          Understanding the Structure and Function of the Human Ear
-        </Typography>
-        
-        <Divider sx={{ mb: 4 }} />
-        
+      <Paper 
+        elevation={3} 
+        sx={{ 
+          p: 3, 
+          borderRadius: 2,
+          boxShadow: theme.shadows[3]
+        }}
+      >
+        <Box mb={4}>
+          <Typography variant="h4" component="h1" gutterBottom align="center" color="primary">
+            Ear Anatomy Interactive Guide
+          </Typography>
+          <Typography variant="subtitle1" gutterBottom align="center" color="text.secondary">
+            Explore the structure and function of the human ear
+          </Typography>
+        </Box>
+
+        {/* 3D Ear Model Section */}
+        <Box mb={4}>
+          <Card sx={{ mb: 2 }}>
+            <CardContent>
+              <Box display="flex" alignItems="center" mb={1}>
+                <ThreeDRotation color="primary" sx={{ mr: 1 }} />
+                <Typography variant="h6" component="h2">
+                  Interactive 3D Ear Model
+                </Typography>
+              </Box>
+              <Typography variant="body2" color="text.secondary" mb={2}>
+                Explore this interactive 3D model of the human ear. Click and drag to rotate, scroll to zoom.
+              </Typography>
+              <EarModel3D height={450} />
+            </CardContent>
+          </Card>
+        </Box>
+
+        {/* Main stepper content */}
         <Stepper activeStep={activeStep} orientation="vertical">
           {steps.map((step, index) => (
-            <Step key={step.label}>
+            <Step key={index}>
               <StepLabel>
-                <Typography variant="subtitle1" fontWeight="bold">{step.label}</Typography>
+                <Typography variant="h6">{step.label}</Typography>
               </StepLabel>
               <StepContent>
-                <Box sx={{ mb: 2 }}>
+                <Box>
                   {step.description}
                   <Box sx={{ mb: 2, mt: 3 }}>
-                    <Stack direction="row" spacing={1}>
-                      <Button
-                        disabled={activeStep === 0}
-                        onClick={handleBack}
-                        variant="outlined"
-                      >
-                        Back
-                      </Button>
+                    <div>
                       <Button
                         variant="contained"
-                        onClick={index === steps.length - 1 ? handleReset : handleNext}
+                        onClick={handleNext}
+                        sx={{ mt: 1, mr: 1 }}
                       >
                         {index === steps.length - 1 ? 'Finish' : 'Continue'}
                       </Button>
-                    </Stack>
+                      <Button
+                        disabled={index === 0}
+                        onClick={handleBack}
+                        sx={{ mt: 1, mr: 1 }}
+                      >
+                        Back
+                      </Button>
+                    </div>
                   </Box>
                 </Box>
               </StepContent>
             </Step>
           ))}
         </Stepper>
-        
         {activeStep === steps.length && (
-          <Paper square elevation={0} sx={{ p: 3, mt: 3, bgcolor: alpha(theme.palette.primary.main, 0.1) }}>
-            <Typography paragraph>Congratulations! You've completed the ear anatomy tutorial.</Typography>
-            <Button onClick={handleReset} variant="outlined">
-              Start Again
+          <Paper square elevation={0} sx={{ p: 3 }}>
+            <Typography paragraph>All steps completed - you&apos;ve successfully learned about the ear!</Typography>
+            <Button onClick={handleReset} sx={{ mt: 1, mr: 1 }}>
+              Start Over
             </Button>
           </Paper>
         )}
+
+        {/* Floating Glossary Button */}
+        <Tooltip title="Ear Anatomy Glossary" arrow placement="left">
+          <Fab 
+            color="primary" 
+            aria-label="glossary"
+            onClick={toggleGlossary}
+            sx={{ 
+              position: 'fixed', 
+              bottom: 20, 
+              right: 20,
+              zIndex: 1000
+            }}
+          >
+            <MenuBook />
+          </Fab>
+        </Tooltip>
+
+        {/* Glossary Drawer */}
+        <Drawer
+          anchor="right"
+          open={glossaryOpen}
+          onClose={toggleGlossary}
+          sx={{
+            '& .MuiDrawer-paper': { 
+              width: {xs: '100%', sm: 350},
+              maxWidth: '100%',
+              p: 2,
+              boxSizing: 'border-box'
+            },
+          }}
+        >
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+            <Typography variant="h6" color="primary" fontWeight="bold">
+              Ear Anatomy Glossary
+            </Typography>
+            <IconButton onClick={toggleGlossary} aria-label="close glossary">
+              <Close />
+            </IconButton>
+          </Box>
+          
+          <Typography variant="body2" paragraph>
+            Quick reference for ear anatomy terminology. Search or scroll to find terms.
+          </Typography>
+          
+          {/* Search box */}
+          <Paper
+            component="form"
+            sx={{ p: '2px 4px', display: 'flex', alignItems: 'center', mb: 2 }}
+          >
+            <InputBase
+              sx={{ ml: 1, flex: 1 }}
+              placeholder="Search glossary terms..."
+              value={glossarySearchTerm}
+              onChange={handleGlossarySearch}
+            />
+            <IconButton type="button" sx={{ p: '10px' }} aria-label="search">
+              <Search />
+            </IconButton>
+          </Paper>
+          
+          {filteredTerms.length === 0 ? (
+            <Typography variant="body2" align="center" sx={{ mt: 3 }}>
+              No matching terms found.
+            </Typography>
+          ) : (
+            <Box sx={{ maxHeight: 'calc(100vh - 160px)', overflowY: 'auto' }}>
+              {filteredTerms.map((item, index) => (
+                <Box key={index} sx={{ mb: 2, pb: 2, borderBottom: '1px solid #eee' }}>
+                  <Typography variant="subtitle2" fontWeight="bold" color="primary.dark">
+                    {item.term}
+                  </Typography>
+                  <Typography variant="body2">
+                    {item.definition}
+                  </Typography>
+                </Box>
+              ))}
+            </Box>
+          )}
+          
+          <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid #eee', display: 'flex', justifyContent: 'center' }}>
+            <Button 
+              startIcon={<ArrowBack />} 
+              onClick={toggleGlossary}
+              size="small"
+            >
+              Back to Learning
+            </Button>
+          </Box>
+        </Drawer>
       </Paper>
     </Container>
   );
