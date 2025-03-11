@@ -47,13 +47,13 @@ import {
 } from '@mui/icons-material';
 
 // Placeholder for actual images - replace with real images when available
-const otoscopeImg = "https://placeholder.com/otoscope-device";
-const otoscopyTechniqueImg = "https://placeholder.com/otoscopy-technique";
-const normalTympanicMembraneImg = "https://placeholder.com/normal-tympanic-membrane";
+const otoscopeImg = "/audiometry_trainer/assets/otoscope.jpg";
+const otoscopyTechniqueImg = "/audiometry_trainer/assets/otoscopy.webp";
+const normalTympanicMembraneImg = "/audiometry_trainer/assets/TM.jpg";
 const earCanalImg = "https://placeholder.com/ear-canal";
-const otitisMediaImg = "https://placeholder.com/otitis-media";
-const cerumenImpactionImg = "https://placeholder.com/cerumen-impaction";
-const perforatedTMImg = "https://placeholder.com/perforated-tympanic-membrane";
+const otitisMediaImg = "/audiometry_trainer/assets/OM.jpg";
+const cerumenImpactionImg = "/audiometry_trainer/assets/impacted.webp";
+const perforatedTMImg = "/audiometry_trainer/assets/perforation.webp";
 
 const OtoscopyPage: React.FC = () => {
   const theme = useTheme();

@@ -283,7 +283,7 @@ const EarModel3D: React.FC<{ height?: string | number }> = ({ height = 400 }) =>
                 <Typography>
                   Your browser may not fully support 3D content. 
                   <br />
-                  Please try using a modern browser like Chrome, Firefox or Edge.
+                  Please try using a browser like Chrome, Firefox or Edge.
                 </Typography>
               </Box>
             }
