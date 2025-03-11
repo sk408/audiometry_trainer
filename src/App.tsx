@@ -43,7 +43,8 @@ import {
   Brightness7 as LightModeIcon,
   KeyboardArrowDown,
   HearingDisabled,
-  ZoomIn
+  ZoomIn,
+  VolumeUp
 } from '@mui/icons-material';
 
 // Import pages
@@ -55,6 +56,7 @@ import TroubleshootingGuidePage from './pages/TroubleshootingGuidePage';
 import RealEarMeasurementPage from './pages/RealEarMeasurementPage';
 import EarAnatomyPage from './pages/EarAnatomyPage';
 import OtoscopyPage from './pages/OtoscopyPage';
+import ContourTestPage from './pages/ContourTestPage';
 // import SettingsPage from './pages/SettingsPage';
 
 // Import logo for splash screen
@@ -250,6 +252,7 @@ function App() {
     { text: 'Follow-Up', icon: <HearingDisabled />, path: '/followup' },
     { text: 'Troubleshooting', icon: <HelpIcon />, path: '/troubleshooting' },
     { text: 'Real Ear', icon: <HearingIcon />, path: '/real-ear-measurement' },
+    { text: 'Contour Test', icon: <VolumeUp />, path: '/contour-test' },
     // { text: 'Settings', icon: <SettingsIcon />, path: '/settings' },
   ];
 
@@ -482,6 +485,7 @@ function App() {
               <Route path="/real-ear-measurement" element={<RealEarMeasurementPage />} />
               <Route path="/ear-anatomy" element={<EarAnatomyPage />} />
               <Route path="/otoscopy" element={<OtoscopyPage />} />
+              <Route path="/contour-test" element={<ContourTestPage />} />
               {/* <Route path="/settings" element={<SettingsPage />} /> */}
             </Routes>
           </Box>

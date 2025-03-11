@@ -134,8 +134,8 @@ function EarModel({
       {activePart !== 'all' && (
         <Html position={[0, 0, 0]} distanceFactor={10}>
           <div style={{ 
-            backgroundColor: 'rgba(0,0,0,0.7)', 
-            color: 'white', 
+            backgroundColor: 'rgba(0,0,0,0.8)',
+            color: 'white',
             padding: '5px 10px', 
             borderRadius: '4px',
             transform: 'translate3d(-50%, -50%, 0)'
@@ -204,6 +204,7 @@ const EarModel3D: React.FC<{ height?: string | number }> = ({ height = 400 }) =>
           borderRadius: 2,
           overflow: 'hidden',
           boxShadow: 3,
+          bgcolor: 'white',
         }}
       >
         {loading && !modelError && (
@@ -217,7 +218,7 @@ const EarModel3D: React.FC<{ height?: string | number }> = ({ height = 400 }) =>
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              backgroundColor: 'rgba(255, 255, 255, 0.7)',
+              backgroundColor: 'white',
               zIndex: 1,
             }}
           >
@@ -232,7 +233,8 @@ const EarModel3D: React.FC<{ height?: string | number }> = ({ height = 400 }) =>
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              p: 2
+              p: 2,
+              bgcolor: 'white',
             }}
           >
             <Alert severity="error" sx={{ width: '100%' }}>
@@ -271,6 +273,7 @@ const EarModel3D: React.FC<{ height?: string | number }> = ({ height = 400 }) =>
           <Canvas
             camera={{ position: [0, 0, 5], fov: 45 }}
             onCreated={() => setLoading(false)}
+            style={{ background: 'white' }}
             fallback={
               <Box sx={{ 
                 height: '100%', 
@@ -312,9 +315,11 @@ const EarModel3D: React.FC<{ height?: string | number }> = ({ height = 400 }) =>
       </Box>
       
       {!modelError && (
-        <Typography variant="caption" color="text.secondary" align="center">
-          Use mouse to rotate the model. Scroll to zoom in/out.
-        </Typography>
+        <Box sx={{ mt: 1 }}>
+          <Typography variant="caption" color="text.secondary" align="center" display="block">
+            Use mouse to rotate the model. Scroll to zoom in/out.
+          </Typography>
+        </Box>
       )}
     </Box>
   );
