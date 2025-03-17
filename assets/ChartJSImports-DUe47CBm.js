@@ -1,0 +1,1 @@
+import{r as e}from"./react-vendor-Dgc981fj.js";import{C as r,a,L as i,b as s,P as l,c as p,p as o,d as m,e as n}from"./chart-BbBqQtpH.js";import"./mui-BPTcmYo2.js";import"./vendor-QrZtzWVC.js";import"./three-CboCXHlv.js";const E=({onLoad:t})=>(e.useEffect(()=>{r.register(a,i,s,l,p,o,m,n),t&&t()},[t]),null);export{E as default};
