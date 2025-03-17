@@ -1,7 +1,7 @@
 {
   "files": {
     "main.css": "/audiometry_trainer/static/css/main.e6c13ad2.css",
-    "main.js": "/audiometry_trainer/static/js/main.118c343a.js",
+    "main.js": "/audiometry_trainer/static/js/main.4bfb221d.js",
     "static/js/977.f4f5dbea.chunk.js": "/audiometry_trainer/static/js/977.f4f5dbea.chunk.js",
     "static/js/732.e9745f94.chunk.js": "/audiometry_trainer/static/js/732.e9745f94.chunk.js",
     "static/js/453.a37934fe.chunk.js": "/audiometry_trainer/static/js/453.a37934fe.chunk.js",
@@ -9,12 +9,12 @@
     "static/media/audiogram_sample.png": "/audiometry_trainer/static/media/audiogram_sample.14dc3f96c9bcb18fe5b4.png",
     "index.html": "/audiometry_trainer/index.html",
     "main.e6c13ad2.css.map": "/audiometry_trainer/static/css/main.e6c13ad2.css.map",
-    "main.118c343a.js.map": "/audiometry_trainer/static/js/main.118c343a.js.map",
+    "main.4bfb221d.js.map": "/audiometry_trainer/static/js/main.4bfb221d.js.map",
     "732.e9745f94.chunk.js.map": "/audiometry_trainer/static/js/732.e9745f94.chunk.js.map",
     "453.a37934fe.chunk.js.map": "/audiometry_trainer/static/js/453.a37934fe.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.e6c13ad2.css",
-    "static/js/main.118c343a.js"
+    "static/js/main.4bfb221d.js"
   ]
 }
