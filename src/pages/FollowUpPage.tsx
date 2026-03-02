@@ -1011,15 +1011,15 @@ const FollowUpPage: React.FC = () => {
                 Resources
               </Typography>
               <List>
-                <ListItem component="a" href="/audiometry_trainer/assets/follow_up_checklist.html" target="_blank">
+                <ListItem component="a" href="/audiometry_trainer/assets/follow_up_checklist.html" target="_blank" rel="noopener noreferrer">
                   <ListItemIcon><Assignment color="primary" /></ListItemIcon>
                   <ListItemText primary="Follow-Up Appointment Checklist" />
                 </ListItem>
-                <ListItem component="a" href="#" target="_blank">
+                <ListItem component="a" href="#" target="_blank" rel="noopener noreferrer">
                   <ListItemIcon><Help color="primary" /></ListItemIcon>
                   <ListItemText primary="Troubleshooting Guide" />
                 </ListItem>
-                <ListItem component="a" href="#" target="_blank">
+                <ListItem component="a" href="#" target="_blank" rel="noopener noreferrer">
                   <ListItemIcon><HearingOutlined color="primary" /></ListItemIcon>
                   <ListItemText primary="Hearing Aid User Guides" />
                 </ListItem>
