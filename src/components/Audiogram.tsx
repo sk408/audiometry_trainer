@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useMemo } from 'react';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -150,22 +150,73 @@ const Audiogram: React.FC<AudiogramProps> = ({
     }
   };
 
+  // Memoize the separated data points to prevent O(N) redundant iterations
+  const memoizedPoints = useMemo(() => {
+    const mainData = {
+      rightAir: [] as any[],
+      leftAir: [] as any[],
+      rightBone: [] as any[],
+      leftBone: [] as any[]
+    };
+
+    for (let i = 0; i < thresholds.length; i++) {
+      const point = thresholds[i];
+      const mapped = {
+        x: point.frequency,
+        y: point.hearingLevel,
+        responseStatus: point.responseStatus
+      };
+
+      if (point.ear === 'right') {
+        if (point.testType === 'air') mainData.rightAir.push(mapped);
+        else if (point.testType === 'bone') mainData.rightBone.push(mapped);
+      } else if (point.ear === 'left') {
+        if (point.testType === 'air') mainData.leftAir.push(mapped);
+        else if (point.testType === 'bone') mainData.leftBone.push(mapped);
+      }
+    }
+
+    let compareData = null;
+    if (compareThresholds) {
+      compareData = {
+        rightAir: [] as any[],
+        leftAir: [] as any[],
+        rightBone: [] as any[],
+        leftBone: [] as any[]
+      };
+
+      for (let i = 0; i < compareThresholds.length; i++) {
+        const point = compareThresholds[i];
+        const mapped = {
+          x: point.frequency,
+          y: point.hearingLevel,
+          responseStatus: point.responseStatus
+        };
+
+        if (point.ear === 'right') {
+          if (point.testType === 'air') compareData.rightAir.push(mapped);
+          else if (point.testType === 'bone') compareData.rightBone.push(mapped);
+        } else if (point.ear === 'left') {
+          if (point.testType === 'air') compareData.leftAir.push(mapped);
+          else if (point.testType === 'bone') compareData.leftBone.push(mapped);
+        }
+      }
+    }
+
+    return { mainData, compareData };
+  }, [thresholds, compareThresholds]);
+
   // Convert threshold data to chart format
   const prepareChartData = (): ChartData<'scatter'> => {
     // Data sets for different ear and test types
     const datasets = [];
+    const { mainData, compareData } = memoizedPoints;
     
     // Create separate datasets for each combination of ear and test type
     // Right ear air conduction
     datasets.push({
       label: 'Right Ear (Air)',
-      data: thresholds
-        .filter(point => point.ear === 'right' && point.testType === 'air')
-        .map(point => ({
-          x: point.frequency,
-          y: point.hearingLevel,
-          responseStatus: point.responseStatus
-        })),
+      data: mainData.rightAir,
       pointStyle: 'circle',
       borderColor: 'red',
       backgroundColor: 'red',
@@ -178,13 +229,7 @@ const Audiogram: React.FC<AudiogramProps> = ({
     // Left ear air conduction
     datasets.push({
       label: 'Left Ear (Air)',
-      data: thresholds
-        .filter(point => point.ear === 'left' && point.testType === 'air')
-        .map(point => ({
-          x: point.frequency,
-          y: point.hearingLevel,
-          responseStatus: point.responseStatus
-        })),
+      data: mainData.leftAir,
       pointStyle: 'crossRot',
       borderColor: 'blue',
       backgroundColor: 'blue',
@@ -197,13 +242,7 @@ const Audiogram: React.FC<AudiogramProps> = ({
     // Right ear bone conduction
     datasets.push({
       label: 'Right Ear (Bone)',
-      data: thresholds
-        .filter(point => point.ear === 'right' && point.testType === 'bone')
-        .map(point => ({
-          x: point.frequency,
-          y: point.hearingLevel,
-          responseStatus: point.responseStatus
-        })),
+      data: mainData.rightBone,
       pointStyle: 'triangle',
       borderColor: 'red',
       backgroundColor: 'rgba(255, 0, 0, 0.2)',
@@ -216,13 +255,7 @@ const Audiogram: React.FC<AudiogramProps> = ({
     // Left ear bone conduction
     datasets.push({
       label: 'Left Ear (Bone)',
-      data: thresholds
-        .filter(point => point.ear === 'left' && point.testType === 'bone')
-        .map(point => ({
-          x: point.frequency,
-          y: point.hearingLevel,
-          responseStatus: point.responseStatus
-        })),
+      data: mainData.leftBone,
       pointStyle: 'triangle',
       borderColor: 'blue',
       backgroundColor: 'rgba(0, 0, 255, 0.2)',
@@ -234,18 +267,12 @@ const Audiogram: React.FC<AudiogramProps> = ({
     });
 
     // Compare thresholds if provided
-    if (compareThresholds) {
+    if (compareData) {
       // Additional datasets for comparison
       // Right ear air comparison
       datasets.push({
         label: 'Right Ear Air (Expected)',
-        data: compareThresholds
-          .filter(point => point.ear === 'right' && point.testType === 'air')
-          .map(point => ({
-            x: point.frequency,
-            y: point.hearingLevel,
-            responseStatus: point.responseStatus
-          })),
+        data: compareData.rightAir,
         pointStyle: 'circle',
         borderColor: 'rgba(255, 0, 0, 0.5)',
         backgroundColor: 'rgba(255, 0, 0, 0.5)',
@@ -259,13 +286,7 @@ const Audiogram: React.FC<AudiogramProps> = ({
       // Left ear air comparison
       datasets.push({
         label: 'Left Ear Air (Expected)',
-        data: compareThresholds
-          .filter(point => point.ear === 'left' && point.testType === 'air')
-          .map(point => ({
-            x: point.frequency,
-            y: point.hearingLevel,
-            responseStatus: point.responseStatus
-          })),
+        data: compareData.leftAir,
         pointStyle: 'crossRot',
         borderColor: 'rgba(0, 0, 255, 0.5)',
         backgroundColor: 'rgba(0, 0, 255, 0.5)',
@@ -279,13 +300,7 @@ const Audiogram: React.FC<AudiogramProps> = ({
       // Right ear bone comparison
       datasets.push({
         label: 'Right Ear Bone (Expected)',
-        data: compareThresholds
-          .filter(point => point.ear === 'right' && point.testType === 'bone')
-          .map(point => ({
-            x: point.frequency,
-            y: point.hearingLevel,
-            responseStatus: point.responseStatus
-          })),
+        data: compareData.rightBone,
         pointStyle: 'triangle',
         borderColor: 'rgba(255, 0, 0, 0.5)',
         backgroundColor: 'rgba(255, 0, 0, 0.2)',
@@ -299,13 +314,7 @@ const Audiogram: React.FC<AudiogramProps> = ({
       // Left ear bone comparison
       datasets.push({
         label: 'Left Ear Bone (Expected)',
-        data: compareThresholds
-          .filter(point => point.ear === 'left' && point.testType === 'bone')
-          .map(point => ({
-            x: point.frequency,
-            y: point.hearingLevel,
-            responseStatus: point.responseStatus
-          })),
+        data: compareData.leftBone,
         pointStyle: 'triangle',
         borderColor: 'rgba(0, 0, 255, 0.5)',
         backgroundColor: 'rgba(0, 0, 255, 0.2)',
