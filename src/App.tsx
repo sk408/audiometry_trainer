@@ -124,7 +124,6 @@ function App() {
     // Listen for storage events (when settings are changed in another tab/component)
     const handleStorageChange = (event: StorageEvent) => {
       if (event.key === 'audiometryTrainerSettings') {
-        console.log('Settings changed in another component, reloading settings');
         loadAndApplySettings();
       }
     };
@@ -133,7 +132,6 @@ function App() {
     
     // Custom event for same-tab updates
     const handleCustomStorageChange = () => {
-      console.log('Settings changed in same tab, reloading settings');
       loadAndApplySettings();
     };
     

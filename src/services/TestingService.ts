@@ -219,7 +219,6 @@ class TestingService {
     const currentFrequency = step.frequency;
     const currentEar = step.ear;
     
-    console.log(`TestingService: Setting level for frequency ${currentFrequency}Hz, ${currentEar} ear to ${level}dB`);
     
     // Only update the current step to prevent affecting other frequencies
     step.currentLevel = level;
@@ -239,7 +238,6 @@ class TestingService {
       // Patient responded - ALWAYS decrease level by 10dB (make it softer)
       // This is a core principle of Hughson-Westlake: any response triggers 10 dB descent
       step.currentLevel = Math.max(-10, step.currentLevel - 10) as HearingLevel;
-      console.log(`Patient responded: Decreasing by 10 dB to ${step.currentLevel} dB (Hughson-Westlake protocol)`);
     } else {
       // Patient did not respond - increase by 5 dB
       // In Hughson-Westlake, after no response during bracketing, always use 5 dB ascent
@@ -247,7 +245,6 @@ class TestingService {
       const isInitialPhase = responses.length < 2; 
       const stepSize = isInitialPhase ? this.initialStepSize : this.finalStepSize;
       step.currentLevel = Math.min(120, step.currentLevel + stepSize) as HearingLevel;
-      console.log(`No response: Increasing by ${stepSize} dB to ${step.currentLevel} dB (${isInitialPhase ? 'Initial phase' : 'Bracketing phase'})`);
     }
     
     // Check if threshold is established per Hughson-Westlake criteria
@@ -314,14 +311,11 @@ class TestingService {
         if (!isThresholdFound || (lowestThresholdLevel !== null && level < lowestThresholdLevel)) {
           isThresholdFound = true;
           lowestThresholdLevel = level;
-          console.log(`Threshold identified at ${level} dB with ${counts.heard}/${counts.total} responses`);
         }
       }
     });
     
-    if (isThresholdFound) {
-      console.log(`Final threshold established at ${lowestThresholdLevel} dB`);
-    }
+
     
     return isThresholdFound;
   }
@@ -334,10 +328,7 @@ class TestingService {
     
     // Log the current step's level and status before moving
     const currentStep = this.getCurrentStep();
-    if (currentStep) {
-      console.log(`Completing step at level: ${currentStep.currentLevel}dB before moving to next step`);
-      console.log(`Step completed status: ${currentStep.completed}, responseStatus: ${currentStep.responseStatus || 'not set'}`);
-    }
+
     
     // Simply change the currentStep index without modifying the step itself
     // This preserves any completed/threshold status that was set
@@ -355,10 +346,8 @@ class TestingService {
    * @returns The next test step or null if test is complete
    */
   public skipCurrentStep(markCompleted: boolean = false): TestStep | null {
-    console.log("=== Debug: skipCurrentStep called with markCompleted =", markCompleted);
     
     if (!this.currentSession) {
-      console.log("=== Debug: skipCurrentStep - no current session");
       return null;
     }
     
@@ -368,7 +357,6 @@ class TestingService {
       // when navigating between frequencies
       if (markCompleted) {
         // Only mark as completed if explicitly requested
-        console.log(`Marking step as completed with threshold at: ${step.currentLevel}dB`);
         step.completed = true;
         
         // If we're marking as completed, also set responseStatus if not already set
@@ -376,7 +364,6 @@ class TestingService {
           step.responseStatus = 'threshold';
         }
       } else {
-        console.log(`Skipping to next step without marking current step as completed`);
         // FIXED: Do not modify the completed or responseStatus properties if they're already set
         // This preserves thresholds when navigating between frequencies
       }
@@ -384,13 +371,9 @@ class TestingService {
       const beforeStep = this.currentSession.currentStep;
       this.moveToNextStep();
       const afterStep = this.currentSession.currentStep;
-      console.log(`=== Debug: skipCurrentStep - moved from step ${beforeStep} to ${afterStep}`);
       
       // Debug - check if the session sequence length matches
-      console.log(`=== Debug: session has ${this.currentSession.testSequence.length} total steps`);
-      console.log(`=== Debug: returning new step with frequency ${this.getCurrentStep()?.frequency || 'null'}`);
     } else {
-      console.log("=== Debug: skipCurrentStep - no current step found");
     }
     
     return this.getCurrentStep();
@@ -478,7 +461,6 @@ class TestingService {
         
         // If we found a validated threshold, use it; otherwise fall back to currentLevel
         const thresholdLevel = validatedThreshold !== null ? validatedThreshold : step.currentLevel;
-        console.log(`Extracting threshold for completed step: ${thresholdLevel}dB (was ${step.currentLevel}dB)`);
         
         thresholds.push({
           frequency: step.frequency,
@@ -489,7 +471,6 @@ class TestingService {
         });
       } else if (step.responses.length > 0) {
         // For incomplete steps with responses, find the lowest level with at least 2 responses
-        console.log(`Extracting threshold data for incomplete step with ${step.responses.length} responses`);
         
         const levelCounts = new Map<HearingLevel, number>();
         
@@ -512,7 +493,6 @@ class TestingService {
         });
         
         if (thresholdLevel !== null) {
-          console.log(`Found valid threshold in incomplete step at: ${thresholdLevel}dB`);
           
           thresholds.push({
             frequency: step.frequency,
@@ -524,7 +504,6 @@ class TestingService {
         } else if (step.responses.length > 0) {
           // No threshold established, use highest level tested
           const highestLevel = Math.max(...step.responses.map(r => r.level)) as HearingLevel;
-          console.log(`No valid threshold found, using highest level: ${highestLevel}dB`);
           
           thresholds.push({
             frequency: step.frequency,

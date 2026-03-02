@@ -41,7 +41,6 @@ function EarModel({
   onPartHover?: (part: string | null) => void;
   onError?: (error: any) => void;
 }) {
-  console.log(`Attempting to load 3D model from: ${modelPath}`);
   
   // Hooks must be at the top level, not inside conditionals
   const modelRef = useRef<Group>(null);
@@ -57,7 +56,6 @@ function EarModel({
   useEffect(() => {
     try {
       if (model) {
-        console.log(`Successfully loaded 3D model:`, { scene: model, ...gltfResult });
       }
     } catch (error: unknown) {
       console.error('Error loading model:', error);

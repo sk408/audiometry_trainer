@@ -98,10 +98,8 @@ const GuidancePanel: React.FC<GuidancePanelProps> = ({
   
   // Update effect to handle responseDetected
   useEffect(() => {
-    console.log('GuidancePanel received patientResponded:', patientResponded);
     
     if (patientResponded) {
-      console.log('Setting responseDetected to true');
       setResponseDetected(true);
       
       // Keep a record that a response was detected recently
@@ -110,7 +108,6 @@ const GuidancePanel: React.FC<GuidancePanelProps> = ({
       }, 8000); // Keep the styling for 8 seconds
       
       return () => {
-        console.log('Cleaning up timer');
         clearTimeout(timer);
       };
     }

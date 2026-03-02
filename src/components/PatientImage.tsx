@@ -85,7 +85,6 @@ const PatientImage: React.FC<PatientImageProps> = ({ patientId, responding, idle
   
   // Handle responding state changes with minimal delay
   useEffect(() => {
-    console.log('PatientImage: responding prop =', responding);
     
     if (responding) {
       // Immediately show response
@@ -96,7 +95,6 @@ const PatientImage: React.FC<PatientImageProps> = ({ patientId, responding, idle
       // This provides a much faster return to default state
       const timeoutId = setTimeout(() => {
         if (!responding) {
-          console.log('PatientImage: quickly resetting isResponding to false');
           setIsResponding(false);
           
           // Also reset wasResponding quickly (after just a tiny additional delay)

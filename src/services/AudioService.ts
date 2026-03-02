@@ -13,7 +13,7 @@ class AudioService {
   private boneCalibrationValues: Map<Frequency, number> = new Map();
   private panNode: StereoPannerNode | null = null;
   private currentFrequency: number = 0;
-  private debugMode: boolean = true; // Enable debug logs
+  private debugMode: boolean = false; // Enable debug logs
   private pulseInterval: number | null = null; // For pulsing tone
   private pulseDuration: number = 200; // Default pulse duration in ms
   private pauseDuration: number = 200; // Default pause between pulses in ms
@@ -179,9 +179,7 @@ class AudioService {
     // Stop oscillator after duration
     this.oscillator.stop(now + attackTime + (durationMs / 1000) + 0.1); // Add small buffer
 
-    if (this.debugMode) {
-      console.log(`Playing ${testType} tone: ${frequency}Hz at ${dBHL}dB HL to ${ear} ear for ${durationMs}ms`);
-    }
+
   }
 
   /**
@@ -236,9 +234,7 @@ class AudioService {
     // Use our comprehensive cleanup method
     this.destroyAllAudioNodes();
     
-    if (this.debugMode) {
-      console.log(`🛑 Stopped tone at ${freqBeforeStop}Hz`);
-    }
+
   }
   
   /**
@@ -321,7 +317,6 @@ class AudioService {
   public playMaskingNoise(intensity: number, ear: string = EAR.BOTH): void {
     // Implementation for masking noise would go here
     // This would typically use filtered noise rather than a pure tone
-    console.log(`Playing masking noise at ${intensity} dB HL to ${ear} ear`);
   }
   
   /**
@@ -329,7 +324,6 @@ class AudioService {
    */
   public stopMaskingNoise(): void {
     // Implementation to stop masking noise would go here
-    console.log('Stopping masking noise');
   }
 
   /**
@@ -359,9 +353,7 @@ class AudioService {
       this.playTone(frequency, dBHL, ear, this.pulseDuration, testType);
     }, this.pulseDuration + this.pauseDuration);
     
-    if (this.debugMode) {
-      console.log(`Playing pulsed ${testType} tone: ${frequency}Hz at ${dBHL}dB HL to ${ear} ear`);
-    }
+
   }
 
   /**
@@ -373,9 +365,7 @@ class AudioService {
     this.pulseDuration = pulseDuration;
     this.pauseDuration = pauseDuration;
     
-    if (this.debugMode) {
-      console.log(`Pulse timing set: ${pulseDuration}ms on, ${pauseDuration}ms off`);
-    }
+
   }
 
   /**
