@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import {
   Box,
   Paper,
@@ -26,7 +26,7 @@ import {
   Warning,
   InfoOutlined
 } from '@mui/icons-material';
-import { TestSession, TestResult } from '../interfaces/AudioTypes';
+import { TestSession, TestResult, ThresholdPoint } from '../interfaces/AudioTypes';
 import Audiogram from './Audiogram';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -74,13 +74,24 @@ const TestResults: React.FC<TestResultsProps> = ({ session, onNewTest }) => {
   
   // Get patient details
   const patient = patientService.getPatientById(session.patientId);
+
+  // Create a lookup map for actual thresholds to optimize search from O(N^2) to O(N)
+  const actualThresholdMap = useMemo(() => {
+    const map = new Map<string, ThresholdPoint>();
+    if (patient?.thresholds) {
+      patient.thresholds.forEach(t => {
+        const key = `${t.frequency}-${t.ear}-${t.testType}`;
+        map.set(key, t);
+      });
+    }
+    return map;
+  }, [patient]);
   
   // Calculate the accuracy metrics if actual thresholds are available
   const calculateAccuracyMetrics = () => {
     if (!patient) return { accuracy: 0, exactMatch: 0, within5dB: 0, within10dB: 0, missedThresholds: 0 };
     
     const userThresholds = results.userThresholds;
-    const actualThresholds = patient.thresholds;
     
     let exactMatchCount = 0;
     let within5dBCount = 0;
@@ -89,13 +100,9 @@ const TestResults: React.FC<TestResultsProps> = ({ session, onNewTest }) => {
     
     // Compare each user threshold to the corresponding actual threshold
     userThresholds.forEach(userT => {
-      // Find matching actual threshold
-      const matchingActual = actualThresholds.find(
-        actT => 
-          actT.frequency === userT.frequency && 
-          actT.ear === userT.ear && 
-          actT.testType === userT.testType
-      );
+      // Find matching actual threshold using optimized lookup
+      const key = `${userT.frequency}-${userT.ear}-${userT.testType}`;
+      const matchingActual = actualThresholdMap.get(key);
       
       if (matchingActual && userT.responseStatus === 'threshold' && matchingActual.responseStatus === 'threshold') {
         const difference = Math.abs(userT.hearingLevel - matchingActual.hearingLevel);
@@ -114,7 +121,7 @@ const TestResults: React.FC<TestResultsProps> = ({ session, onNewTest }) => {
       }
     });
     
-    const totalActualThresholds = actualThresholds.filter(t => t.responseStatus === 'threshold').length;
+    const totalActualThresholds = patient.thresholds.filter(t => t.responseStatus === 'threshold').length;
     const totalTestedThresholds = userThresholds.filter(t => t.responseStatus === 'threshold').length;
     
     return {
@@ -366,12 +373,8 @@ const TestResults: React.FC<TestResultsProps> = ({ session, onNewTest }) => {
                 </TableHead>
                 <TableBody>
                   {results.userThresholds.map((threshold, index) => {
-                    const actualThreshold = patient?.thresholds.find(
-                      t => 
-                        t.frequency === threshold.frequency && 
-                        t.ear === threshold.ear && 
-                        t.testType === threshold.testType
-                    );
+                    const key = `${threshold.frequency}-${threshold.ear}-${threshold.testType}`;
+                    const actualThreshold = actualThresholdMap.get(key);
                     
                     let difference = 0;
                     let status = 'Untested';
