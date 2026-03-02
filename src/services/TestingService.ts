@@ -568,27 +568,31 @@ class TestingService {
    */
   private identifyTechnicalErrors(session: TestSession): string[] {
     const errors: string[] = [];
+    let skippedStepsCount = 0;
     
-    // Check if some frequencies were skipped
-    const skippedSteps = session.testSequence.filter(step => !step.completed);
-    if (skippedSteps.length > 0) {
-      errors.push(`Skipped ${skippedSteps.length} test frequencies`);
-    }
-    
-    // Check if sufficient responses were collected
+    // Single pass to identify all technical errors
     session.testSequence.forEach(step => {
-      if (step.completed && step.responses.length < 3) {
-        errors.push(`Insufficient responses for ${step.frequency} Hz in ${step.ear} ear`);
+      // Check if some frequencies were skipped
+      if (!step.completed) {
+        skippedStepsCount++;
+      } else {
+        // Check if sufficient responses were collected
+        if (step.responses.length < 3) {
+          errors.push(`Insufficient responses for ${step.frequency} Hz in ${step.ear} ear`);
+        }
       }
-    });
-    
-    // Check if the starting level was appropriate
-    session.testSequence.forEach(step => {
+
+      // Check if the starting level was appropriate
       if (step.responses.length > 0 && step.responses[0].level > 60) {
         errors.push(`Starting level too high for ${step.frequency} Hz in ${step.ear} ear`);
       }
     });
     
+    // Add skipped steps error at the beginning to match original order
+    if (skippedStepsCount > 0) {
+      errors.unshift(`Skipped ${skippedStepsCount} test frequencies`);
+    }
+
     return errors;
   }
 
