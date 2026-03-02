@@ -263,6 +263,7 @@ const EarModel3D: React.FC<{ height?: string | number }> = ({ height = 400 }) =>
                   component={Link}
                   href={getAssetPath('/assets/Main_ear_default.glb')} 
                   target="_blank"
+                  rel="noopener noreferrer"
                 >
                   Open model file directly
                 </Button>
