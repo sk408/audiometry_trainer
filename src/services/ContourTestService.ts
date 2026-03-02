@@ -63,9 +63,17 @@ export class ContourTestService {
     }
     
     // Check for abnormally low ratings at high intensities (recruitment)
-    const highIntensityRatings = sortedRatings.filter(r => r.intensity >= 70);
-    if (highIntensityRatings.length > 0) {
-      const averageHighRating = highIntensityRatings.reduce((sum, r) => sum + r.rating, 0) / highIntensityRatings.length;
+    let highRatingSum = 0;
+    let highRatingCount = 0;
+    for (const r of sortedRatings) {
+      if (r.intensity >= 70) {
+        highRatingSum += r.rating;
+        highRatingCount++;
+      }
+    }
+
+    if (highRatingCount > 0) {
+      const averageHighRating = highRatingSum / highRatingCount;
       
       if (averageHighRating < 5) {
         analysis.isNormal = false;
