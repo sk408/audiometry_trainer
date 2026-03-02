@@ -56,27 +56,30 @@ const PatientsPage: React.FC = () => {
 
   // Apply filters and search
   useEffect(() => {
-    let filtered = patients;
+    const lowerSearchTerm = searchTerm ? searchTerm.toLowerCase() : '';
     
-    // Apply search term filter
-    if (searchTerm) {
-      filtered = filtered.filter(
-        patient => 
-          patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          patient.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          patient.id.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-    
-    // Apply difficulty filter
-    if (difficultyFilter !== 'all') {
-      filtered = filtered.filter(patient => patient.difficulty === difficultyFilter);
-    }
-    
-    // Apply hearing loss type filter
-    if (hearingLossTypeFilter !== 'all') {
-      filtered = filtered.filter(patient => patient.hearingLossType === hearingLossTypeFilter);
-    }
+    const filtered = patients.filter(patient => {
+      // Apply hearing loss type filter (fast path early rejection)
+      if (hearingLossTypeFilter !== 'all' && patient.hearingLossType !== hearingLossTypeFilter) {
+        return false;
+      }
+
+      // Apply difficulty filter (fast path early rejection)
+      if (difficultyFilter !== 'all' && patient.difficulty !== difficultyFilter) {
+        return false;
+      }
+
+      // Apply search term filter
+      if (lowerSearchTerm) {
+        return (
+          patient.name.toLowerCase().includes(lowerSearchTerm) ||
+          patient.description.toLowerCase().includes(lowerSearchTerm) ||
+          patient.id.toLowerCase().includes(lowerSearchTerm)
+        );
+      }
+
+      return true;
+    });
     
     setFilteredPatients(filtered);
     setPage(1); // Reset to first page when filters change
