@@ -482,9 +482,15 @@ class RealEarMeasurementService {
     let totalWeightedScore = 0;
     let totalWeight = 0;
     
+    // Create a Map of target points indexed by frequency for O(1) lookup
+    const targetPointsMap = new Map();
+    target.targetPoints.forEach(tp => {
+      targetPointsMap.set(tp.frequency, tp);
+    });
+
     // For each measurement point, find the corresponding target point
     measurement.measurementPoints.forEach(measPoint => {
-      const targetPoint = target.targetPoints.find(tp => tp.frequency === measPoint.frequency);
+      const targetPoint = targetPointsMap.get(measPoint.frequency);
       
       if (targetPoint) {
         // Calculate absolute difference
