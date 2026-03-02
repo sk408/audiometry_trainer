@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import {
   Box,
   Paper,
@@ -75,6 +75,18 @@ const TestResults: React.FC<TestResultsProps> = ({ session, onNewTest }) => {
   // Get patient details
   const patient = patientService.getPatientById(session.patientId);
   
+  // Pre-calculate a lookup map for actual thresholds to change O(N) lookup to O(1)
+  const actualThresholdsMap = useMemo(() => {
+    const map = new Map();
+    if (patient?.thresholds) {
+      for (let i = 0; i < patient.thresholds.length; i++) {
+        const t = patient.thresholds[i];
+        map.set(`${t.frequency}-${t.ear}-${t.testType}`, t);
+      }
+    }
+    return map;
+  }, [patient?.thresholds]);
+
   // Calculate the accuracy metrics if actual thresholds are available
   const calculateAccuracyMetrics = () => {
     if (!patient) return { accuracy: 0, exactMatch: 0, within5dB: 0, within10dB: 0, missedThresholds: 0 };
@@ -89,13 +101,8 @@ const TestResults: React.FC<TestResultsProps> = ({ session, onNewTest }) => {
     
     // Compare each user threshold to the corresponding actual threshold
     userThresholds.forEach(userT => {
-      // Find matching actual threshold
-      const matchingActual = actualThresholds.find(
-        actT => 
-          actT.frequency === userT.frequency && 
-          actT.ear === userT.ear && 
-          actT.testType === userT.testType
-      );
+      // Find matching actual threshold using O(1) lookup
+      const matchingActual = actualThresholdsMap.get(`${userT.frequency}-${userT.ear}-${userT.testType}`);
       
       if (matchingActual && userT.responseStatus === 'threshold' && matchingActual.responseStatus === 'threshold') {
         const difference = Math.abs(userT.hearingLevel - matchingActual.hearingLevel);
@@ -366,12 +373,7 @@ const TestResults: React.FC<TestResultsProps> = ({ session, onNewTest }) => {
                 </TableHead>
                 <TableBody>
                   {results.userThresholds.map((threshold, index) => {
-                    const actualThreshold = patient?.thresholds.find(
-                      t => 
-                        t.frequency === threshold.frequency && 
-                        t.ear === threshold.ear && 
-                        t.testType === threshold.testType
-                    );
+                    const actualThreshold = actualThresholdsMap.get(`${threshold.frequency}-${threshold.ear}-${threshold.testType}`);
                     
                     let difference = 0;
                     let status = 'Untested';
