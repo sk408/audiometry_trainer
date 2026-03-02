@@ -184,15 +184,12 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
     // We'll process responses even if not in trainer mode
     // But we'll only update UI state if trainer mode is on
     if (!currentStep) {
-      console.log('Cannot update trainer state: currentStep is falsy');
       return;
     }
     
-    console.log('🔍 Processing response:', didRespond, 'in phase:', procedurePhase, 'trainer mode:', trainerMode);
     
     // Always record the response for guidance purposes
     if (didRespond) {
-      console.log('Patient responded - updating state');
       
       // Only update UI state if trainer mode is on
       if (trainerMode) {
@@ -201,13 +198,11 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
           setProcedurePhase('descending');
           setSuggestedAction('decrease');
           setCurrentGuidance('The patient responded at this level. According to Hughson-Westlake, the next step would be to decrease by 10 dB and present the tone again.');
-          console.log('Initial phase - patient responded, changing to descending phase');
         } else if (procedurePhase === 'descending') {
           // Continue descending
           setProcedurePhase('descending');
           setSuggestedAction('decrease');
           setCurrentGuidance('The patient can still hear at this level. In the descending phase, you should continue to decrease by 10 dB intervals.');
-          console.log('Descending phase - patient responded, suggesting continue decreasing');
         } else if (procedurePhase === 'ascending') {
           // If patient responds during ascending phase, we've found a potential threshold
           // This is the beginning of the bracketing pattern
@@ -244,11 +239,9 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
           // After any positive response, must immediately decrease by 10 dB
           setSuggestedAction('decrease');
           setCurrentGuidance(`You've found the potential threshold! The patient responded at ${currentLevel} dB. According to Hughson-Westlake protocol, you must immediately decrease by 10 dB and begin the bracketing pattern (10 dB down after response, 5 dB up after no response).`);
-          console.log(`Ascending phase - patient responded at ${currentLevel}dB, changed to threshold phase, starting bracketing pattern`);
           
           // Important: Record the timestamp when entering threshold phase to ignore previous responses
           setThresholdPhaseStartTime(Date.now());
-          console.log(`⏰ Setting threshold phase start time to ${Date.now()}`);
         } else if (procedurePhase === 'threshold') {
           // Continue tracking responses at the current level
           const currentLevel = currentStep.currentLevel;
@@ -270,7 +263,6 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
           levelResponseCounts[frequency][ear][currentLevel].total += 1;
           levelResponseCounts[frequency][ear][currentLevel].heard += 1;
 
-          console.log(`Threshold phase - adding response at ${currentLevel}dB for ${frequency}Hz, ${ear} ear: ${levelResponseCounts[frequency][ear][currentLevel].heard}/${levelResponseCounts[frequency][ear][currentLevel].total} responses`);
           
           setResponseCounts(levelResponseCounts);
           
@@ -283,13 +275,10 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
           
           // Make sure this is a new student-initiated presentation
           if (thresholdPhaseStartTime && lastPresentationTimeRef.current > thresholdPhaseStartTime) {
-            console.log(`🔢 Current responses at ${currentLevel}dB: ${heardCount}/${totalCount}`);
-            console.log(`⏰ Presentation time: ${lastPresentationTimeRef.current}, Threshold phase start: ${thresholdPhaseStartTime}`);
             
             // CRITICAL FIX: Check if this is a new presentation we haven't processed yet
             if (lastPresentationTimeRef.current > lastProcessedPresentationRef.current) {
               // Update the last processed time to prevent double counting
-              console.log(`✅ New presentation detected. Last processed: ${lastProcessedPresentationRef.current}, Current: ${lastPresentationTimeRef.current}`);
               lastProcessedPresentationRef.current = lastPresentationTimeRef.current;
               
               // FIXED HUGHSON-WESTLAKE PROTOCOL:
@@ -304,44 +293,33 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
               if (totalCount >= 2) {
                 if (heardCount >= 2) {
                   // Confirmed threshold: at least 2 out of 3 responses
-                  console.log(`✅ Threshold CONFIRMED at ${currentLevel}dB with ${heardCount}/${totalCount} responses.`);
                   setProcedurePhase('complete');
                   setSuggestedAction('store_threshold');
                   setCurrentGuidance(`Excellent! You have established a threshold at ${currentLevel} dB. The patient has responded ${heardCount} times out of ${totalCount} at this level, which meets the criteria of "2 out of 3" responses needed to establish a threshold. You can now store this value and move to the next frequency.`);
                 } else {
                   // Failed threshold confirmation: less than 2 out of 3 responses
-                  console.log(`❌ Threshold NOT confirmed at ${currentLevel}dB with only ${heardCount}/${totalCount} responses.`);
                   setSuggestedAction('decrease');
                   setCurrentGuidance(`The patient responded, but has only ${heardCount} total responses out of ${totalCount} at ${currentLevel} dB. Following Hughson-Westlake protocol, decrease by 10 dB after ANY response, then continue testing.`);
                 }
               } else if (heardCount >= 2) {
                 // Already have 2 positive responses, but continue for confirmation
-                console.log(`👍 Already have ${heardCount} positive responses at ${currentLevel}dB, need more presentations for confirmation.`);
                 setSuggestedAction('decrease');
                 setCurrentGuidance(`Good! The patient has responded ${heardCount} times at ${currentLevel} dB. Following Hughson-Westlake protocol, decrease by 10 dB after EACH response, then continue the bracketing pattern.`);
               } else if (totalCount === 2 && heardCount === 1) {
                 // Have 1 out of 2 responses, need more presentations
-                console.log(`⏳ Have 1 out of 2 responses at ${currentLevel}dB, continuing bracketing.`);
                 setSuggestedAction('decrease');
                 setCurrentGuidance(`The patient has responded once out of ${totalCount} presentations at ${currentLevel} dB. Following Hughson-Westlake protocol, decrease by 10 dB after EACH response, then continue the bracketing pattern.`);
               } else {
                 // Continue testing with the bracketing pattern
-                console.log(`⏳ Starting bracketing at ${currentLevel}dB (have ${heardCount}/${totalCount}, need at least 2/3)`);
                 setSuggestedAction('decrease');
                 setCurrentGuidance(`The patient has responded ${heardCount} time(s) out of ${totalCount} at ${currentLevel} dB. Following Hughson-Westlake protocol, decrease by 10 dB after EACH response, then continue the bracketing pattern.`);
               }
-            } else {
-              console.log(`⚠️ Double counting prevented! This presentation (${lastPresentationTimeRef.current}) was already processed.`);
             }
-          } else {
-            console.log('⚠️ Ignoring response from before threshold phase started in updateTrainerState');
-            console.log(`⏰ Presentation time: ${lastPresentationTimeRef.current}, Threshold phase start: ${thresholdPhaseStartTime}`);
           }
         }
       }
     } else {
       // No response
-      console.log('Patient did NOT respond - updating state');
       
       // Only update UI state if trainer mode is on
       if (trainerMode) {
@@ -349,13 +327,11 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
           // Initial level too low, suggest increasing
           setSuggestedAction('increase');
           setCurrentGuidance('The patient did not respond to the initial presentation. This suggests the starting level was too low. Increase the level by 10-15 dB and try again.');
-          console.log('Initial phase - no response, suggest increasing');
         } else if (procedurePhase === 'descending') {
           // Move to ascending phase when patient stops responding during descending
           setProcedurePhase('ascending');
           setSuggestedAction('increase');
           setCurrentGuidance('The patient no longer responds at this level. This means we\'ve gone below their threshold. Now switch to the ascending phase: increase by 5 dB steps until the patient responds again. Note that we use smaller steps (5 dB) when ascending to more precisely determine the threshold.');
-          console.log('Descending phase - no response, changing to ascending phase');
         } else if (procedurePhase === 'threshold') {
           // During threshold determination - if no response, track it and suggest increasing by 5dB
           const currentLevel = currentStep.currentLevel;
@@ -383,7 +359,6 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
           const heardCount = levelResponseCounts[currentStep.frequency][currentStep.ear][currentLevel].heard;
           const totalCount = levelResponseCounts[currentStep.frequency][currentStep.ear][currentLevel].total;
           
-          console.log(`🔢 Current responses at ${currentLevel}dB: ${heardCount}/${totalCount}`);
           
           // Update last processed time to prevent double counting
           if (lastPresentationTimeRef.current > lastProcessedPresentationRef.current) {
@@ -395,18 +370,15 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
           // First check if we've already met threshold criteria despite this no-response
           if (totalCount >= 2 && heardCount >= 2) {
             // We already have a threshold! (2+ out of 3+ responses)
-            console.log(`✅ Threshold CONFIRMED at ${currentLevel}dB with ${heardCount}/${totalCount} responses, despite this no-response.`);
             setProcedurePhase('complete');
             setSuggestedAction('store_threshold');
             setCurrentGuidance(`You have established a threshold at ${currentLevel} dB. The patient has responded ${heardCount} times out of ${totalCount} at this level, which meets the criteria of "2 out of 3" responses needed to establish a threshold. You can now store this value and move to the next frequency.`);
           } else if (totalCount >= 2 && heardCount < 2) {
             // Failed to confirm threshold at this level - move up 5 dB
-            console.log(`❌ Level ${currentLevel}dB is below threshold with only ${heardCount}/${totalCount} positive responses.`);
             setSuggestedAction('increase');
             setCurrentGuidance(`The patient did not respond at ${currentLevel} dB (${heardCount}/${totalCount} responses). Following Hughson-Westlake protocol, increase by 5 dB and continue the bracketing pattern.`);
           } else if (totalCount - heardCount >= 2) {
             // Already have 2 negative responses, suggest increasing by 5 dB
-            console.log(`👎 Already have ${totalCount - heardCount} negative responses at ${currentLevel}dB, suggesting to increase.`);
             setSuggestedAction('increase');
             setCurrentGuidance(`The patient has failed to respond ${totalCount - heardCount} times out of ${totalCount} at ${currentLevel} dB. Following Hughson-Westlake protocol, increase by 5 dB and continue the bracketing pattern.`);
           } else {
@@ -419,7 +391,6 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
           setProcedurePhase('ascending');
           setSuggestedAction('increase');
           setCurrentGuidance('Patient still doesn\'t respond at this level. Continue to increase by 5 dB steps until you get a response. Remember, we use smaller 5 dB steps during the ascending phase for more precise threshold determination.');
-          console.log('Ascending phase - no response, continue ascending');
         }
       }
     }
@@ -429,15 +400,12 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
   const processAutomaticResponse = useCallback(() => {
     // This function handles automatic responses during tone presentation for all phases
     if (!currentStep) {
-      console.log('❌ Cannot process response: currentStep is null');
       return;
     }
     
-    console.log('🔍 Processing automatic response with toneActive =', toneActive);
     
     // Simulate patient response
     const didRespond = simulatePatientResponse();
-    console.log('👂 Patient response simulation result:', didRespond);
     
     // Update UI to show response
     setPatientResponse(didRespond);
@@ -445,7 +413,6 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
     
     // Display user-friendly notification about patient response
     if (didRespond) {
-      console.log('👂 Patient is responding to the tone!');
       // Set the flag that patient just responded (for the guidance panel)
       setPatientJustResponded(true);
       
@@ -454,17 +421,14 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
         setPatientJustResponded(false);
       }, 3000);
     } else {
-      console.log('👂 Patient does not hear this tone.');
       setPatientJustResponded(false);
     }
     
     // Record the response time
     const responseTimestamp = Date.now();
-    console.log('⏱️ Response time:', responseTimestamp);
     
     // Record the response in the testing service WITHOUT automatic level adjustment
     // during tone presentation to prevent unwanted level changes
-    console.log('💾 Recording response WITHOUT level adjustment. Current phase:', procedurePhase);
     testingService.recordResponseWithoutAdjustment(didRespond);
     
     // Store the current user-set level before getting the updated step
@@ -475,7 +439,6 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
     
     // IMPORTANT: Preserve the user's manually set level rather than using whatever comes back from the service
     if (newStep && currentUserLevel !== newStep.currentLevel) {
-      console.log(`🔄 Preserving user-set level: ${currentUserLevel}dB instead of service level: ${newStep.currentLevel}dB`);
       newStep.currentLevel = currentUserLevel;
     }
     
@@ -498,20 +461,17 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
     
     // EXTREMELY IMPORTANT: NEVER update the trainer state during tone presentation
     // The trainer state will ONLY be updated when the tone stops in the stopTone function
-    console.log('⚠️ STRICTLY NOT updating trainer state during tone presentation. Phase remains:', procedurePhase);
     
   }, [currentStep, simulatePatientResponse, onComplete, procedurePhase, setPatientResponse, setShowResponseIndicator, setPatientJustResponded, setCurrentStep, setSession]);
 
   // Process response without changing levels - just UI indication
   const processSimpleResponse = useCallback(() => {
     if (!currentStep) {
-      console.log('Cannot process response: currentStep is null');
       return;
     }
     
     // Simulate patient response
     const didRespond = simulatePatientResponse();
-    console.log('Patient response simulation result (simple):', didRespond);
     
     // Update UI to show response
     setPatientResponse(didRespond);
@@ -519,7 +479,6 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
     
     // Display user-friendly notification about patient response
     if (didRespond) {
-      console.log('Patient is responding to the tone!');
       // Set the flag that patient just responded (for the guidance panel)
       setPatientJustResponded(true);
       
@@ -528,7 +487,6 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
         setPatientJustResponded(false);
       }, 3000);
     } else {
-      console.log('Patient does not hear this tone.');
       setPatientJustResponded(false);
     }
     
@@ -540,7 +498,6 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
 
   // Stop tone and check for patient response
   const stopTone = useCallback(() => {
-    console.log('🛑 Stopping tone...');
     
     // Stop the pulsing tone
     audioService.stopTone();
@@ -551,11 +508,6 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
     const currentProcedurePhase = procedurePhase;
     
     // Log current state for debugging
-    console.log('🛑 Stopping tone with current state:', {
-      toneActive: currentToneActive,
-      patientResponse: currentPatientResponse,
-      phase: currentProcedurePhase
-    });
     
     // Set tone inactive
     setToneActive(false);
@@ -564,28 +516,22 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
     const presentationStopTime = Date.now();
     lastPresentationTimeRef.current = presentationStopTime;
     
-    console.log('⏱️ Presentation stopped at:', presentationStopTime);
     
     // Simulate a patient response for internal processing if one doesn't exist yet
     let effectiveResponse = currentPatientResponse;
     if (effectiveResponse === null) {
       // If we haven't determined a response yet, do so now
       const didRespond = simulatePatientResponse();
-      console.log('🔊 Simulating patient response at tone stop for internal processing only:', didRespond);
       
       // Use this response for processing but don't update UI
       effectiveResponse = didRespond;
-    } else {
-      console.log('🔊 Using existing patient response from during tone playback:', effectiveResponse);
     }
     
     // Always process a response after stopping the tone
     if (currentStep) {
-      console.log('💻 Processing tone stop in phase:', currentProcedurePhase);
       
       // Make sure this is a fresh presentation that hasn't been processed yet
       if (presentationStopTime > lastProcessedPresentationRef.current) {
-        console.log(`✅ Processing new presentation. Current: ${presentationStopTime}, Last processed: ${lastProcessedPresentationRef.current}`);
         
         // Process the response
         if (effectiveResponse !== null) {
@@ -594,7 +540,6 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
           
           // Update trainer state IMMEDIATELY for all phases
           // This ensures the guidance updates immediately after tone stops
-          console.log('🔄 Immediately updating trainer state with response:', effectiveResponse);
           updateTrainerState(Boolean(effectiveResponse));
           
           // Update the last processed time
@@ -602,16 +547,12 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
         } else {
           // FIXED: If effectiveResponse is null but we had a previous patient response during the tone
           // that wasn't yet processed by updateTrainerState, we need to process it now
-          console.log('⚠️ Checking for unprocessed patient response from during tone playback');
           if (currentPatientResponse !== null) {
-            console.log('✅ Found unprocessed patient response:', currentPatientResponse);
             testingService.recordResponseWithoutAdjustment(Boolean(currentPatientResponse));
             updateTrainerState(Boolean(currentPatientResponse));
             lastProcessedPresentationRef.current = presentationStopTime;
           }
         }
-      } else {
-        console.log(`⚠️ Presentation already processed in stopTone! Current: ${presentationStopTime}, Last processed: ${lastProcessedPresentationRef.current}`);
       }
     }
 
@@ -623,7 +564,6 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
     setPatientResponse(null);
     setShowResponseIndicator(false);
     setPatientJustResponded(false);
-    console.log('🔄 Patient response visuals reset AFTER updating trainer state');
     
   }, [patientResponse, currentStep, updateTrainerState, procedurePhase]);
 
@@ -660,7 +600,6 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
       const newLevel = Math.max(-10, Math.min(120, currentStep.currentLevel + change)) as HearingLevel;
       
       // Log the current frequency and ear for debugging
-      console.log(`Adjusting level for frequency ${currentStep.frequency}Hz, ${currentStep.ear} ear: ${currentStep.currentLevel}dB -> ${newLevel}dB`);
       
       // Update trainer mode state based on level change
       if (trainerMode) {
@@ -701,17 +640,14 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
             // User following standard protocol - decrease after a response
             setSuggestedAction('present');
             setCurrentGuidance(`You've decreased by 10 dB to ${newLevel} dB. This follows the Hughson-Westlake protocol. Present the tone to check for a response at this new level.`);
-            console.log(`Threshold phase - decreased by 10dB to ${newLevel}dB`);
           } else if (change === 5) {
             // User following standard protocol - increase after no response
             setSuggestedAction('present');
             setCurrentGuidance(`You've increased by 5 dB to ${newLevel} dB. This follows the Hughson-Westlake protocol. Present the tone to check for a response at this new level.`);
-            console.log(`Threshold phase - increased by 5dB to ${newLevel}dB`);
           } else {
             // Non-standard adjustment - just provide appropriate guidance
             setSuggestedAction('present');
             setCurrentGuidance(`You've changed the level to ${newLevel} dB. Present the tone to check for a response at this level.`);
-            console.log(`Threshold phase - adjusted by ${change}dB to ${newLevel}dB (non-standard adjustment)`);
           }
           
           // Update UI to reflect the current level
@@ -779,8 +715,6 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
       step => step.completed && step.responseStatus === 'threshold'
     );
     
-    console.log(`Preserving ${thresholdSteps.length} thresholds from current session:`, 
-      thresholdSteps.map(s => `${s.frequency}Hz ${s.ear} ear at ${s.currentLevel}dB`).join(', '));
     
     // Update the new session with the stored thresholds
     if (thresholdSteps.length > 0) {
@@ -810,7 +744,6 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
   // Modified handleSkipStep to use preserveThresholds
   const handleSkipStep = useCallback(() => {
     try {
-      console.log('⏭️ handleSkipStep called - skipping to next frequency');
       
       // Reset trainer mode state for the next frequency
       if (trainerMode) {
@@ -818,12 +751,10 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
         setLastResponseLevel(null);
         setSuggestedAction('present');
         setCurrentGuidance('Start testing at a comfortable level (30-40 dB).');
-        console.log('Reset phase to: initial for next frequency');
       }
       
       // Use TestingService to skip to the next step
       const nextStep = testingService.skipCurrentStep();
-      console.log('Next step from TestingService:', nextStep);
       
       if (nextStep) {
         // Get updated session from TestingService
@@ -842,7 +773,6 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
             // Make a deep copy to ensure we don't modify by reference
             const currentStepCopy = JSON.parse(JSON.stringify(currentStepData));
             setCurrentStep(currentStepCopy);
-            console.log('Moving to next frequency:', currentStepCopy.frequency);
           } else {
             console.error('Current step data not found in updated session');
             setErrorMessage('Error navigating to next frequency.');
@@ -857,7 +787,6 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
         if (finalSession) {
           // Set progress to 100% on completion
           setTestProgress(100);
-          console.log('Test completed, progress set to 100%');
           
           // Make sure we're passing a session with preserved thresholds to onComplete
           const preservedFinalSession = preserveThresholds(finalSession);
@@ -875,7 +804,6 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
   // Modified handlePreviousStep to use preserveThresholds
   const handlePreviousStep = useCallback(() => {
     try {
-      console.log('⏮️ handlePreviousStep called - going to previous frequency');
       
       // Reset trainer mode state for the previous frequency
       if (trainerMode) {
@@ -883,13 +811,11 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
         setLastResponseLevel(null);
         setSuggestedAction('present');
         setCurrentGuidance('Returning to the previous frequency. Begin at a comfortable level.');
-        console.log('Reset phase to: initial for previous frequency');
       }
       
       // We need to modify the session directly since TestingService may not have a specific 
       // method to go back to the previous step
       if (session) {
-        console.log('📊 Before navigating back - Current step:', session.currentStep);
         // Create a deep copy of the session to avoid mutating the original
         const updatedSession = JSON.parse(JSON.stringify(session));
         
@@ -905,7 +831,6 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
             return;
           }
           
-          console.log('📊 Going back to step:', updatedSession.currentStep, 'with frequency:', previousStep.frequency);
           
           // Use preserveThresholds to ensure consistent threshold data
           const preservedSession = preserveThresholds(updatedSession);
@@ -931,12 +856,9 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
           if (currentSession) {
             // Store the session in a variable first to avoid TypeScript null error
             currentSession.currentStep = preservedSession.currentStep;
-            console.log(`🔄 Explicitly updated TestingService step to ${preservedSession.currentStep} with frequency ${currentStepData.frequency}Hz`);
           }
           
-          console.log('Moving to previous frequency:', currentStepData.frequency);
         } else {
-          console.log('Already at the first frequency, cannot go back further');
           setErrorMessage('Already at the first frequency.');
         }
       } else {
@@ -1033,7 +955,6 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
       return;
     }
     
-    console.log(`Storing threshold at validated level: ${validThresholdLevel}dB (current level is ${currentStep.currentLevel}dB)`);
     
     // Update the TestingService with the validated threshold level
     testingService.setCurrentLevel(validThresholdLevel as HearingLevel);
@@ -1071,13 +992,6 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
       updatedStep.currentLevel = validThresholdLevel as HearingLevel;
       
       // Add a debug log to check what we're storing
-      console.log(`DEBUG: Storing threshold for step ${stepIndex}:`, {
-        id: updatedStep.id,
-        frequency: updatedStep.frequency,
-        ear: updatedStep.ear,
-        currentLevel: updatedStep.currentLevel,
-        responseStatus: updatedStep.responseStatus
-      });
       
       // Update our session state to reflect this change
       setSession(updatedSession);
@@ -1096,7 +1010,6 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
         setCurrentStep(updatedCurrentStep);
       }
       
-      console.log(`Threshold stored at ${validThresholdLevel}dB, marked as completed but staying on current frequency`);
     }
     
     // Add clearer feedback for successful threshold storage and navigation instructions
@@ -1115,7 +1028,6 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
       const frequency = currentStep.frequency;
       const ear = currentStep.ear;
       
-      console.log(`Updating response counts for threshold: ${frequency}Hz, ${ear} ear at ${level}dB`);
       
       if (!newCounts[frequency]) {
         newCounts[frequency] = {};
@@ -1151,7 +1063,6 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
         
         // Initialize progress to 0
         setTestProgress(0);
-        console.log('New test session started, progress initialized to 0%');
         
         // We don't want to reset responseCounts here as it will clear any stored thresholds
         // keeping the existing responseCounts which stores thresholds per frequency/ear
@@ -1207,7 +1118,6 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
     if (!currentStep) return;
     
     try {
-      console.log('🎵 Starting tone...');
       
       // Stop any currently playing tones to ensure a clean start
       audioService.stopTone();
@@ -1216,55 +1126,42 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
       if (currentStep) {
         // Ensure the testing service knows about our current step's frequency
         const currentFrequency = currentStep.frequency;
-        console.log(`🔊 Explicit frequency check: Using ${currentFrequency}Hz for tone`);
         
         // Ensure the testing service knows about our current manually set level
         testingService.setCurrentLevel(currentStep.currentLevel);
-        console.log(`🔊 Starting tone at user-set level: ${currentStep.currentLevel}dB, phase: ${procedurePhase}`);
       }
       
       // Reset response states at the start of a new tone
       setPatientResponse(null);
       setPatientJustResponded(false);
       setShowResponseIndicator(false);
-      console.log('🔄 Response states reset');
       
       // Set tone active state BEFORE playing tone
       setToneActive(true);
-      console.log('🔊 Tone active set to true');
       
       // Play the tone with pulsing - this now happens in AudioService
       testingService.playCurrentTone();
-      console.log('🎵 Pulsed tone started');
       
       // Immediate response check - show response immediately if patient can hear it
       const didRespond = simulatePatientResponse();
-      console.log('👂 Immediate patient response check:', didRespond);
       
       if (didRespond) {
         setPatientResponse(didRespond);
         setShowResponseIndicator(true);
         setPatientJustResponded(true);
-        console.log('👂 Patient IMMEDIATELY responded to the tone!');
         
         // Record the response in the testing service for later processing
-        console.log('💾 Recording immediate response for later processing');
         testingService.recordResponseWithoutAdjustment(didRespond);
       }
       
       // Record the presentation time
-      console.log('🎯 Recording tone presentation time');
       lastPresentationTimeRef.current = Date.now();
       
       // Process automatic response after a brief delay if not already responded
-      console.log('⏱️ Setting up automatic response processing');
       setTimeout(() => {
         // Only process if tone is still active and no response yet
         if (toneActive && !patientResponse) {
-          console.log('📲 Processing automatic response...');
           processAutomaticResponse();
-        } else {
-          console.log('⚠️ Tone no longer active or response already shown, skipping response processing');
         }
       }, 600);
       
@@ -1297,7 +1194,6 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
     if (newIndex !== currentIndex) {
       const newFrequency = availableFrequencies[newIndex];
       
-      console.log(`Changing frequency from ${currentFreq}Hz to ${newFrequency}Hz`);
       
       // CRITICAL FIX: We need to find the appropriate step in the test sequence
       // that matches the target frequency and ear, then navigate to that step
@@ -1311,7 +1207,6 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
         
         if (targetStepIndex !== -1) {
           // Found a matching step in the sequence
-          console.log(`Found matching step for ${newFrequency}Hz at index ${targetStepIndex}`);
           
           // Create a deep copy of the session to avoid mutating the original
           const updatedSession = JSON.parse(JSON.stringify(session));
@@ -1322,7 +1217,6 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
           // Get reference to the target step
           const targetStep = updatedSession.testSequence[targetStepIndex];
           
-          console.log(`Navigating to step with ID ${targetStep.id}, frequency ${targetStep.frequency}Hz`);
           
           // Update session and current step states with fresh objects
           setSession(updatedSession);
@@ -1335,7 +1229,6 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
           const currentSession = testingService.getCurrentSession();
           if (currentSession) {
             currentSession.currentStep = updatedSession.currentStep;
-            console.log(`Explicitly updated TestingService step to ${updatedSession.currentStep} with frequency ${targetStep.frequency}Hz`);
           }
           
           // Reset UI state for the new frequency
@@ -1381,7 +1274,6 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
   const handleSuggestedAction = useCallback(() => {
     if (!currentStep) return;
     
-    console.log('Implementing suggested action:', suggestedAction);
     
     // Save current state before making any changes to ensure thresholds are preserved
     const originalSession = session ? JSON.parse(JSON.stringify(session)) : null;
@@ -1392,15 +1284,10 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
         // We always use 5 dB increments during bracketing (after no response)
         if (procedurePhase === 'initial') {
           handleAdjustLevel(10); // 10 dB for initial phase
-          console.log('Remained in initial phase after increasing by 10dB');
         } else {
           // In all other phases (ascending, threshold), use 5 dB increments
           handleAdjustLevel(5); // 5 dB for ascending/threshold phase
-          if (procedurePhase === 'ascending') {
-            console.log('Remained in ascending phase after increasing by 5dB');
-          } else if (procedurePhase === 'threshold') {
-            console.log('Continued bracketing in threshold phase after increasing by 5dB');
-          }
+
         }
         break;
       case 'decrease':
@@ -1410,10 +1297,8 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
         // If we're in the initial or ascending phase, explicitly update to descending
         if (procedurePhase === 'initial' || procedurePhase === 'ascending') {
           setProcedurePhase('descending');
-          console.log('Updated phase to: descending after decreasing by 10dB');
         } else if (procedurePhase === 'threshold') {
           // In threshold phase, we stay in threshold phase but continue bracketing
-          console.log('Continued bracketing in threshold phase after decreasing by 10dB');
         }
         break;
       case 'store_threshold':
@@ -1423,7 +1308,6 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
           // Call handleStoreThreshold which already handles setting the procedure phase
           // and other state updates correctly
           handleStoreThreshold();
-          console.log('Stored threshold using suggested action');
         } else {
           // Show error for invalid threshold
           setErrorMessage(message);
@@ -1436,7 +1320,6 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
           // If we're in complete phase, check that the current step is properly marked as completed
           const { isValid } = validateThreshold();
           if (isValid && currentStep && !currentStep.completed) {
-            console.log('Current step has valid threshold but is not marked completed - calling handleStoreThreshold');
             handleStoreThreshold();
           }
         }
@@ -1445,7 +1328,6 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
         handleSkipStep();
         // Reset to initial phase for the next frequency
         setProcedurePhase('initial');
-        console.log('Reset phase to: initial for next frequency');
         break;
       case 'present':
         // No level adjustment needed, just guidance to present the tone
@@ -1453,16 +1335,13 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
         // Don't change the phase when just presenting the tone
         break;
       default:
-        console.log('Unknown suggested action:', suggestedAction);
     }
     
     // For any action, ensure we preserve thresholds if the session has changed
     if (originalSession && session && JSON.stringify(originalSession) !== JSON.stringify(session)) {
-      console.log('Session changed after action, ensuring thresholds are preserved...');
       // Use preserveThresholds to maintain threshold consistency
       const preservedSession = preserveThresholds(session);
       if (JSON.stringify(preservedSession) !== JSON.stringify(session)) {
-        console.log('Updating session with preserved thresholds');
         setSession(preservedSession);
       }
     }
@@ -1511,7 +1390,6 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
       // Calculate and update the progress percentage
       const progress = testingService.calculateProgress();
       setTestProgress(progress);
-      console.log(`Test progress updated: ${progress}%`);
     }
   }, [session, currentStep, testingService]);
 
