@@ -188,8 +188,6 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
       return;
     }
     
-    console.log('🔍 Processing response:', didRespond, 'in phase:', procedurePhase, 'trainer mode:', trainerMode);
-    
     // Always record the response for guidance purposes
     if (didRespond) {
       console.log('Patient responded - updating state');
