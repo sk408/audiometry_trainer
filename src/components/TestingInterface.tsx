@@ -1186,22 +1186,6 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
     }
   };
 
-  // Add a function to display the current test type
-  const getTestTypeIcon = (testType: string) => {
-    switch (testType) {
-      case 'air':
-        return <VolumeUp />;
-      case 'bone':
-        return <Hearing />;
-      case 'masked_air':
-        return <Badge badgeContent="M" color="primary"><VolumeUp /></Badge>;
-      case 'masked_bone':
-        return <Badge badgeContent="M" color="primary"><Hearing /></Badge>;
-      default:
-        return <HelpOutline />;
-    }
-  };
-
   // Start playing tone with pulsing pattern
   const startTone = useCallback(() => {
     if (!currentStep) return;
