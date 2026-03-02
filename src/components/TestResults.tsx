@@ -28,8 +28,6 @@ import {
 } from '@mui/icons-material';
 import { TestSession, TestResult } from '../interfaces/AudioTypes';
 import Audiogram from './Audiogram';
-import { jsPDF } from 'jspdf';
-import html2canvas from 'html2canvas';
 import patientService from '../services/PatientService';
 import { useTheme } from '@mui/material/styles';
 
@@ -145,6 +143,10 @@ const TestResults: React.FC<TestResultsProps> = ({ session, onNewTest }) => {
         return;
       }
       
+      // Dynamically import heavy libraries for PDF export
+      const html2canvas = (await import('html2canvas')).default;
+      const { jsPDF } = await import('jspdf');
+
       const canvas = await html2canvas(resultsElement, { scale: 2 });
       const imgData = canvas.toDataURL('image/png');
       
