@@ -356,8 +356,8 @@ const generateGuideHTML = (brand: string, selectedCategory: string | undefined =
   <div class="resources">
     <h3>Quick Resources</h3>
     <ul>
-      <li><strong>User Manual:</strong> <a href="${brandInfo.manualUrl}" target="_blank">View Online Manual</a></li>
-      <li><strong>Support Website:</strong> <a href="${brandInfo.troubleshootingUrl}" target="_blank">Visit Support Website</a></li>
+      <li><strong>User Manual:</strong> <a href="${brandInfo.manualUrl}" target="_blank" rel="noopener noreferrer">View Online Manual</a></li>
+      <li><strong>Support Website:</strong> <a href="${brandInfo.troubleshootingUrl}" target="_blank" rel="noopener noreferrer">Visit Support Website</a></li>
     </ul>
   </div>
 
@@ -376,13 +376,13 @@ const generateGuideHTML = (brand: string, selectedCategory: string | undefined =
       <ol>
         ${category.platformSpecific.ios.steps.map(step => `<li>${step}</li>`).join('')}
       </ol>
-      <p>For detailed instructions: <a href="${category.platformSpecific.ios.url}" target="_blank">Apple Support</a></p>
+      <p>For detailed instructions: <a href="${category.platformSpecific.ios.url}" target="_blank" rel="noopener noreferrer">Apple Support</a></p>
       
       <h5>Android Devices</h5>
       <ol>
         ${category.platformSpecific.android.steps.map(step => `<li>${step}</li>`).join('')}
       </ol>
-      <p>For detailed instructions: <a href="${category.platformSpecific.android.url}" target="_blank">Android Support</a></p>
+      <p>For detailed instructions: <a href="${category.platformSpecific.android.url}" target="_blank" rel="noopener noreferrer">Android Support</a></p>
     </div>
     ` : ''}
   </div>
@@ -708,6 +708,7 @@ const TroubleshootingGuidePage: React.FC = () => {
                         size="small" 
                         href={category.platformSpecific.ios.url} 
                         target="_blank"
+                        rel="noopener noreferrer"
                         sx={{ mt: 1 }}
                       >
                         Apple Support Article
@@ -734,6 +735,7 @@ const TroubleshootingGuidePage: React.FC = () => {
                         size="small" 
                         href={category.platformSpecific.android.url} 
                         target="_blank"
+                        rel="noopener noreferrer"
                         sx={{ mt: 1 }}
                       >
                         Android Support Article
