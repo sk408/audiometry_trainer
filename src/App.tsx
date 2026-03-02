@@ -299,7 +299,7 @@ function App() {
           </ListItemIcon>
           <ListItemText primary={darkMode ? 'Light Mode' : 'Dark Mode'} />
         </ListItem>
-        <ListItem component="a" href="https://github.com/sk408/audiometry_trainer" target="_blank">
+        <ListItem component="a" href="https://github.com/sk408/audiometry_trainer" target="_blank" rel="noopener noreferrer">
           <ListItemIcon>
             <HelpIcon />
           </ListItemIcon>
