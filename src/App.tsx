@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, KeyboardEvent, MouseEvent } from 'react';
 import { HashRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import {
   AppBar,
@@ -146,7 +146,7 @@ function App() {
   }, []);
 
   // Create theme based on settings
-  const appTheme = React.useMemo(
+  const appTheme = useMemo(
     () =>
       createTheme({
         palette: {
@@ -211,17 +211,17 @@ function App() {
     [darkMode, highContrastMode, fontSize]
   );
 
-  const toggleDrawer = (open: boolean) => (event: React.KeyboardEvent | React.MouseEvent) => {
+  const toggleDrawer = (open: boolean) => (event: KeyboardEvent | MouseEvent) => {
     if (
       event.type === 'keydown' &&
-      ((event as React.KeyboardEvent).key === 'Tab' || (event as React.KeyboardEvent).key === 'Shift')
+      ((event as KeyboardEvent).key === 'Tab' || (event as KeyboardEvent).key === 'Shift')
     ) {
       return;
     }
     setDrawerOpen(open);
   };
 
-  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+  const handleMenuOpen = (event: MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
   };
 
