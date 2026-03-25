@@ -20,8 +20,7 @@ import {
   DialogActions,
   Chip,
   Stack,
-  Pagination,
-  useMediaQuery
+  Pagination
 } from '@mui/material';
 import { Search, FilterList, HearingOutlined, PersonAdd } from '@mui/icons-material';
 import { HearingProfile, TestSession } from '../interfaces/AudioTypes';
@@ -47,7 +46,6 @@ const PatientsPage: React.FC = () => {
   const [patientsPerPage] = useState(6);
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   const { patientProgressMap, getCompletionStatusForPatient, refresh: refreshProgress } = useProgress();
 
