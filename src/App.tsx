@@ -57,6 +57,7 @@ import RealEarMeasurementPage from './pages/RealEarMeasurementPage';
 import EarAnatomyPage from './pages/EarAnatomyPage';
 import OtoscopyPage from './pages/OtoscopyPage';
 import ContourTestPage from './pages/ContourTestPage';
+import ProgressPage from './pages/ProgressPage';
 // import SettingsPage from './pages/SettingsPage';
 
 // Import logo for splash screen
@@ -228,6 +229,7 @@ function App() {
     { text: 'Troubleshooting', icon: <HelpIcon />, path: '/troubleshooting' },
     { text: 'Real Ear', icon: <HearingIcon />, path: '/real-ear-measurement' },
     { text: 'Contour Test', icon: <VolumeUp />, path: '/contour-test' },
+    { text: 'Progress', icon: <AssessmentIcon />, path: '/progress' },
   ];
 
   if (showSplash) {
@@ -424,7 +426,7 @@ function AppContent({
               open={Boolean(anchorEl)}
               onClose={handleMenuClose}
             >
-              <MenuItem onClick={handleMenuClose}>
+              <MenuItem component={Link} to="/progress" onClick={handleMenuClose}>
                 <ListItemIcon>
                   <AssessmentIcon fontSize="small" />
                 </ListItemIcon>
@@ -460,6 +462,7 @@ function AppContent({
             <Route path="/ear-anatomy" element={<EarAnatomyPage />} />
             <Route path="/otoscopy" element={<OtoscopyPage />} />
             <Route path="/contour-test" element={<ContourTestPage />} />
+            <Route path="/progress" element={<ProgressPage />} />
           </Routes>
         </Box>
 
@@ -495,6 +498,9 @@ function AppContent({
                 </Link>
                 <Link to="/troubleshooting" style={{ color: 'inherit', textDecoration: 'none' }}>
                   Troubleshooting
+                </Link>
+                <Link to="/progress" style={{ color: 'inherit', textDecoration: 'none' }}>
+                  Progress
                 </Link>
               </Box>
             </Typography>

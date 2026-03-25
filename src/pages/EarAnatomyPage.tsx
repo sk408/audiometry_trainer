@@ -2001,6 +2001,31 @@ const EarAnatomyPage: React.FC = () => {
               </Grid>
             </Grid>
             
+            {/* Quiz score and retake button */}
+            {showAnswers['question1'] && showAnswers['question2'] && showAnswers['question3'] && (
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mt: 2, mb: 1 }}>
+                <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                  Score: {
+                    [
+                      selectedAnswers['question1'] === 'b',
+                      selectedAnswers['question2'] === 'b',
+                      selectedAnswers['question3'] === 'c'
+                    ].filter(Boolean).length
+                  } / 3
+                </Typography>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={() => {
+                    setSelectedAnswers({ question1: null, question2: null, question3: null });
+                    setShowAnswers({ question1: false, question2: false, question3: false });
+                  }}
+                >
+                  Retake Quiz
+                </Button>
+              </Box>
+            )}
+
             <Box sx={{ display: 'flex', justifyContent: 'center' }}>
               <Typography variant="body2" sx={{ fontStyle: 'italic', maxWidth: '80%', textAlign: 'center' }}>
                 These quick checks help reinforce your understanding of key concepts about the middle ear.

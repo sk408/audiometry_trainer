@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Box,
   Container,
@@ -21,16 +21,16 @@ import {
   Chip,
   Stack,
   Pagination,
-  Alert,
   useMediaQuery
 } from '@mui/material';
 import { Search, FilterList, HearingOutlined, PersonAdd } from '@mui/icons-material';
-import { HearingProfile } from '../interfaces/AudioTypes';
+import { HearingProfile, TestSession } from '../interfaces/AudioTypes';
 import patientService from '../services/PatientService';
 import PatientCard from '../components/PatientCard';
 import TestingInterface from '../components/TestingInterface';
 import TestResults from '../components/TestResults';
 import { useTheme, alpha } from '@mui/material/styles';
+import { useProgress } from '../hooks/useProgress';
 
 const PatientsPage: React.FC = () => {
   const [patients, setPatients] = useState<HearingProfile[]>([]);
@@ -39,13 +39,17 @@ const PatientsPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [difficultyFilter, setDifficultyFilter] = useState<string>('all');
   const [hearingLossTypeFilter, setHearingLossTypeFilter] = useState<string>('all');
+  const [completionFilter, setCompletionFilter] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<string>('name');
   const [isTesting, setIsTesting] = useState(false);
-  const [testResults, setTestResults] = useState<any>(null);
+  const [testResults, setTestResults] = useState<TestSession | null>(null);
   const [page, setPage] = useState(1);
   const [patientsPerPage] = useState(6);
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+
+  const { patientProgressMap, getCompletionStatusForPatient, refresh: refreshProgress } = useProgress();
 
   // Load patients on component mount
   useEffect(() => {
@@ -54,107 +58,135 @@ const PatientsPage: React.FC = () => {
     setFilteredPatients(allPatients);
   }, []);
 
-  // Apply filters and search
+  // Apply filters, search, and sort
   useEffect(() => {
     let filtered = patients;
-    
-    // Apply search term filter
+
     if (searchTerm) {
       filtered = filtered.filter(
-        patient => 
+        patient =>
           patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
           patient.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
           patient.id.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
-    
-    // Apply difficulty filter
+
     if (difficultyFilter !== 'all') {
       filtered = filtered.filter(patient => patient.difficulty === difficultyFilter);
     }
-    
-    // Apply hearing loss type filter
+
     if (hearingLossTypeFilter !== 'all') {
       filtered = filtered.filter(patient => patient.hearingLossType === hearingLossTypeFilter);
     }
-    
-    setFilteredPatients(filtered);
-    setPage(1); // Reset to first page when filters change
-  }, [searchTerm, difficultyFilter, hearingLossTypeFilter, patients]);
 
-  // Handle search input change
+    if (completionFilter !== 'all') {
+      filtered = filtered.filter(patient => getCompletionStatusForPatient(patient.id) === completionFilter);
+    }
+
+    filtered = [...filtered].sort((a, b) => {
+      switch (sortBy) {
+        case 'difficulty': {
+          const order: Record<string, number> = { beginner: 0, intermediate: 1, advanced: 2 };
+          return (order[a.difficulty] ?? 0) - (order[b.difficulty] ?? 0);
+        }
+        case 'accuracy': {
+          const aProgress = patientProgressMap.get(a.id);
+          const bProgress = patientProgressMap.get(b.id);
+          return (bProgress?.bestAccuracy ?? -1) - (aProgress?.bestAccuracy ?? -1);
+        }
+        case 'recent': {
+          const aProgress = patientProgressMap.get(a.id);
+          const bProgress = patientProgressMap.get(b.id);
+          const aDate = aProgress?.lastTestedDate ?? '';
+          const bDate = bProgress?.lastTestedDate ?? '';
+          return bDate.localeCompare(aDate);
+        }
+        default:
+          return a.name.localeCompare(b.name);
+      }
+    });
+
+    setFilteredPatients(filtered);
+    setPage(1);
+  }, [searchTerm, difficultyFilter, hearingLossTypeFilter, completionFilter, sortBy, patients, patientProgressMap, getCompletionStatusForPatient]);
+
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(event.target.value);
   };
 
-  // Handle difficulty filter change
   const handleDifficultyChange = (event: SelectChangeEvent) => {
     setDifficultyFilter(event.target.value);
   };
 
-  // Handle hearing loss type filter change
   const handleHearingLossTypeChange = (event: SelectChangeEvent) => {
     setHearingLossTypeFilter(event.target.value);
   };
 
-  // Handle patient selection
   const handlePatientSelect = (patient: HearingProfile) => {
     setSelectedPatient(patient);
   };
 
-  // Handle start testing
   const handleStartTesting = () => {
     setIsTesting(true);
     setTestResults(null);
   };
 
-  // Handle cancel testing
   const handleCancelTesting = () => {
     setIsTesting(false);
     setTestResults(null);
   };
 
-  // Handle test completion
-  const handleTestComplete = (results: any) => {
+  const handleTestComplete = (results: TestSession) => {
     setIsTesting(false);
     setTestResults(results);
+    refreshProgress();
   };
 
-  // Handle new test after viewing results
   const handleNewTest = () => {
     setTestResults(null);
     setSelectedPatient(null);
   };
 
-  // Handle page change
-  const handlePageChange = (event: React.ChangeEvent<unknown>, value: number) => {
+  const handleTryAgain = () => {
+    setTestResults(null);
+    setIsTesting(true);
+  };
+
+  const handlePageChange = (_event: React.ChangeEvent<unknown>, value: number) => {
     setPage(value);
   };
 
-  // Get current patients for pagination
   const indexOfLastPatient = page * patientsPerPage;
   const indexOfFirstPatient = indexOfLastPatient - patientsPerPage;
   const currentPatients = filteredPatients.slice(indexOfFirstPatient, indexOfLastPatient);
   const totalPages = Math.ceil(filteredPatients.length / patientsPerPage);
 
-  // Reset filters
   const handleResetFilters = () => {
     setSearchTerm('');
     setDifficultyFilter('all');
     setHearingLossTypeFilter('all');
+    setCompletionFilter('all');
+    setSortBy('name');
     setIsFiltersOpen(false);
   };
 
-  // Render test results if available
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (difficultyFilter !== 'all') count++;
+    if (hearingLossTypeFilter !== 'all') count++;
+    if (completionFilter !== 'all') count++;
+    if (sortBy !== 'name') count++;
+    return count;
+  }, [difficultyFilter, hearingLossTypeFilter, completionFilter, sortBy]);
+
   if (testResults) {
     return (
       <Container maxWidth="lg" sx={{ py: 4 }}>
-        <TestResults session={testResults} onNewTest={handleNewTest} />
+        <TestResults session={testResults} onNewTest={handleNewTest} onTryAgain={handleTryAgain} />
       </Container>
     );
   }
 
-  // Render testing interface if in testing mode
   if (isTesting && selectedPatient) {
     return (
       <Container maxWidth="lg" sx={{ py: 4 }}>
@@ -173,10 +205,10 @@ const PatientsPage: React.FC = () => {
         Virtual Patients
       </Typography>
       <Typography variant="body1" paragraph color="text.secondary">
-        Select a virtual patient to practice your audiometry skills. Each patient has a unique 
+        Select a virtual patient to practice your audiometry skills. Each patient has a unique
         hearing profile that simulates different types of hearing loss.
       </Typography>
-      
+
       <Box sx={{ mb: { xs: 2, md: 4 } }}>
         <Grid container spacing={{ xs: 1, md: 2 }} alignItems="center">
           <Grid item xs={12} md={6}>
@@ -198,9 +230,9 @@ const PatientsPage: React.FC = () => {
             />
           </Grid>
           <Grid item xs={12} md={6}>
-            <Box sx={{ 
-              display: 'flex', 
-              gap: { xs: 1, md: 2 }, 
+            <Box sx={{
+              display: 'flex',
+              gap: { xs: 1, md: 2 },
               justifyContent: { xs: 'space-between', md: 'flex-end' },
               flexWrap: 'wrap'
             }}>
@@ -211,7 +243,7 @@ const PatientsPage: React.FC = () => {
                 size="small"
                 sx={{ flex: { xs: 1, sm: 'initial' } }}
               >
-                Filters
+                Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}
               </Button>
               {selectedPatient ? (
                 <Button
@@ -240,20 +272,20 @@ const PatientsPage: React.FC = () => {
           </Grid>
         </Grid>
       </Box>
-      
+
       {/* Active filters display */}
-      {(difficultyFilter !== 'all' || hearingLossTypeFilter !== 'all') && (
+      {(difficultyFilter !== 'all' || hearingLossTypeFilter !== 'all' || completionFilter !== 'all' || sortBy !== 'name') && (
         <Box sx={{ mb: 3 }}>
-          <Stack 
-            direction={{ xs: 'column', sm: 'row' }} 
-            spacing={1} 
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }}
+            spacing={1}
             alignItems={{ xs: 'flex-start', sm: 'center' }}
             sx={{ flexWrap: 'wrap', gap: 1 }}
           >
             <Typography variant="body2">Active Filters:</Typography>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
               {difficultyFilter !== 'all' && (
-                <Chip 
+                <Chip
                   label={`Difficulty: ${difficultyFilter}`}
                   onDelete={() => setDifficultyFilter('all')}
                   size="small"
@@ -261,11 +293,26 @@ const PatientsPage: React.FC = () => {
                 />
               )}
               {hearingLossTypeFilter !== 'all' && (
-                <Chip 
+                <Chip
                   label={`Type: ${hearingLossTypeFilter.replace(/[-_]/g, ' ')}`}
                   onDelete={() => setHearingLossTypeFilter('all')}
                   size="small"
                   color="secondary"
+                />
+              )}
+              {completionFilter !== 'all' && (
+                <Chip
+                  label={`Status: ${completionFilter.replace(/_/g, ' ')}`}
+                  onDelete={() => setCompletionFilter('all')}
+                  size="small"
+                  color="info"
+                />
+              )}
+              {sortBy !== 'name' && (
+                <Chip
+                  label={`Sort: ${sortBy}`}
+                  onDelete={() => setSortBy('name')}
+                  size="small"
                 />
               )}
               <Button size="small" onClick={handleResetFilters}>
@@ -275,15 +322,15 @@ const PatientsPage: React.FC = () => {
           </Stack>
         </Box>
       )}
-      
+
       {/* Filter dialog */}
-      <Dialog 
-        open={isFiltersOpen} 
+      <Dialog
+        open={isFiltersOpen}
         onClose={() => setIsFiltersOpen(false)}
         fullWidth
         maxWidth="xs"
       >
-        <DialogTitle>Filter Patients</DialogTitle>
+        <DialogTitle>Filter & Sort Patients</DialogTitle>
         <DialogContent sx={{ pt: 1 }}>
           <FormControl fullWidth margin="normal">
             <InputLabel>Difficulty Level</InputLabel>
@@ -298,7 +345,7 @@ const PatientsPage: React.FC = () => {
               <MenuItem value="advanced">Advanced</MenuItem>
             </Select>
           </FormControl>
-          
+
           <FormControl fullWidth margin="normal">
             <InputLabel>Hearing Loss Type</InputLabel>
             <Select
@@ -316,6 +363,34 @@ const PatientsPage: React.FC = () => {
               <MenuItem value="presbycusis">Presbycusis</MenuItem>
             </Select>
           </FormControl>
+
+          <FormControl fullWidth margin="normal">
+            <InputLabel>Completion Status</InputLabel>
+            <Select
+              value={completionFilter}
+              onChange={(e: SelectChangeEvent) => setCompletionFilter(e.target.value)}
+              label="Completion Status"
+            >
+              <MenuItem value="all">All</MenuItem>
+              <MenuItem value="not_started">Not Started</MenuItem>
+              <MenuItem value="in_progress">In Progress</MenuItem>
+              <MenuItem value="completed">Completed</MenuItem>
+            </Select>
+          </FormControl>
+
+          <FormControl fullWidth margin="normal">
+            <InputLabel>Sort By</InputLabel>
+            <Select
+              value={sortBy}
+              onChange={(e: SelectChangeEvent) => setSortBy(e.target.value)}
+              label="Sort By"
+            >
+              <MenuItem value="name">Name</MenuItem>
+              <MenuItem value="difficulty">Difficulty</MenuItem>
+              <MenuItem value="accuracy">Best Accuracy</MenuItem>
+              <MenuItem value="recent">Recently Tested</MenuItem>
+            </Select>
+          </FormControl>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleResetFilters}>
@@ -326,9 +401,9 @@ const PatientsPage: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
-      
+
       <Divider sx={{ mb: { xs: 2, md: 4 } }} />
-      
+
       {/* Patient cards */}
       {filteredPatients.length > 0 ? (
         <>
@@ -339,32 +414,33 @@ const PatientsPage: React.FC = () => {
                   patient={patient}
                   onSelect={handlePatientSelect}
                   selected={selectedPatient?.id === patient.id}
+                  progress={patientProgressMap.get(patient.id)}
                 />
               </Grid>
             ))}
           </Grid>
-          
+
           {/* Pagination */}
           <Box sx={{ display: 'flex', justifyContent: 'center', mt: { xs: 2, md: 4 } }}>
-            <Pagination 
-              count={totalPages} 
-              page={page} 
-              onChange={handlePageChange} 
-              color="primary" 
-              showFirstButton 
+            <Pagination
+              count={totalPages}
+              page={page}
+              onChange={handlePageChange}
+              color="primary"
+              showFirstButton
               showLastButton
               size="small"
             />
           </Box>
         </>
       ) : (
-        <Paper 
-          elevation={0} 
-          sx={{ 
-            p: { xs: 2, md: 4 }, 
-            textAlign: 'center', 
-            bgcolor: theme.palette.mode === 'dark' 
-              ? alpha(theme.palette.background.paper, 0.6) 
+        <Paper
+          elevation={0}
+          sx={{
+            p: { xs: 2, md: 4 },
+            textAlign: 'center',
+            bgcolor: theme.palette.mode === 'dark'
+              ? alpha(theme.palette.background.paper, 0.6)
               : '#f5f5f5',
             borderRadius: 2
           }}
@@ -375,25 +451,25 @@ const PatientsPage: React.FC = () => {
           <Typography variant="body2" color="text.secondary">
             Try adjusting your search criteria or filters to find a patient.
           </Typography>
-          <Button 
-            variant="outlined" 
-            sx={{ mt: 2 }} 
+          <Button
+            variant="outlined"
+            sx={{ mt: 2 }}
             onClick={handleResetFilters}
           >
             Clear All Filters
           </Button>
         </Paper>
       )}
-      
+
       {/* Selected patient summary */}
       {selectedPatient && (
-        <Paper 
-          elevation={3} 
-          sx={{ 
-            mt: { xs: 2, md: 4 }, 
-            p: { xs: 2, md: 3 }, 
-            bgcolor: theme.palette.mode === 'dark' 
-              ? theme.palette.background.paper 
+        <Paper
+          elevation={3}
+          sx={{
+            mt: { xs: 2, md: 4 },
+            p: { xs: 2, md: 3 },
+            bgcolor: theme.palette.mode === 'dark'
+              ? theme.palette.background.paper
               : '#f9f9f9',
             borderRadius: 2,
             border: `1px solid ${theme.palette.divider}`
@@ -406,17 +482,24 @@ const PatientsPage: React.FC = () => {
             {selectedPatient.description}
           </Typography>
           <Box sx={{ display: 'flex', gap: 1, mb: 2, flexWrap: 'wrap' }}>
-            <Chip 
-              label={`Difficulty: ${selectedPatient.difficulty}`} 
+            <Chip
+              label={`Difficulty: ${selectedPatient.difficulty}`}
               color={
                 selectedPatient.difficulty === 'beginner' ? 'success' :
                 selectedPatient.difficulty === 'intermediate' ? 'warning' : 'error'
               }
             />
-            <Chip 
+            <Chip
               label={`Type: ${selectedPatient.hearingLossType.replace(/[-_]/g, ' ')}`}
               color="secondary"
             />
+            {patientProgressMap.get(selectedPatient.id) && (
+              <Chip
+                label={`Best: ${patientProgressMap.get(selectedPatient.id)!.bestAccuracy}%`}
+                color="info"
+                variant="outlined"
+              />
+            )}
           </Box>
           <Button
             variant="contained"
@@ -435,4 +518,4 @@ const PatientsPage: React.FC = () => {
   );
 };
 
-export default PatientsPage; 
+export default PatientsPage;

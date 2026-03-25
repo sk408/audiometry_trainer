@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Paper,
@@ -16,7 +16,9 @@ import {
   AlertTitle,
   Stack,
   Tab,
-  Tabs
+  Tabs,
+  Snackbar,
+  CircularProgress
 } from '@mui/material';
 import {
   PictureAsPdf,
@@ -37,13 +39,15 @@ import TabPanel, { a11yProps } from './shared/TabPanel';
 interface TestResultsProps {
   session: TestSession;
   onNewTest: () => void;
+  onTryAgain?: () => void;
 }
 
-const TestResults: React.FC<TestResultsProps> = ({ session, onNewTest }) => {
+const TestResults: React.FC<TestResultsProps> = ({ session, onNewTest, onTryAgain }) => {
   const [tabValue, setTabValue] = useState(0);
   const [exportLoading, setExportLoading] = useState(false);
-  const audiogramRef = useRef<HTMLDivElement>(null);
-  const summaryRef = useRef<HTMLDivElement>(null);
+  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
+    open: false, message: '', severity: 'success'
+  });
   const theme = useTheme();
   
   // Get results from session
@@ -113,42 +117,43 @@ const TestResults: React.FC<TestResultsProps> = ({ session, onNewTest }) => {
   // Export report to PDF
   const exportToPDF = async () => {
     setExportLoading(true);
-    
+
     try {
       const resultsElement = document.getElementById('test-results-container');
       if (!resultsElement) {
-        console.error('Results element not found');
+        setSnackbar({ open: true, message: 'Could not find results to export', severity: 'error' });
         setExportLoading(false);
         return;
       }
-      
+
       const canvas = await html2canvas(resultsElement, { scale: 2 });
       const imgData = canvas.toDataURL('image/png');
-      
+
       const pdf = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
         format: 'a4'
       });
-      
+
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
       const imgWidth = canvas.width;
       const imgHeight = canvas.height;
       const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
       const imgX = (pdfWidth - imgWidth * ratio) / 2;
-      
+
       pdf.addImage(imgData, 'PNG', imgX, 10, imgWidth * ratio, imgHeight * ratio);
       pdf.save(`audiometry_results_${new Date().toISOString().slice(0, 10)}.pdf`);
+      setSnackbar({ open: true, message: 'PDF exported successfully!', severity: 'success' });
     } catch (error) {
-      console.error('Error exporting to PDF:', error);
+      setSnackbar({ open: true, message: 'Failed to export PDF. Please try again.', severity: 'error' });
     }
-    
+
     setExportLoading(false);
   };
   
   // Get severity rating based on accuracy
-  const getSeverityRating = (accuracy: number) => {
+  const getSeverityRating = (accuracy: number): { color: 'success' | 'info' | 'warning' | 'error'; label: string; icon: React.ReactElement } => {
     if (accuracy >= 90) return { color: 'success', label: 'Excellent', icon: <CheckCircle /> };
     if (accuracy >= 75) return { color: 'info', label: 'Good', icon: <InfoOutlined /> };
     if (accuracy >= 60) return { color: 'warning', label: 'Fair', icon: <Warning /> };
@@ -210,7 +215,7 @@ const TestResults: React.FC<TestResultsProps> = ({ session, onNewTest }) => {
                     </Typography>
                     <Chip 
                       label={severityRating.label} 
-                      color={severityRating.color as any} 
+                      color={severityRating.color}
                       icon={severityRating.icon}
                       sx={{ fontWeight: 'bold' }}
                     />
@@ -277,8 +282,14 @@ const TestResults: React.FC<TestResultsProps> = ({ session, onNewTest }) => {
                     {patient?.hearingLossType === 'mixed' && 
                       'This patient shows a mixed hearing loss with both conductive and sensorineural components. Note the elevated bone conduction thresholds and additional air-bone gaps.'
                     }
-                    {patient?.hearingLossType === 'asymmetrical' && 
+                    {patient?.hearingLossType === 'asymmetrical' &&
                       'This patient has asymmetrical hearing loss with different thresholds between the left and right ears. This pattern requires additional diagnostic testing and may indicate unilateral pathology.'
+                    }
+                    {patient?.hearingLossType === 'noise-induced' &&
+                      'This patient shows a noise-induced hearing loss pattern, typically characterized by a notch at 3000-6000 Hz (most commonly 4000 Hz) with recovery at 8000 Hz. This is consistent with damage to outer hair cells from prolonged noise exposure.'
+                    }
+                    {patient?.hearingLossType === 'presbycusis' &&
+                      'This patient shows age-related hearing loss (presbycusis), characterized by a bilateral, symmetrical, sloping high-frequency sensorineural hearing loss. This is the most common type of hearing loss in older adults.'
                     }
                   </Typography>
                   
@@ -428,14 +439,23 @@ const TestResults: React.FC<TestResultsProps> = ({ session, onNewTest }) => {
         <Divider sx={{ my: 3 }} />
         
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="space-between">
-          <Box>
-            <Button 
-              variant="contained" 
-              color="primary" 
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <Button
+              variant="contained"
+              color="primary"
               onClick={onNewTest}
             >
               Start New Test
             </Button>
+            {onTryAgain && (
+              <Button
+                variant="outlined"
+                color="primary"
+                onClick={onTryAgain}
+              >
+                Try Again
+              </Button>
+            )}
           </Box>
           
           <Box sx={{ display: 'flex', gap: 2 }}>
@@ -446,9 +466,9 @@ const TestResults: React.FC<TestResultsProps> = ({ session, onNewTest }) => {
             >
               Share Results
             </Button>
-            <Button 
-              variant="outlined" 
-              startIcon={<PictureAsPdf />}
+            <Button
+              variant="outlined"
+              startIcon={exportLoading ? <CircularProgress size={20} /> : <PictureAsPdf />}
               onClick={exportToPDF}
               disabled={exportLoading}
             >
@@ -457,6 +477,21 @@ const TestResults: React.FC<TestResultsProps> = ({ session, onNewTest }) => {
           </Box>
         </Stack>
       </Box>
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={4000}
+        onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
+          severity={snackbar.severity}
+          variant="filled"
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Paper>
   );
 };

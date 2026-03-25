@@ -58,7 +58,15 @@ const FollowUpPage: React.FC = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [activeStep, setActiveStep] = useState(0);
   const [satisfactionRating, setSatisfactionRating] = useState<number | null>(null);
-  
+  const [selectedProgram, setSelectedProgram] = useState('everyday');
+  const [followUpTimeframe, setFollowUpTimeframe] = useState('3months');
+  const [features, setFeatures] = useState({
+    noiseReduction: true,
+    directionalMics: true,
+    windNoise: false,
+    feedbackCancellation: false,
+  });
+
   // Demo data for the follow-up form
   const [followUpData, setFollowUpData] = useState({
     wearTime: '',
@@ -491,7 +499,8 @@ const FollowUpPage: React.FC = () => {
                       row
                       aria-label="program"
                       name="program"
-                      defaultValue="everyday"
+                      value={selectedProgram}
+                      onChange={(e) => setSelectedProgram(e.target.value)}
                     >
                       <FormControlLabel value="everyday" control={<Radio />} label="Everyday" />
                       <FormControlLabel value="noisy" control={<Radio />} label="Noisy" />
@@ -516,25 +525,25 @@ const FollowUpPage: React.FC = () => {
               <Grid container spacing={2}>
                 <Grid item xs={12} sm={6}>
                   <FormControlLabel
-                    control={<Checkbox defaultChecked />}
+                    control={<Checkbox checked={features.noiseReduction} onChange={(e) => setFeatures(f => ({ ...f, noiseReduction: e.target.checked }))} />}
                     label="Noise Reduction"
                   />
                 </Grid>
                 <Grid item xs={12} sm={6}>
                   <FormControlLabel
-                    control={<Checkbox defaultChecked />}
+                    control={<Checkbox checked={features.directionalMics} onChange={(e) => setFeatures(f => ({ ...f, directionalMics: e.target.checked }))} />}
                     label="Directional Microphones"
                   />
                 </Grid>
                 <Grid item xs={12} sm={6}>
                   <FormControlLabel
-                    control={<Checkbox />}
+                    control={<Checkbox checked={features.windNoise} onChange={(e) => setFeatures(f => ({ ...f, windNoise: e.target.checked }))} />}
                     label="Wind Noise Reduction"
                   />
                 </Grid>
                 <Grid item xs={12} sm={6}>
                   <FormControlLabel
-                    control={<Checkbox />}
+                    control={<Checkbox checked={features.feedbackCancellation} onChange={(e) => setFeatures(f => ({ ...f, feedbackCancellation: e.target.checked }))} />}
                     label="Feedback Cancellation"
                   />
                 </Grid>
@@ -861,7 +870,8 @@ const FollowUpPage: React.FC = () => {
                     <FormLabel>Recommended follow-up timeframe:</FormLabel>
                     <RadioGroup
                       row
-                      defaultValue="3months"
+                      value={followUpTimeframe}
+                      onChange={(e) => setFollowUpTimeframe(e.target.value)}
                     >
                       <FormControlLabel value="1month" control={<Radio />} label="1 month" />
                       <FormControlLabel value="3months" control={<Radio />} label="3 months" />

@@ -637,10 +637,20 @@ const TroubleshootingGuidePage: React.FC = () => {
                 color="primary"
                 startIcon={<Print />}
                 onClick={() => {
-                  const brand = findBrandById(selectedBrand);
-                  if (brand) {
-                    const filename = `${brand.name.replace(/\s+/g, '_')}_troubleshooting_guide.html`;
-                    window.open(`/audiometry_trainer/assets/guides/${filename}`, '_blank');
+                  const html = generateGuideHTML(selectedBrand, selectedCategory || undefined);
+                  const blob = new Blob([html], { type: 'text/html' });
+                  const url = URL.createObjectURL(blob);
+                  const newWindow = window.open(url, '_blank');
+                  // Revoke after the new window has had time to load
+                  setTimeout(() => URL.revokeObjectURL(url), 30000);
+                  if (!newWindow) {
+                    // Fallback: trigger download if popup was blocked
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'troubleshooting_guide.html';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
                   }
                 }}
               >
