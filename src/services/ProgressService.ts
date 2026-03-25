@@ -6,6 +6,7 @@
  */
 
 const STORAGE_KEY = 'audiometry_progress_data';
+const REM_STORAGE_KEY = 'audiometry_rem_progress_data';
 const SCHEMA_VERSION = 1;
 
 export interface ProgressRecord {
@@ -25,9 +26,24 @@ export interface ProgressRecord {
   technicalErrors: string[];
 }
 
+export interface REMProgressRecord {
+  sessionId: string;
+  patientId: string;
+  patientName: string;
+  prescriptionMethod: string;
+  fitQuality: number; // 0-100
+  date: string; // ISO string
+  timeSpent: number; // seconds
+}
+
 interface StorageSchema {
   version: number;
   records: ProgressRecord[];
+}
+
+interface REMStorageSchema {
+  version: number;
+  records: REMProgressRecord[];
 }
 
 class ProgressService {
@@ -180,6 +196,48 @@ class ProgressService {
       records,
     };
     return JSON.stringify(data, null, 2);
+  }
+
+  // -------------------------------------------------------------------------
+  // REM session tracking
+  // -------------------------------------------------------------------------
+
+  private loadREMRecords(): REMProgressRecord[] {
+    try {
+      const raw = localStorage.getItem(REM_STORAGE_KEY);
+      if (!raw) return [];
+      const parsed: REMStorageSchema = JSON.parse(raw);
+      if (!parsed || parsed.version !== SCHEMA_VERSION || !Array.isArray(parsed.records)) return [];
+      return parsed.records;
+    } catch {
+      return [];
+    }
+  }
+
+  private saveREMRecords(records: REMProgressRecord[]): void {
+    const data: REMStorageSchema = { version: SCHEMA_VERSION, records };
+    localStorage.setItem(REM_STORAGE_KEY, JSON.stringify(data));
+  }
+
+  saveREMSession(record: REMProgressRecord): void {
+    const records = this.loadREMRecords();
+    records.push(record);
+    this.saveREMRecords(records);
+  }
+
+  getREMHistory(): REMProgressRecord[] {
+    const records = this.loadREMRecords();
+    return records.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }
+
+  getREMSessionCount(): number {
+    return this.loadREMRecords().length;
+  }
+
+  getAverageREMFitQuality(): number {
+    const records = this.loadREMRecords();
+    if (records.length === 0) return 0;
+    return records.reduce((acc, r) => acc + r.fitQuality, 0) / records.length;
   }
 }
 

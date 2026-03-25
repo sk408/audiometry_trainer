@@ -36,6 +36,8 @@ import {
 } from '@mui/icons-material';
 
 import remService from '../services/RealEarMeasurementService';
+import patientService from '../services/PatientService';
+import progressService from '../services/ProgressService';
 import REMChart from '../components/REMChart';
 import {
   REMType,
@@ -49,13 +51,6 @@ import {
   REMSession,
   VentType
 } from '../interfaces/RealEarMeasurementTypes';
-
-// Sample patient data
-const SAMPLE_PATIENTS = [
-  { id: 'p1', name: 'John Smith', age: 68, hearingLoss: 'Moderate-to-severe sensorineural' },
-  { id: 'p2', name: 'Mary Johnson', age: 75, hearingLoss: 'Mild-to-moderate sensorineural' },
-  { id: 'p3', name: 'Robert Davis', age: 52, hearingLoss: 'Moderate conductive' },
-];
 
 // Measurement legend component for consistency
 const MeasurementLegend: React.FC<{ measurements: REMCurve[] }> = ({ measurements }) => (
@@ -130,6 +125,12 @@ const RealEarMeasurementPage: React.FC = () => {
   // Responsive layout
   const isSmallScreen = useMediaQuery('(max-width:600px)');
 
+  // Patients from PatientService
+  const [patients, setPatients] = useState<Array<{ id: string; name: string; age: number; hearingLoss: string }>>([]);
+
+  // Session timing for progress tracking
+  const sessionStartTimeRef = useRef<number>(Date.now());
+
   // New state for adjustable REAR
   const [adjustedREAR, setAdjustedREAR] = useState<REMCurve | null>(null);
   const [matchAccuracy, setMatchAccuracy] = useState<number | null>(null);
@@ -147,10 +148,16 @@ const RealEarMeasurementPage: React.FC = () => {
     'Adjust Frequency Response'
   ];
   
-  // Initialize services
+  // Initialize services and load patients from PatientService
   useEffect(() => {
-    // Use the imported singleton
     setHearingAids(remService.getHearingAids());
+    const allPatients = patientService.getAllPatients();
+    setPatients(allPatients.map(p => ({
+      id: p.id,
+      name: p.name,
+      age: p.age || 0,
+      hearingLoss: p.hearingLossType
+    })));
   }, []);
   
   // React to activeStep changes to set measurement type and initialize adjustment step
@@ -191,6 +198,11 @@ const RealEarMeasurementPage: React.FC = () => {
       setProbePosition(ProbePosition.NOT_INSERTED);
       setCurrentMeasurement(null);
       setCurrentTarget(null);
+      setAllMeasurements([]);
+      setAdjustedREAR(null);
+      setMatchAccuracy(null);
+      setAdjustmentFeedback(null);
+      sessionStartTimeRef.current = Date.now();
       setSuccess('Session initialized. Proceed to position the probe tube.');
     } else {
       setError('Please select a patient and hearing aid to continue');
@@ -274,13 +286,12 @@ const RealEarMeasurementPage: React.FC = () => {
     }
   };
   
-  // Generate targets
+  // Generate targets — now passes ear to compute patient-specific prescription
   const generateTargets = () => {
     if (selectedPatient) {
       try {
-        const targets = remService.generateTargets(selectedPatient, prescriptionMethod);
+        const targets = remService.generateTargets(selectedPatient, prescriptionMethod, selectedEar);
         if (targets.length > 0) {
-          // Find target matching current measurement type
           const matchingTarget = targets.find(t => t.type === measurementType);
           if (matchingTarget) {
             setCurrentTarget(matchingTarget);
@@ -470,7 +481,7 @@ const RealEarMeasurementPage: React.FC = () => {
                     onChange={handlePatientChange}
                     label="Select Patient"
                   >
-                    {SAMPLE_PATIENTS.map(patient => (
+                    {patients.map(patient => (
                       <MenuItem key={patient.id} value={patient.id}>
                         {patient.name} - {patient.age} y/o - {patient.hearingLoss}
                       </MenuItem>
@@ -707,10 +718,20 @@ const RealEarMeasurementPage: React.FC = () => {
                       </>
                     )}
                     {measurementType === 'REAR' && (
-                      <Typography variant="body2">
-                        Real Ear Aided Response measures the response with the hearing aid in place and turned on. 
-                        This is compared with targets to verify the fitting.
-                      </Typography>
+                      <>
+                        <Typography variant="body2" sx={{ mb: 2 }}>
+                          Real Ear Aided Response measures the response with the hearing aid in place and turned on.
+                          This is compared with targets to verify the fitting.
+                        </Typography>
+                        {allMeasurements.find(m => m.type === 'REUR') && (
+                          <Alert severity="info">
+                            <Typography variant="body2">
+                              The REAR should show the combined effect of the ear canal resonance (REUR) plus the hearing aid gain.
+                              Compare the green REAR curve with the blue REUR curve — the difference is the actual insertion gain (REIG).
+                            </Typography>
+                          </Alert>
+                        )}
+                      </>
                     )}
                   </Box>
                 </Grid>
@@ -934,7 +955,6 @@ const RealEarMeasurementPage: React.FC = () => {
                     color="success"
                     onClick={() => {
                       setSuccess("REM procedure completed successfully!");
-                      // Save adjusted REAR to session and mark as completed — functional setState
                       const capturedAdjustedREAR = adjustedREAR;
                       const capturedMatchAccuracy = matchAccuracy;
                       setSession(prev => {
@@ -944,6 +964,18 @@ const RealEarMeasurementPage: React.FC = () => {
                           updatedMeasurements.push(capturedAdjustedREAR);
                           setAllMeasurements(updatedMeasurements);
                         }
+                        // Save REM session to ProgressService
+                        const patient = patientService.getPatientById(prev.patientId);
+                        const timeSpent = Math.round((Date.now() - sessionStartTimeRef.current) / 1000);
+                        progressService.saveREMSession({
+                          sessionId: prev.id,
+                          patientId: prev.patientId,
+                          patientName: patient?.name || 'Unknown',
+                          prescriptionMethod: prescriptionMethod,
+                          fitQuality: capturedMatchAccuracy || 0,
+                          date: new Date().toISOString(),
+                          timeSpent
+                        });
                         return {
                           ...prev,
                           completed: true,
@@ -959,8 +991,8 @@ const RealEarMeasurementPage: React.FC = () => {
               </Box>
               
               {adjustmentFeedback && (
-                <Alert 
-                  severity={matchAccuracy && matchAccuracy >= 80 ? "success" : matchAccuracy && matchAccuracy >= 70 ? "info" : "warning"} 
+                <Alert
+                  severity={matchAccuracy && matchAccuracy >= 80 ? "success" : matchAccuracy && matchAccuracy >= 70 ? "info" : "warning"}
                   sx={{ mt: 3 }}
                 >
                   {adjustmentFeedback}
@@ -971,7 +1003,55 @@ const RealEarMeasurementPage: React.FC = () => {
                   )}
                 </Alert>
               )}
-              
+
+              {/* Per-frequency match results */}
+              {matchAccuracy !== null && adjustedREAR && (reigTarget || currentTarget) && (() => {
+                const targetForMatch = reigTarget || currentTarget;
+                if (!targetForMatch) return null;
+                const perFreq = remService.getPerFrequencyMatch(adjustedREAR, targetForMatch);
+                const passCount = perFreq.filter(p => p.withinTolerance).length;
+                const interpretation = remService.getFitInterpretation(matchAccuracy);
+
+                return (
+                  <Paper sx={{ p: 2, mt: 3, bgcolor: 'background.default' }}>
+                    <Typography variant="h6" gutterBottom>Fit Quality Report</Typography>
+                    <Typography variant="body2" sx={{ mb: 2 }}>
+                      {passCount} of {perFreq.length} frequencies within clinical tolerance
+                    </Typography>
+
+                    <Box sx={{
+                      display: 'grid',
+                      gridTemplateColumns: { xs: 'repeat(3, 1fr)', sm: 'repeat(4, 1fr)', md: 'repeat(6, 1fr)', lg: 'repeat(11, 1fr)' },
+                      gap: 1, mb: 2
+                    }}>
+                      {perFreq.map(p => (
+                        <Box key={p.frequency} sx={{
+                          textAlign: 'center', p: 1, borderRadius: 1,
+                          bgcolor: p.withinTolerance ? 'success.light' : 'error.light',
+                          color: p.withinTolerance ? 'success.contrastText' : 'error.contrastText'
+                        }}>
+                          <Typography variant="caption" display="block">{p.frequency} Hz</Typography>
+                          <Typography variant="body2" fontWeight="bold">
+                            {p.difference > 0 ? '+' : ''}{p.difference.toFixed(1)}
+                          </Typography>
+                          <Typography variant="caption" display="block">
+                            {p.withinTolerance ? 'PASS' : 'FAIL'}
+                          </Typography>
+                          <Typography variant="caption" display="block" sx={{ opacity: 0.8 }}>
+                            ±{p.tolerance} dB
+                          </Typography>
+                        </Box>
+                      ))}
+                    </Box>
+
+                    <Alert severity={matchAccuracy >= 85 ? 'success' : matchAccuracy >= 70 ? 'info' : 'warning'} sx={{ mt: 2 }}>
+                      <Typography variant="subtitle2">Clinical Interpretation</Typography>
+                      <Typography variant="body2">{interpretation}</Typography>
+                    </Alert>
+                  </Paper>
+                );
+              })()}
+
               <Alert severity="info" sx={{ mt: 3 }}>
                 <Typography variant="subtitle2">Clinical best practices for target matching:</Typography>
                 <ul>
