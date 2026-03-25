@@ -69,7 +69,7 @@ const getStatusLabel = (status: string) => {
   }
 };
 
-const PatientCard: React.FC<PatientCardProps> = ({ patient, onSelect, selected = false, progress }) => {
+const PatientCard: React.FC<PatientCardProps> = React.memo(({ patient, onSelect, selected = false, progress }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
@@ -190,6 +190,8 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient, onSelect, selected =
       </CardActions>
     </Card>
   );
-};
+});
+
+PatientCard.displayName = 'PatientCard';
 
 export default PatientCard;

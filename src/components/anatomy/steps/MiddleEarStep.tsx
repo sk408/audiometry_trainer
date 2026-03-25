@@ -52,6 +52,7 @@ const MiddleEarStep: React.FC = () => {
           height="250"
           image={middleEarImg}
           alt="Middle Ear Anatomy"
+          loading="lazy"
           sx={{
             objectFit: 'contain',
             p: 2,

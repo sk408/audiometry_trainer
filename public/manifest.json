@@ -1,6 +1,7 @@
 {
   "short_name": "Audiometry Trainer",
   "name": "Audiometry Trainer by Stephen Kanney",
+  "description": "A professional web application for Pure Tone Audiometry Training designed for audiology students and professionals.",
   "icons": [
     {
       "src": "favicon.ico",
@@ -10,16 +11,26 @@
     {
       "src": "logo192.png",
       "type": "image/png",
-      "sizes": "192x192"
+      "sizes": "192x192",
+      "purpose": "any"
     },
     {
       "src": "logo512.png",
       "type": "image/png",
-      "sizes": "512x512"
+      "sizes": "512x512",
+      "purpose": "any"
+    },
+    {
+      "src": "logo192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "maskable"
     }
   ],
   "start_url": ".",
   "display": "standalone",
+  "orientation": "any",
   "theme_color": "#2196f3",
-  "background_color": "#ffffff"
+  "background_color": "#ffffff",
+  "categories": ["education", "medical"]
 }

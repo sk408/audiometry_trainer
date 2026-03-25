@@ -37,6 +37,7 @@ const PinnaLandmarksStep: React.FC = () => {
           height="300"
           image={outerEarImg}
           alt="Pinna Landmarks"
+          loading="lazy"
           sx={{
             objectFit: 'contain',
             p: 2,

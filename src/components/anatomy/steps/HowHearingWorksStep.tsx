@@ -30,6 +30,7 @@ const HowHearingWorksStep: React.FC = () => {
           height="250"
           image={hearingProcessImg}
           alt="Hearing Process"
+          loading="lazy"
           sx={{
             objectFit: 'contain',
             p: 2,

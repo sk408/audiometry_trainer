@@ -90,10 +90,11 @@ const OtoscopyPage: React.FC = () => {
             A thorough otoscopic examination is essential for diagnosing common ear conditions such as otitis media,
             cerumen impaction, foreign bodies, tympanic membrane perforations, and other abnormalities.
           </Typography>
-          <Box 
-            component="img" 
-            src={otoscopeImg} 
+          <Box
+            component="img"
+            src={otoscopeImg}
             alt="Otoscope device"
+            loading="lazy"
             sx={{
               width: '100%',
               maxWidth: 400,
@@ -185,10 +186,11 @@ const OtoscopyPage: React.FC = () => {
             Performing Otoscopy: Step-by-Step Approach
           </Typography>
           
-          <Box 
-            component="img" 
-            src={otoscopyTechniqueImg} 
+          <Box
+            component="img"
+            src={otoscopyTechniqueImg}
             alt="Otoscopy technique"
+            loading="lazy"
             sx={{
               width: '100%',
               maxWidth: 400,
@@ -303,10 +305,11 @@ const OtoscopyPage: React.FC = () => {
           
           <Grid container spacing={3}>
             <Grid item xs={12} md={6}>
-              <Box 
-                component="img" 
-                src={normalTympanicMembraneImg} 
+              <Box
+                component="img"
+                src={normalTympanicMembraneImg}
                 alt="Normal tympanic membrane"
+                loading="lazy"
                 sx={{
                   width: '100%',
                   height: 'auto',
@@ -388,10 +391,11 @@ const OtoscopyPage: React.FC = () => {
             <AccordionDetails>
               <Grid container spacing={2}>
                 <Grid item xs={12} md={5}>
-                  <Box 
-                    component="img" 
-                    src={cerumenImpactionImg} 
+                  <Box
+                    component="img"
+                    src={cerumenImpactionImg}
                     alt="Cerumen impaction"
+                    loading="lazy"
                     sx={{
                       width: '100%',
                       height: 'auto',
@@ -422,10 +426,11 @@ const OtoscopyPage: React.FC = () => {
             <AccordionDetails>
               <Grid container spacing={2}>
                 <Grid item xs={12} md={5}>
-                  <Box 
-                    component="img" 
-                    src={otitisMediaImg} 
+                  <Box
+                    component="img"
+                    src={otitisMediaImg}
                     alt="Acute otitis media"
+                    loading="lazy"
                     sx={{
                       width: '100%',
                       height: 'auto',
@@ -473,10 +478,11 @@ const OtoscopyPage: React.FC = () => {
             <AccordionDetails>
               <Grid container spacing={2}>
                 <Grid item xs={12} md={5}>
-                  <Box 
-                    component="img" 
-                    src={perforatedTMImg} 
+                  <Box
+                    component="img"
+                    src={perforatedTMImg}
                     alt="Perforated tympanic membrane"
+                    loading="lazy"
                     sx={{
                       width: '100%',
                       height: 'auto',

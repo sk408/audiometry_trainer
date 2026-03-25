@@ -114,6 +114,7 @@ const TutorialPage: React.FC = () => {
               height="250"
               image={audiogramImage}
               alt="Sample Audiogram"
+              loading="lazy"
               sx={{ 
                 objectFit: 'contain', 
                 p: 2, 

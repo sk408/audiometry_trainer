@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { HashRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import {
   AppBar,
@@ -22,12 +22,7 @@ import {
   Menu,
   MenuItem,
   Avatar,
-  FormControl,
-  FormLabel,
-  FormGroup,
-  FormControlLabel,
-  Checkbox,
-  Paper,
+  CircularProgress,
   GlobalStyles
 } from '@mui/material';
 import {
@@ -35,7 +30,6 @@ import {
   Home as HomeIcon,
   School as SchoolIcon,
   Person as PersonIcon,
-  Settings as SettingsIcon,
   Hearing as HearingIcon,
   Assessment as AssessmentIcon,
   Help as HelpIcon,
@@ -47,18 +41,17 @@ import {
   VolumeUp
 } from '@mui/icons-material';
 
-// Import pages
-import HomePage from './pages/HomePage';
-import TutorialPage from './pages/TutorialPage';
-import PatientsPage from './pages/PatientsPage';
-import FollowUpPage from './pages/FollowUpPage';
-import TroubleshootingGuidePage from './pages/TroubleshootingGuidePage';
-import RealEarMeasurementPage from './pages/RealEarMeasurementPage';
-import EarAnatomyPage from './pages/EarAnatomyPage';
-import OtoscopyPage from './pages/OtoscopyPage';
-import ContourTestPage from './pages/ContourTestPage';
-import ProgressPage from './pages/ProgressPage';
-// import SettingsPage from './pages/SettingsPage';
+// Lazy-loaded page components for code splitting
+const HomePage = React.lazy(() => import('./pages/HomePage'));
+const TutorialPage = React.lazy(() => import('./pages/TutorialPage'));
+const PatientsPage = React.lazy(() => import('./pages/PatientsPage'));
+const FollowUpPage = React.lazy(() => import('./pages/FollowUpPage'));
+const TroubleshootingGuidePage = React.lazy(() => import('./pages/TroubleshootingGuidePage'));
+const RealEarMeasurementPage = React.lazy(() => import('./pages/RealEarMeasurementPage'));
+const EarAnatomyPage = React.lazy(() => import('./pages/EarAnatomyPage'));
+const OtoscopyPage = React.lazy(() => import('./pages/OtoscopyPage'));
+const ContourTestPage = React.lazy(() => import('./pages/ContourTestPage'));
+const ProgressPage = React.lazy(() => import('./pages/ProgressPage'));
 
 // Import logo for splash screen
 import logo from './logo512.png';
@@ -452,18 +445,26 @@ function AppContent({
         </Drawer>
 
         <Box component="main" sx={{ flexGrow: 1 }}>
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/tutorial" element={<TutorialPage />} />
-            <Route path="/patients" element={<PatientsPage />} />
-            <Route path="/followup" element={<FollowUpPage />} />
-            <Route path="/troubleshooting" element={<TroubleshootingGuidePage />} />
-            <Route path="/real-ear-measurement" element={<RealEarMeasurementPage />} />
-            <Route path="/ear-anatomy" element={<EarAnatomyPage />} />
-            <Route path="/otoscopy" element={<OtoscopyPage />} />
-            <Route path="/contour-test" element={<ContourTestPage />} />
-            <Route path="/progress" element={<ProgressPage />} />
-          </Routes>
+          <Suspense
+            fallback={
+              <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+                <CircularProgress />
+              </Box>
+            }
+          >
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/tutorial" element={<TutorialPage />} />
+              <Route path="/patients" element={<PatientsPage />} />
+              <Route path="/followup" element={<FollowUpPage />} />
+              <Route path="/troubleshooting" element={<TroubleshootingGuidePage />} />
+              <Route path="/real-ear-measurement" element={<RealEarMeasurementPage />} />
+              <Route path="/ear-anatomy" element={<EarAnatomyPage />} />
+              <Route path="/otoscopy" element={<OtoscopyPage />} />
+              <Route path="/contour-test" element={<ContourTestPage />} />
+              <Route path="/progress" element={<ProgressPage />} />
+            </Routes>
+          </Suspense>
         </Box>
 
         <Box
