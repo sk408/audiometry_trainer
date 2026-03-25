@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useMemo } from 'react';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -33,47 +33,6 @@ const STANDARD_FREQUENCIES = [125, 250, 500, 750, 1000, 1500, 2000, 3000, 4000, 
 // Define major frequencies to show labels for on mobile devices
 const MAJOR_FREQUENCIES = [250, 500, 1000, 2000, 4000, 8000];
 
-// Define symbol mappings
-const SYMBOL_MAPPINGS = {
-  right_air: {
-    symbol: 'circle',
-    color: 'red',
-  },
-  left_air: {
-    symbol: 'crossRot',
-    color: 'blue',
-  },
-  right_bone: {
-    symbol: 'triangle',
-    color: 'red',
-  },
-  left_bone: {
-    symbol: 'triangle',
-    color: 'blue',
-    rotation: 180,
-  },
-  right_air_no_response: {
-    symbol: 'circle',
-    color: 'red',
-    withArrow: true,
-  },
-  left_air_no_response: {
-    symbol: 'crossRot',
-    color: 'blue',
-    withArrow: true,
-  },
-  right_bone_no_response: {
-    symbol: 'triangle',
-    color: 'red',
-    withArrow: true,
-  },
-  left_bone_no_response: {
-    symbol: 'triangle',
-    color: 'blue',
-    rotation: 180,
-    withArrow: true,
-  },
-};
 
 interface AudiogramProps {
   thresholds: ThresholdPoint[];
@@ -104,29 +63,19 @@ const Audiogram: React.FC<AudiogramProps> = ({
 }) => {
   const chartRef = useRef<ChartJS<'scatter'>>(null);
   const [reticleFlash, setReticleFlash] = useState(false);
-  
-  // Cleanup chart instance when component unmounts
-  useEffect(() => {
-    return () => {
-      if (chartRef.current) {
-        chartRef.current.destroy();
-      }
-    };
-  }, []);
 
   // Flash the reticle when tone is active
   useEffect(() => {
     let flashInterval: NodeJS.Timeout | null = null;
-    
+
     if (toneActive && currentFrequency && currentLevel !== undefined) {
-      // Start flashing - alternate every 200ms
       flashInterval = setInterval(() => {
         setReticleFlash(prev => !prev);
       }, 200);
     } else {
       setReticleFlash(false);
     }
-    
+
     return () => {
       if (flashInterval) {
         clearInterval(flashInterval);
@@ -134,39 +83,17 @@ const Audiogram: React.FC<AudiogramProps> = ({
     };
   }, [toneActive, currentFrequency, currentLevel]);
 
-  // Define standard audiogram symbols and colors
-  const symbols = {
-    right: {
-      air: { symbol: 'circle', color: 'rgb(255, 0, 0)', borderColor: 'rgb(255, 0, 0)', fillColor: 'rgb(255, 0, 0)' },
-      bone: { symbol: '<', color: 'rgb(255, 0, 0)', borderColor: 'rgb(255, 0, 0)', fillColor: 'transparent' },
-      masked_air: { symbol: 'triangle', color: 'rgb(255, 0, 0)', borderColor: 'rgb(255, 0, 0)', fillColor: 'transparent' },
-      masked_bone: { symbol: '[', color: 'rgb(255, 0, 0)', borderColor: 'rgb(255, 0, 0)', fillColor: 'transparent' }
-    },
-    left: {
-      air: { symbol: 'crossRot', color: 'rgb(0, 0, 255)', borderColor: 'rgb(0, 0, 255)', fillColor: 'rgb(0, 0, 255)' },
-      bone: { symbol: '>', color: 'rgb(0, 0, 255)', borderColor: 'rgb(0, 0, 255)', fillColor: 'transparent' },
-      masked_air: { symbol: 'rect', color: 'rgb(0, 0, 255)', borderColor: 'rgb(0, 0, 255)', fillColor: 'transparent' },
-      masked_bone: { symbol: ']', color: 'rgb(0, 0, 255)', borderColor: 'rgb(0, 0, 255)', fillColor: 'transparent' }
-    }
-  };
-
-  // Convert threshold data to chart format
-  const prepareChartData = (): ChartData<'scatter'> => {
-    // Data sets for different ear and test types
+  // Memoize threshold datasets — only rebuild when threshold data changes,
+  // not on every reticle flash (5x/second)
+  const thresholdDatasets = useMemo(() => {
     const datasets = [];
-    
-    // Create separate datasets for each combination of ear and test type
-    // Right ear air conduction
+
     datasets.push({
       label: 'Right Ear (Air)',
       data: thresholds
         .filter(point => point.ear === 'right' && point.testType === 'air')
-        .map(point => ({
-          x: point.frequency,
-          y: point.hearingLevel,
-          responseStatus: point.responseStatus
-        })),
-      pointStyle: 'circle',
+        .map(point => ({ x: point.frequency, y: point.hearingLevel, responseStatus: point.responseStatus })),
+      pointStyle: 'circle' as const,
       borderColor: 'red',
       backgroundColor: 'red',
       borderWidth: 2,
@@ -175,17 +102,12 @@ const Audiogram: React.FC<AudiogramProps> = ({
       tension: 0.1
     });
 
-    // Left ear air conduction
     datasets.push({
       label: 'Left Ear (Air)',
       data: thresholds
         .filter(point => point.ear === 'left' && point.testType === 'air')
-        .map(point => ({
-          x: point.frequency,
-          y: point.hearingLevel,
-          responseStatus: point.responseStatus
-        })),
-      pointStyle: 'crossRot',
+        .map(point => ({ x: point.frequency, y: point.hearingLevel, responseStatus: point.responseStatus })),
+      pointStyle: 'crossRot' as const,
       borderColor: 'blue',
       backgroundColor: 'blue',
       borderWidth: 2,
@@ -194,17 +116,12 @@ const Audiogram: React.FC<AudiogramProps> = ({
       tension: 0.1
     });
 
-    // Right ear bone conduction
     datasets.push({
       label: 'Right Ear (Bone)',
       data: thresholds
         .filter(point => point.ear === 'right' && point.testType === 'bone')
-        .map(point => ({
-          x: point.frequency,
-          y: point.hearingLevel,
-          responseStatus: point.responseStatus
-        })),
-      pointStyle: 'triangle',
+        .map(point => ({ x: point.frequency, y: point.hearingLevel, responseStatus: point.responseStatus })),
+      pointStyle: 'triangle' as const,
       borderColor: 'red',
       backgroundColor: 'rgba(255, 0, 0, 0.2)',
       borderWidth: 2,
@@ -213,17 +130,12 @@ const Audiogram: React.FC<AudiogramProps> = ({
       tension: 0.1
     });
 
-    // Left ear bone conduction
     datasets.push({
       label: 'Left Ear (Bone)',
       data: thresholds
         .filter(point => point.ear === 'left' && point.testType === 'bone')
-        .map(point => ({
-          x: point.frequency,
-          y: point.hearingLevel,
-          responseStatus: point.responseStatus
-        })),
-      pointStyle: 'triangle',
+        .map(point => ({ x: point.frequency, y: point.hearingLevel, responseStatus: point.responseStatus })),
+      pointStyle: 'triangle' as const,
       borderColor: 'blue',
       backgroundColor: 'rgba(0, 0, 255, 0.2)',
       borderWidth: 2,
@@ -233,20 +145,13 @@ const Audiogram: React.FC<AudiogramProps> = ({
       rotation: 180
     });
 
-    // Compare thresholds if provided
     if (compareThresholds) {
-      // Additional datasets for comparison
-      // Right ear air comparison
       datasets.push({
         label: 'Right Ear Air (Expected)',
         data: compareThresholds
           .filter(point => point.ear === 'right' && point.testType === 'air')
-          .map(point => ({
-            x: point.frequency,
-            y: point.hearingLevel,
-            responseStatus: point.responseStatus
-          })),
-        pointStyle: 'circle',
+          .map(point => ({ x: point.frequency, y: point.hearingLevel, responseStatus: point.responseStatus })),
+        pointStyle: 'circle' as const,
         borderColor: 'rgba(255, 0, 0, 0.5)',
         backgroundColor: 'rgba(255, 0, 0, 0.5)',
         borderWidth: 1,
@@ -256,17 +161,12 @@ const Audiogram: React.FC<AudiogramProps> = ({
         borderDash: [5, 5]
       });
 
-      // Left ear air comparison
       datasets.push({
         label: 'Left Ear Air (Expected)',
         data: compareThresholds
           .filter(point => point.ear === 'left' && point.testType === 'air')
-          .map(point => ({
-            x: point.frequency,
-            y: point.hearingLevel,
-            responseStatus: point.responseStatus
-          })),
-        pointStyle: 'crossRot',
+          .map(point => ({ x: point.frequency, y: point.hearingLevel, responseStatus: point.responseStatus })),
+        pointStyle: 'crossRot' as const,
         borderColor: 'rgba(0, 0, 255, 0.5)',
         backgroundColor: 'rgba(0, 0, 255, 0.5)',
         borderWidth: 1,
@@ -276,17 +176,12 @@ const Audiogram: React.FC<AudiogramProps> = ({
         borderDash: [5, 5]
       });
 
-      // Right ear bone comparison
       datasets.push({
         label: 'Right Ear Bone (Expected)',
         data: compareThresholds
           .filter(point => point.ear === 'right' && point.testType === 'bone')
-          .map(point => ({
-            x: point.frequency,
-            y: point.hearingLevel,
-            responseStatus: point.responseStatus
-          })),
-        pointStyle: 'triangle',
+          .map(point => ({ x: point.frequency, y: point.hearingLevel, responseStatus: point.responseStatus })),
+        pointStyle: 'triangle' as const,
         borderColor: 'rgba(255, 0, 0, 0.5)',
         backgroundColor: 'rgba(255, 0, 0, 0.2)',
         borderWidth: 1,
@@ -296,17 +191,12 @@ const Audiogram: React.FC<AudiogramProps> = ({
         borderDash: [5, 5]
       });
 
-      // Left ear bone comparison
       datasets.push({
         label: 'Left Ear Bone (Expected)',
         data: compareThresholds
           .filter(point => point.ear === 'left' && point.testType === 'bone')
-          .map(point => ({
-            x: point.frequency,
-            y: point.hearingLevel,
-            responseStatus: point.responseStatus
-          })),
-        pointStyle: 'triangle',
+          .map(point => ({ x: point.frequency, y: point.hearingLevel, responseStatus: point.responseStatus })),
+        pointStyle: 'triangle' as const,
         borderColor: 'rgba(0, 0, 255, 0.5)',
         backgroundColor: 'rgba(0, 0, 255, 0.2)',
         borderWidth: 1,
@@ -318,13 +208,17 @@ const Audiogram: React.FC<AudiogramProps> = ({
       });
     }
 
-    // Add reticle dataset if current frequency and level are provided
+    return datasets;
+  }, [thresholds, compareThresholds]);
+
+  // Build final chart data combining memoized thresholds with reticle overlay
+  const chartData = useMemo((): ChartData<'scatter'> => {
+    const datasets = [...thresholdDatasets];
+
     if (currentFrequency !== undefined && currentLevel !== undefined) {
-      // Reticle horizontal line (frequency indicator)
       datasets.push({
         label: 'Current Frequency',
         data: [
-          // Create a line at the current frequency from -10 to 120 dB
           { x: currentFrequency, y: -10 },
           { x: currentFrequency, y: 120 }
         ],
@@ -335,13 +229,11 @@ const Audiogram: React.FC<AudiogramProps> = ({
         pointRadius: 0,
         showLine: true,
         tension: 0
-      });
-      
-      // Reticle vertical line (level indicator)
+      } as any);
+
       datasets.push({
         label: 'Current Level',
         data: [
-          // Create a line at the current level across all frequencies
           { x: 125, y: currentLevel },
           { x: 8000, y: currentLevel }
         ],
@@ -352,23 +244,22 @@ const Audiogram: React.FC<AudiogramProps> = ({
         pointRadius: 0,
         showLine: true,
         tension: 0
-      });
-      
-      // Reticle intersection point
+      } as any);
+
       datasets.push({
         label: 'Current Position',
         data: [{ x: currentFrequency, y: currentLevel }],
         backgroundColor: reticleFlash ? 'rgba(255, 165, 0, 1)' : 'rgba(255, 165, 0, 0.7)',
         borderColor: reticleFlash ? 'rgb(255, 165, 0)' : 'rgba(255, 100, 0, 0.7)',
-        pointStyle: 'circle',
+        pointStyle: 'circle' as const,
         pointRadius: reticleFlash ? 9 : 7,
         borderWidth: 2,
         showLine: false
-      });
+      } as any);
     }
-    
+
     return { datasets };
-  };
+  }, [thresholdDatasets, currentFrequency, currentLevel, reticleFlash]);
 
   // Chart options
   const options = {
@@ -497,9 +388,9 @@ const Audiogram: React.FC<AudiogramProps> = ({
       width: '100%',
       cursor: interactive && !toneActive ? 'crosshair' : 'default'
     }}>
-      <Scatter 
-        data={prepareChartData()} 
-        options={options} 
+      <Scatter
+        data={chartData}
+        options={options}
         ref={chartRef}
         onClick={handleChartClick}
       />

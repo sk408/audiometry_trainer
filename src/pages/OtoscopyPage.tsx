@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
   Box,
   Container,
@@ -72,12 +72,12 @@ const OtoscopyPage: React.FC = () => {
     setActiveStep(0);
   };
 
-  const handleAccordionChange = (panel: string) => (event: React.SyntheticEvent, isExpanded: boolean) => {
+  const handleAccordionChange = useCallback((panel: string) => (event: React.SyntheticEvent, isExpanded: boolean) => {
     setExpanded(isExpanded ? panel : false);
-  };
+  }, []);
 
   // Define the steps for the otoscopy procedure
-  const steps = [
+  const steps = useMemo(() => [
     {
       label: 'Introduction to Otoscopy',
       description: (
@@ -382,7 +382,7 @@ const OtoscopyPage: React.FC = () => {
           </Typography>
           
           <Accordion expanded={expanded === 'panel1'} onChange={handleAccordionChange('panel1')}>
-            <AccordionSummary expandIcon={<KeyboardArrowDown />}>
+            <AccordionSummary expandIcon={<KeyboardArrowDown />} aria-controls="panel1-content" id="panel1-header">
               <Typography variant="subtitle1">Cerumen Impaction</Typography>
             </AccordionSummary>
             <AccordionDetails>
@@ -416,7 +416,7 @@ const OtoscopyPage: React.FC = () => {
           </Accordion>
           
           <Accordion expanded={expanded === 'panel2'} onChange={handleAccordionChange('panel2')}>
-            <AccordionSummary expandIcon={<KeyboardArrowDown />}>
+            <AccordionSummary expandIcon={<KeyboardArrowDown />} aria-controls="panel2-content" id="panel2-header">
               <Typography variant="subtitle1">Acute Otitis Media</Typography>
             </AccordionSummary>
             <AccordionDetails>
@@ -450,7 +450,7 @@ const OtoscopyPage: React.FC = () => {
           </Accordion>
           
           <Accordion expanded={expanded === 'panel3'} onChange={handleAccordionChange('panel3')}>
-            <AccordionSummary expandIcon={<KeyboardArrowDown />}>
+            <AccordionSummary expandIcon={<KeyboardArrowDown />} aria-controls="panel3-content" id="panel3-header">
               <Typography variant="subtitle1">Otitis Media with Effusion</Typography>
             </AccordionSummary>
             <AccordionDetails>
@@ -467,7 +467,7 @@ const OtoscopyPage: React.FC = () => {
           </Accordion>
           
           <Accordion expanded={expanded === 'panel4'} onChange={handleAccordionChange('panel4')}>
-            <AccordionSummary expandIcon={<KeyboardArrowDown />}>
+            <AccordionSummary expandIcon={<KeyboardArrowDown />} aria-controls="panel4-content" id="panel4-header">
               <Typography variant="subtitle1">Tympanic Membrane Perforation</Typography>
             </AccordionSummary>
             <AccordionDetails>
@@ -501,7 +501,7 @@ const OtoscopyPage: React.FC = () => {
           </Accordion>
           
           <Accordion expanded={expanded === 'panel5'} onChange={handleAccordionChange('panel5')}>
-            <AccordionSummary expandIcon={<KeyboardArrowDown />}>
+            <AccordionSummary expandIcon={<KeyboardArrowDown />} aria-controls="panel5-content" id="panel5-header">
               <Typography variant="subtitle1">External Otitis</Typography>
             </AccordionSummary>
             <AccordionDetails>
@@ -691,8 +691,8 @@ const OtoscopyPage: React.FC = () => {
         </>
       ),
     },
-  ];
-  
+  ], [expanded, handleAccordionChange, theme]);
+
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Paper elevation={3} sx={{ p: 3, mb: 4 }}>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
   Box,
   Container,
@@ -85,12 +85,12 @@ const FollowUpPage: React.FC = () => {
     highFreq: 0,
   });
 
-  const handleInputChange = (field: string, value: string) => {
-    setFollowUpData({
-      ...followUpData,
+  const handleInputChange = useCallback((field: string, value: string) => {
+    setFollowUpData(prev => ({
+      ...prev,
       [field]: value
-    });
-  };
+    }));
+  }, []);
 
   const handleNext = () => {
     setActiveStep((prevActiveStep) => prevActiveStep + 1);
@@ -105,7 +105,7 @@ const FollowUpPage: React.FC = () => {
   };
 
   // Steps for follow-up appointment
-  const steps = [
+  const steps = useMemo(() => [
     {
       label: 'Interview',
       description: 'Assess satisfaction and identify any concerns',
@@ -944,7 +944,7 @@ const FollowUpPage: React.FC = () => {
         </Box>
       )
     }
-  ];
+  ], [followUpData, satisfactionRating, gainAdjustments, selectedProgram, features, followUpTimeframe, handleInputChange, handleNext, handleBack, handleReset]);
 
   return (
     <Box>

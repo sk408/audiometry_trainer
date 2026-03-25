@@ -47,19 +47,15 @@ function EarModel({
   
   // Move useGLTF hook call to the top level
   // React-three-fiber will handle errors internally
-  const { scene: model, ...gltfResult } = useGLTF(modelPath);
-  
-  // Use a separate useEffect for error handling since useGLTF doesn't accept an error callback
+  const { scene: model } = useGLTF(modelPath);
+
+  // Only depend on model (a stable Three.js object) — not the rest spread which
+  // creates a new object reference every render and causes an infinite loop.
   useEffect(() => {
-    try {
-      if (model) {
-      }
-    } catch (error: unknown) {
-      console.error('Error loading model:', error);
-      setLoadError(error);
-      if (onError) onError(error);
+    if (!model && onError) {
+      onError(new Error('Model failed to load'));
     }
-  }, [model, gltfResult, onError]);
+  }, [model, onError]);
   
   // Automatic rotation when not interacting
   useFrame((state, delta) => {

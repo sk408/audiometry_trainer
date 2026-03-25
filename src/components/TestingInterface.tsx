@@ -133,6 +133,7 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
                     setShowMainGuidance(!showMainGuidance);
                   }}
                   sx={{ ml: 1 }}
+                  aria-label={showMainGuidance ? 'Collapse guidance panel' : 'Expand guidance panel'}
                 >
                   {showMainGuidance ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
                 </IconButton>
@@ -260,6 +261,7 @@ const TestingInterface: React.FC<TestingInterfaceProps> = ({
             <IconButton
               onClick={onCancel}
               color="primary"
+              aria-label="Go back"
               sx={{
                 backgroundColor: theme.palette.mode === 'dark'
                   ? alpha(theme.palette.action.active, 0.1)

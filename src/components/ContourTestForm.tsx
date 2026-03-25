@@ -227,6 +227,7 @@ const ContourTestForm: React.FC<ContourTestFormProps> = ({ onSaveResults, initia
                         <IconButton
                           color="error"
                           onClick={() => handleDeleteRating(rating.intensity)}
+                          aria-label={`Delete rating at ${rating.intensity} dB`}
                         >
                           <DeleteIcon />
                         </IconButton>

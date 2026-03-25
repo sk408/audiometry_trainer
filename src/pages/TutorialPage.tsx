@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
   Box,
   Container,
@@ -72,21 +72,21 @@ const TutorialPage: React.FC = () => {
   };
 
   // Play demonstration tone with enhanced functionality
-  const playSampleTone = (frequency: number) => {
+  const playSampleTone = useCallback((frequency: number) => {
     // Resume audio context on first interaction
     audioService.resumeAudioContext().then(() => {
       // Set the currently playing tone
       setPlayingTone(frequency);
-      
+
       // Play a medium-loud tone (40 dB) in the right ear for 1 second
       audioService.playTone(frequency as Frequency, 40, 'right', 1000);
-      
+
       // Reset playing status after tone completes
       setTimeout(() => {
         setPlayingTone(null);
       }, 1100); // Slightly longer than tone duration to ensure it completes
     });
-  };
+  }, []);
 
   // Handle FAQ expansion
   const handleFaqChange = (panel: string) => (event: React.SyntheticEvent, isExpanded: boolean) => {
@@ -94,7 +94,7 @@ const TutorialPage: React.FC = () => {
   };
 
   // Tutorial steps content
-  const steps = [
+  const steps = useMemo(() => [
     {
       label: 'Introduction to Pure Tone Audiometry',
       description: (
@@ -1094,7 +1094,7 @@ const TutorialPage: React.FC = () => {
         </>
       ),
     },
-  ];
+  ], [playingTone, playSampleTone, theme]);
 
   // FAQ content
   const faqs = [

@@ -276,10 +276,11 @@ const Tutorial: React.FC<TutorialProps> = ({ onComplete }) => {
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
                     <Tooltip title="Play 125 Hz tone (very low pitch)">
-                      <IconButton 
-                        onClick={() => playSampleTone(125)} 
+                      <IconButton
+                        onClick={() => playSampleTone(125)}
                         color={playingTone === 125 ? "secondary" : "primary"}
                         disabled={playingTone !== null && playingTone !== 125}
+                        aria-label="Play 125 Hz tone"
                       >
                         <VolumeUp />
                       </IconButton>
@@ -288,10 +289,11 @@ const Tutorial: React.FC<TutorialProps> = ({ onComplete }) => {
                   </Box>
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
                     <Tooltip title="Play 250 Hz tone (low pitch)">
-                      <IconButton 
-                        onClick={() => playSampleTone(250)} 
+                      <IconButton
+                        onClick={() => playSampleTone(250)}
                         color={playingTone === 250 ? "secondary" : "primary"}
                         disabled={playingTone !== null && playingTone !== 250}
+                        aria-label="Play 250 Hz tone"
                       >
                         <VolumeUp />
                       </IconButton>
@@ -300,10 +302,11 @@ const Tutorial: React.FC<TutorialProps> = ({ onComplete }) => {
                   </Box>
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
                     <Tooltip title="Play 500 Hz tone (low-medium pitch)">
-                      <IconButton 
-                        onClick={() => playSampleTone(500)} 
+                      <IconButton
+                        onClick={() => playSampleTone(500)}
                         color={playingTone === 500 ? "secondary" : "primary"}
                         disabled={playingTone !== null && playingTone !== 500}
+                        aria-label="Play 500 Hz tone"
                       >
                         <VolumeUp />
                       </IconButton>
@@ -320,10 +323,11 @@ const Tutorial: React.FC<TutorialProps> = ({ onComplete }) => {
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
                     <Tooltip title="Play 1000 Hz tone (medium pitch)">
-                      <IconButton 
-                        onClick={() => playSampleTone(1000)} 
+                      <IconButton
+                        onClick={() => playSampleTone(1000)}
                         color={playingTone === 1000 ? "secondary" : "primary"}
                         disabled={playingTone !== null && playingTone !== 1000}
+                        aria-label="Play 1000 Hz tone"
                       >
                         <VolumeUp />
                       </IconButton>
@@ -332,10 +336,11 @@ const Tutorial: React.FC<TutorialProps> = ({ onComplete }) => {
                   </Box>
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
                     <Tooltip title="Play 1500 Hz tone">
-                      <IconButton 
-                        onClick={() => playSampleTone(1500)} 
+                      <IconButton
+                        onClick={() => playSampleTone(1500)}
                         color={playingTone === 1500 ? "secondary" : "primary"}
                         disabled={playingTone !== null && playingTone !== 1500}
+                        aria-label="Play 1500 Hz tone"
                       >
                         <VolumeUp />
                       </IconButton>
@@ -344,10 +349,11 @@ const Tutorial: React.FC<TutorialProps> = ({ onComplete }) => {
                   </Box>
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
                     <Tooltip title="Play 2000 Hz tone">
-                      <IconButton 
-                        onClick={() => playSampleTone(2000)} 
+                      <IconButton
+                        onClick={() => playSampleTone(2000)}
                         color={playingTone === 2000 ? "secondary" : "primary"}
                         disabled={playingTone !== null && playingTone !== 2000}
+                        aria-label="Play 2000 Hz tone"
                       >
                         <VolumeUp />
                       </IconButton>
@@ -364,10 +370,11 @@ const Tutorial: React.FC<TutorialProps> = ({ onComplete }) => {
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
                     <Tooltip title="Play 4000 Hz tone (high pitch)">
-                      <IconButton 
-                        onClick={() => playSampleTone(4000)} 
+                      <IconButton
+                        onClick={() => playSampleTone(4000)}
                         color={playingTone === 4000 ? "secondary" : "primary"}
                         disabled={playingTone !== null && playingTone !== 4000}
+                        aria-label="Play 4000 Hz tone"
                       >
                         <VolumeUp />
                       </IconButton>
@@ -376,10 +383,11 @@ const Tutorial: React.FC<TutorialProps> = ({ onComplete }) => {
                   </Box>
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
                     <Tooltip title="Play 6000 Hz tone (very high pitch)">
-                      <IconButton 
-                        onClick={() => playSampleTone(6000)} 
+                      <IconButton
+                        onClick={() => playSampleTone(6000)}
                         color={playingTone === 6000 ? "secondary" : "primary"}
                         disabled={playingTone !== null && playingTone !== 6000}
+                        aria-label="Play 6000 Hz tone"
                       >
                         <VolumeUp />
                       </IconButton>
@@ -388,10 +396,11 @@ const Tutorial: React.FC<TutorialProps> = ({ onComplete }) => {
                   </Box>
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
                     <Tooltip title="Play 8000 Hz tone (extremely high pitch)">
-                      <IconButton 
-                        onClick={() => playSampleTone(8000)} 
+                      <IconButton
+                        onClick={() => playSampleTone(8000)}
                         color={playingTone === 8000 ? "secondary" : "primary"}
                         disabled={playingTone !== null && playingTone !== 8000}
+                        aria-label="Play 8000 Hz tone"
                       >
                         <VolumeUp />
                       </IconButton>
@@ -532,11 +541,12 @@ const Tutorial: React.FC<TutorialProps> = ({ onComplete }) => {
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
                     <Tooltip title="Play 1000 Hz at 40 dB (starting level)">
-                      <IconButton 
-                        onClick={() => playSampleTone(1000)} 
+                      <IconButton
+                        onClick={() => playSampleTone(1000)}
                         color={playingTone === 1000 ? "secondary" : "primary"}
                         disabled={playingTone !== null && playingTone !== 1000}
                         size="small"
+                        aria-label="Play 1000 Hz at 40 dB"
                       >
                         <VolumeUp />
                       </IconButton>
@@ -545,17 +555,18 @@ const Tutorial: React.FC<TutorialProps> = ({ onComplete }) => {
                   </Box>
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
                     <Tooltip title="Play 1000 Hz at 30 dB (descending)">
-                      <IconButton 
+                      <IconButton
                         onClick={() => {
                           audioService.resumeAudioContext().then(() => {
                             setPlayingTone(1000);
                             audioService.playTone(1000 as Frequency, 30, 'right', 1000);
                             setTimeout(() => setPlayingTone(null), 1100);
                           });
-                        }} 
+                        }}
                         color={playingTone === 1000 ? "secondary" : "primary"}
                         disabled={playingTone !== null}
                         size="small"
+                        aria-label="Play 1000 Hz at 30 dB"
                       >
                         <VolumeUp />
                       </IconButton>
@@ -564,17 +575,18 @@ const Tutorial: React.FC<TutorialProps> = ({ onComplete }) => {
                   </Box>
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
                     <Tooltip title="Play 1000 Hz at 20 dB (descending)">
-                      <IconButton 
+                      <IconButton
                         onClick={() => {
                           audioService.resumeAudioContext().then(() => {
                             setPlayingTone(1000);
                             audioService.playTone(1000 as Frequency, 20, 'right', 1000);
                             setTimeout(() => setPlayingTone(null), 1100);
                           });
-                        }} 
+                        }}
                         color={playingTone === 1000 ? "secondary" : "primary"}
                         disabled={playingTone !== null}
                         size="small"
+                        aria-label="Play 1000 Hz at 20 dB"
                       >
                         <VolumeUp />
                       </IconButton>
@@ -583,17 +595,18 @@ const Tutorial: React.FC<TutorialProps> = ({ onComplete }) => {
                   </Box>
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
                     <Tooltip title="Play 1000 Hz at 10 dB (descending)">
-                      <IconButton 
+                      <IconButton
                         onClick={() => {
                           audioService.resumeAudioContext().then(() => {
                             setPlayingTone(1000);
                             audioService.playTone(1000 as Frequency, 10, 'right', 1000);
                             setTimeout(() => setPlayingTone(null), 1100);
                           });
-                        }} 
+                        }}
                         color={playingTone === 1000 ? "secondary" : "primary"}
                         disabled={playingTone !== null}
                         size="small"
+                        aria-label="Play 1000 Hz at 10 dB"
                       >
                         <VolumeUp />
                       </IconButton>
@@ -602,17 +615,18 @@ const Tutorial: React.FC<TutorialProps> = ({ onComplete }) => {
                   </Box>
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
                     <Tooltip title="Play 1000 Hz at 0 dB (descending, might not be audible)">
-                      <IconButton 
+                      <IconButton
                         onClick={() => {
                           audioService.resumeAudioContext().then(() => {
                             setPlayingTone(1000);
                             audioService.playTone(1000 as Frequency, 0, 'right', 1000);
                             setTimeout(() => setPlayingTone(null), 1100);
                           });
-                        }} 
+                        }}
                         color={playingTone === 1000 ? "secondary" : "primary"}
                         disabled={playingTone !== null}
                         size="small"
+                        aria-label="Play 1000 Hz at 0 dB"
                       >
                         <VolumeUp />
                       </IconButton>
@@ -629,17 +643,18 @@ const Tutorial: React.FC<TutorialProps> = ({ onComplete }) => {
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
                     <Tooltip title="Play 1000 Hz at 5 dB (ascending)">
-                      <IconButton 
+                      <IconButton
                         onClick={() => {
                           audioService.resumeAudioContext().then(() => {
                             setPlayingTone(1000);
                             audioService.playTone(1000 as Frequency, 5, 'right', 1000);
                             setTimeout(() => setPlayingTone(null), 1100);
                           });
-                        }} 
+                        }}
                         color={playingTone === 1000 ? "secondary" : "primary"}
                         disabled={playingTone !== null}
                         size="small"
+                        aria-label="Play 1000 Hz at 5 dB ascending"
                       >
                         <VolumeUp />
                       </IconButton>
@@ -648,17 +663,18 @@ const Tutorial: React.FC<TutorialProps> = ({ onComplete }) => {
                   </Box>
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
                     <Tooltip title="Play 1000 Hz at 5 dB again (test for threshold)">
-                      <IconButton 
+                      <IconButton
                         onClick={() => {
                           audioService.resumeAudioContext().then(() => {
                             setPlayingTone(1000);
                             audioService.playTone(1000 as Frequency, 5, 'right', 1000);
                             setTimeout(() => setPlayingTone(null), 1100);
                           });
-                        }} 
+                        }}
                         color={playingTone === 1000 ? "secondary" : "primary"}
                         disabled={playingTone !== null}
                         size="small"
+                        aria-label="Play 1000 Hz at 5 dB threshold test"
                       >
                         <VolumeUp />
                       </IconButton>
@@ -667,17 +683,18 @@ const Tutorial: React.FC<TutorialProps> = ({ onComplete }) => {
                   </Box>
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
                     <Tooltip title="Play 1000 Hz at 5 dB a third time (confirming threshold)">
-                      <IconButton 
+                      <IconButton
                         onClick={() => {
                           audioService.resumeAudioContext().then(() => {
                             setPlayingTone(1000);
                             audioService.playTone(1000 as Frequency, 5, 'right', 1000);
                             setTimeout(() => setPlayingTone(null), 1100);
                           });
-                        }} 
+                        }}
                         color={playingTone === 1000 ? "secondary" : "primary"}
                         disabled={playingTone !== null}
                         size="small"
+                        aria-label="Play 1000 Hz at 5 dB threshold confirmation"
                       >
                         <VolumeUp />
                       </IconButton>

@@ -82,7 +82,7 @@ function App() {
   const [includeBoneConduction, setIncludeBoneConduction] = useState<boolean>(true);
   const [showSplash, setShowSplash] = useState(true);
 
-  // Show splash screen for 500ms
+  // Show splash screen for 1000ms
   useEffect(() => {
     const timer = setTimeout(() => {
       setShowSplash(false);
@@ -406,7 +406,7 @@ function AppContent({
               </Box>
             )}
 
-            <IconButton color="inherit" onClick={toggleDarkMode}>
+            <IconButton color="inherit" onClick={toggleDarkMode} aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}>
               {darkMode ? <LightModeIcon /> : <DarkModeIcon />}
             </IconButton>
 
@@ -483,7 +483,7 @@ function AppContent({
               &copy; 2025 Stephen Kanney. All rights reserved.
             </Typography>
             <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 1 }}>
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: { xs: 1, sm: 2 } }}>
+              <Box component="nav" aria-label="Footer navigation" sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: { xs: 1, sm: 2 } }}>
                 <Link to="/tutorial" style={{ color: 'inherit', textDecoration: 'none' }}>
                   Tutorial
                 </Link>

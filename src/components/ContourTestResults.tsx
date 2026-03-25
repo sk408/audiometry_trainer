@@ -166,8 +166,8 @@ const ContourTestResults: React.FC<ContourTestResultsProps> = ({ results, analys
             <CardContent>
               {analysis.recommendations && analysis.recommendations.length > 0 ? (
                 <List dense>
-                  {analysis.recommendations.map((recommendation, index) => (
-                    <ListItem key={index}>
+                  {analysis.recommendations.map((recommendation) => (
+                    <ListItem key={recommendation}>
                       <ListItemIcon>
                         <ArrowRight color="primary" />
                       </ListItemIcon>
@@ -194,8 +194,8 @@ const ContourTestResults: React.FC<ContourTestResultsProps> = ({ results, analys
             <CardContent>
               {hearingAidRecommendations.length > 0 ? (
                 <List dense>
-                  {hearingAidRecommendations.map((recommendation, index) => (
-                    <ListItem key={index}>
+                  {hearingAidRecommendations.map((recommendation) => (
+                    <ListItem key={recommendation}>
                       <ListItemIcon>
                         <ArrowRight color="primary" />
                       </ListItemIcon>

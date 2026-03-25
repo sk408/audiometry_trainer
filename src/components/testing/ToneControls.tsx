@@ -52,6 +52,7 @@ const ToneControls: React.FC<ToneControlsProps> = ({ hookState }) => {
               disabled={!currentStep || toneActive}
               onClick={() => handleAdjustLevel(-10)}
               size="medium"
+              aria-label="Decrease level by 10 dB"
             >
               <ArrowDownward />
             </IconButton>
@@ -75,6 +76,7 @@ const ToneControls: React.FC<ToneControlsProps> = ({ hookState }) => {
                 disabled={!currentStep || toneActive}
                 onClick={() => handleAdjustLevel(5)}
                 size="small"
+                aria-label="Increase level by 5 dB"
               >
                 <ArrowUpward />
               </IconButton>
@@ -99,6 +101,7 @@ const ToneControls: React.FC<ToneControlsProps> = ({ hookState }) => {
                 disabled={!currentStep || toneActive}
                 onClick={() => handleAdjustFrequency(-1)}
                 size="small"
+                aria-label="Decrease frequency"
               >
                 <ArrowBackIosNew fontSize="small" />
               </IconButton>
@@ -109,6 +112,7 @@ const ToneControls: React.FC<ToneControlsProps> = ({ hookState }) => {
                 disabled={!currentStep || toneActive}
                 onClick={() => handleAdjustFrequency(1)}
                 size="small"
+                aria-label="Increase frequency"
               >
                 <ArrowForwardIos fontSize="small" />
               </IconButton>
