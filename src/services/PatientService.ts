@@ -2,17 +2,110 @@ import { HearingProfile, ThresholdPoint, Frequency, HearingLevel } from '../inte
 
 /**
  * PatientService - Manages virtual patients with different hearing profiles
+ *
+ * Audiometric invariants enforced:
+ *   - Bone conduction <= Air conduction at every shared frequency
+ *   - All hearing levels are multiples of 5 in the range [-10, 120]
+ *   - Thresholds are deterministic per patient (seeded PRNG from patient ID)
  */
 class PatientService {
   private patients: HearingProfile[] = [];
 
   constructor() {
     this.initializePatients();
+
+    // Validate every patient after generation
+    for (const patient of this.patients) {
+      if (!this.validatePatientThresholds(patient.thresholds)) {
+        throw new Error(
+          `Patient "${patient.name}" (${patient.id}) has invalid thresholds: ` +
+          'bone > air, out-of-range value, or non-multiple-of-5 detected.'
+        );
+      }
+    }
   }
 
+  // ---------------------------------------------------------------------------
+  // Seeded PRNG
+  // ---------------------------------------------------------------------------
+
   /**
-   * Initialize the predefined virtual patients
+   * Create a deterministic pseudo-random number generator seeded by a string.
+   * Returns a function that yields values in [0, 1) on each call.
    */
+  private seededRandom(seed: string): () => number {
+    let hash = 0;
+    for (let i = 0; i < seed.length; i++) {
+      const char = seed.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32-bit integer
+    }
+    return () => {
+      hash = (hash * 1664525 + 1013904223) & 0x7fffffff;
+      return hash / 0x7fffffff;
+    };
+  }
+
+  // ---------------------------------------------------------------------------
+  // Helpers
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Get a random hearing level within a specified range, rounded to the
+   * nearest 5 dB and clamped to [-10, 120].
+   */
+  private getRandomLevel(min: number, max: number, random: () => number): HearingLevel {
+    const value = Math.round((random() * (max - min) + min) / 5) * 5;
+    return Math.min(120, Math.max(-10, value)) as HearingLevel;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Validation
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Validate an array of threshold points for audiometric correctness.
+   *  - bone <= air at every frequency/ear combination
+   *  - all hearing levels in [-10, 120]
+   *  - all hearing levels are multiples of 5
+   */
+  public validatePatientThresholds(thresholds: ThresholdPoint[]): boolean {
+    // Build lookup maps for air and bone by ear+frequency
+    const airMap = new Map<string, number>();
+    const boneMap = new Map<string, number>();
+
+    for (const t of thresholds) {
+      const level = t.hearingLevel as number;
+
+      // Range check
+      if (level < -10 || level > 120) return false;
+
+      // Multiple-of-5 check
+      if (level % 5 !== 0) return false;
+
+      const key = `${t.ear}-${t.frequency}`;
+      if (t.testType === 'air' || t.testType === 'masked_air') {
+        airMap.set(key, level);
+      } else if (t.testType === 'bone' || t.testType === 'masked_bone') {
+        boneMap.set(key, level);
+      }
+    }
+
+    // For every frequency where both bone and air exist, bone <= air
+    for (const [key, boneLevel] of boneMap) {
+      const airLevel = airMap.get(key);
+      if (airLevel !== undefined && boneLevel > airLevel) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Patient initialisation
+  // ---------------------------------------------------------------------------
+
   private initializePatients(): void {
     this.patients = [
       // Normal hearing
@@ -22,9 +115,9 @@ class PatientService {
         description: 'Young adult with normal hearing',
         difficulty: 'beginner',
         hearingLossType: 'normal',
-        thresholds: this.generateNormalHearingThresholds()
+        thresholds: this.generateNormalHearingThresholds(this.seededRandom('patient1'))
       },
-      
+
       // Mild high-frequency sensorineural hearing loss
       {
         id: 'patient2',
@@ -32,9 +125,9 @@ class PatientService {
         description: 'Middle-aged with mild high-frequency sensorineural hearing loss',
         difficulty: 'beginner',
         hearingLossType: 'sensorineural',
-        thresholds: this.generateMildHighFrequencyLoss()
+        thresholds: this.generateMildHighFrequencyLoss(this.seededRandom('patient2'))
       },
-      
+
       // Moderate flat conductive hearing loss
       {
         id: 'patient3',
@@ -42,9 +135,9 @@ class PatientService {
         description: 'Adult with moderate flat conductive hearing loss',
         difficulty: 'intermediate',
         hearingLossType: 'conductive',
-        thresholds: this.generateConductiveLoss()
+        thresholds: this.generateConductiveLoss(this.seededRandom('patient3'))
       },
-      
+
       // Asymmetrical sensorineural hearing loss
       {
         id: 'patient4',
@@ -52,9 +145,9 @@ class PatientService {
         description: 'Elderly with asymmetrical sensorineural hearing loss',
         difficulty: 'intermediate',
         hearingLossType: 'asymmetrical',
-        thresholds: this.generateAsymmetricalLoss()
+        thresholds: this.generateAsymmetricalLoss(this.seededRandom('patient4'))
       },
-      
+
       // Mixed hearing loss
       {
         id: 'patient5',
@@ -62,9 +155,9 @@ class PatientService {
         description: 'Adult with mixed hearing loss',
         difficulty: 'advanced',
         hearingLossType: 'mixed',
-        thresholds: this.generateMixedLoss()
+        thresholds: this.generateMixedLoss(this.seededRandom('patient5'))
       },
-      
+
       // Severe-profound hearing loss
       {
         id: 'patient6',
@@ -72,414 +165,448 @@ class PatientService {
         description: 'Child with severe-profound sensorineural hearing loss',
         difficulty: 'advanced',
         hearingLossType: 'sensorineural',
-        thresholds: this.generateSevereProfoundLoss()
+        thresholds: this.generateSevereProfoundLoss(this.seededRandom('patient6'))
       }
     ];
   }
 
-  /**
-   * Generate normal hearing thresholds
-   * @returns Array of threshold points for normal hearing
-   */
-  private generateNormalHearingThresholds(): ThresholdPoint[] {
-    const thresholds: ThresholdPoint[] = [];
-    const frequencies: number[] = [250, 500, 750, 1000, 1500, 2000, 3000, 4000, 6000, 8000];
-    
-    // Air conduction thresholds
-    frequencies.forEach(freq => {
-      // Right ear thresholds (normal = between -10 and 15 dB HL)
-      thresholds.push({
-        frequency: freq as Frequency,
-        hearingLevel: this.getRandomLevel(-10, 15) as HearingLevel,
-        ear: 'right',
-        testType: 'air',
-        responseStatus: 'threshold'
-      });
-      
-      // Left ear thresholds
-      thresholds.push({
-        frequency: freq as Frequency,
-        hearingLevel: this.getRandomLevel(-10, 15) as HearingLevel,
-        ear: 'left',
-        testType: 'air',
-        responseStatus: 'threshold'
-      });
-    });
-    
-    // Bone conduction thresholds (typically for frequencies 250-4000 Hz)
-    const boneFrequencies: number[] = [250, 500, 1000, 2000, 3000, 4000];
-    
-    boneFrequencies.forEach(freq => {
-      // For normal hearing, bone conduction thresholds should be similar to air conduction
-      // Right ear bone conduction
-      thresholds.push({
-        frequency: freq as Frequency,
-        hearingLevel: this.getRandomLevel(-10, 15) as HearingLevel,
-        ear: 'right',
-        testType: 'bone',
-        responseStatus: 'threshold'
-      });
-      
-      // Left ear bone conduction
-      thresholds.push({
-        frequency: freq as Frequency,
-        hearingLevel: this.getRandomLevel(-10, 15) as HearingLevel,
-        ear: 'left',
-        testType: 'bone',
-        responseStatus: 'threshold'
-      });
-    });
-    
-    return thresholds;
-  }
+  // ---------------------------------------------------------------------------
+  // Threshold generators
+  // ---------------------------------------------------------------------------
 
   /**
-   * Generate mild high-frequency sensorineural hearing loss
-   * @returns Array of threshold points
+   * Normal hearing: bone -10..15, air = bone + 0..5
    */
-  private generateMildHighFrequencyLoss(): ThresholdPoint[] {
+  private generateNormalHearingThresholds(random: () => number): ThresholdPoint[] {
     const thresholds: ThresholdPoint[] = [];
-    const frequencies: number[] = [250, 500, 750, 1000, 1500, 2000, 3000, 4000, 6000, 8000];
-    
-    // Air conduction thresholds
-    frequencies.forEach(freq => {
-      // Hearing level based on frequency - higher frequencies have higher thresholds
-      let rightLevel: HearingLevel = 10 as HearingLevel;
-      let leftLevel: HearingLevel = 10 as HearingLevel;
-      
-      // Progressive loss in high frequencies
-      if (freq >= 2000) {
-        rightLevel = Math.min(85, 10 + Math.round((freq - 1500) / 100)) as HearingLevel;
-        leftLevel = Math.min(85, 10 + Math.round((freq - 1500) / 100)) as HearingLevel;
-      }
-      
-      // Add some randomness
-      rightLevel = (rightLevel + this.getRandomLevel(-5, 5)) as HearingLevel;
-      leftLevel = (leftLevel + this.getRandomLevel(-5, 5)) as HearingLevel;
-      
-      // Right ear
-      thresholds.push({
-        frequency: freq as Frequency,
-        hearingLevel: rightLevel,
-        ear: 'right',
-        testType: 'air',
-        responseStatus: 'threshold'
-      });
-      
-      // Left ear
-      thresholds.push({
-        frequency: freq as Frequency,
-        hearingLevel: leftLevel,
-        ear: 'left',
-        testType: 'air',
-        responseStatus: 'threshold'
-      });
-    });
-    
-    // Bone conduction thresholds (typically for frequencies 250-4000 Hz)
-    const boneFrequencies: number[] = [250, 500, 1000, 2000, 3000, 4000];
-    
-    boneFrequencies.forEach(freq => {
-      // For sensorineural hearing loss, bone conduction thresholds should be similar to air conduction
-      let rightLevel: HearingLevel = 10 as HearingLevel;
-      let leftLevel: HearingLevel = 10 as HearingLevel;
-      
-      // Progressive loss in high frequencies
-      if (freq >= 2000) {
-        rightLevel = Math.min(85, 10 + Math.round((freq - 1500) / 100)) as HearingLevel;
-        leftLevel = Math.min(85, 10 + Math.round((freq - 1500) / 100)) as HearingLevel;
-      }
-      
-      // Add some randomness
-      rightLevel = (rightLevel + this.getRandomLevel(-5, 5)) as HearingLevel;
-      leftLevel = (leftLevel + this.getRandomLevel(-5, 5)) as HearingLevel;
-      
-      // Right ear bone conduction
-      thresholds.push({
-        frequency: freq as Frequency,
-        hearingLevel: rightLevel,
-        ear: 'right',
-        testType: 'bone',
-        responseStatus: 'threshold'
-      });
-      
-      // Left ear bone conduction
-      thresholds.push({
-        frequency: freq as Frequency,
-        hearingLevel: leftLevel,
-        ear: 'left',
-        testType: 'bone',
-        responseStatus: 'threshold'
-      });
-    });
-    
-    return thresholds;
-  }
+    const frequencies: Frequency[] = [250, 500, 750, 1000, 1500, 2000, 3000, 4000, 6000, 8000];
+    const boneFrequencies: Frequency[] = [250, 500, 1000, 2000, 3000, 4000];
 
-  /**
-   * Generate moderate flat conductive hearing loss
-   * @returns Array of threshold points
-   */
-  private generateConductiveLoss(): ThresholdPoint[] {
-    const thresholds: ThresholdPoint[] = [];
-    const frequencies: number[] = [250, 500, 750, 1000, 1500, 2000, 3000, 4000, 6000, 8000];
-    
-    // Air conduction thresholds - conductive loss is typically flat across frequencies
-    frequencies.forEach(freq => {
-      // Moderate conductive loss (40-55 dB HL)
-      const rightLevel = (40 + this.getRandomLevel(0, 15)) as HearingLevel;
-      const leftLevel = (40 + this.getRandomLevel(0, 15)) as HearingLevel;
-      
-      // Right ear
-      thresholds.push({
-        frequency: freq as Frequency,
-        hearingLevel: rightLevel,
-        ear: 'right',
-        testType: 'air',
-        responseStatus: 'threshold'
-      });
-      
-      // Left ear
-      thresholds.push({
-        frequency: freq as Frequency,
-        hearingLevel: leftLevel,
-        ear: 'left',
-        testType: 'air',
-        responseStatus: 'threshold'
-      });
-    });
-    
-    // Bone conduction thresholds (typically for frequencies 250-4000 Hz)
-    const boneFrequencies: number[] = [250, 500, 1000, 2000, 3000, 4000];
-    
-    boneFrequencies.forEach(freq => {
-      // For conductive hearing loss, bone conduction thresholds should be normal
-      // despite elevated air conduction thresholds
-      const rightLevel = (this.getRandomLevel(-10, 15)) as HearingLevel;
-      const leftLevel = (this.getRandomLevel(-10, 15)) as HearingLevel;
-      
-      // Right ear bone conduction
-      thresholds.push({
-        frequency: freq as Frequency,
-        hearingLevel: rightLevel,
-        ear: 'right',
-        testType: 'bone',
-        responseStatus: 'threshold'
-      });
-      
-      // Left ear bone conduction
-      thresholds.push({
-        frequency: freq as Frequency,
-        hearingLevel: leftLevel,
-        ear: 'left',
-        testType: 'bone',
-        responseStatus: 'threshold'
-      });
-    });
-    
-    return thresholds;
-  }
+    // Generate bone first, then air = bone + small gap
+    for (const freq of frequencies) {
+      const hasBone = (boneFrequencies as number[]).includes(freq);
 
-  /**
-   * Generate thresholds for asymmetrical sensorineural hearing loss
-   */
-  private generateAsymmetricalLoss(): ThresholdPoint[] {
-    // UPDATED: Added 1500Hz to ensure all UI frequencies are covered
-    const frequencies = [250, 500, 750, 1000, 1500, 2000, 3000, 4000, 6000, 8000] as const;
-    const thresholds: ThresholdPoint[] = [];
-
-    frequencies.forEach(freq => {
-      // Right ear: Mild to moderate loss
-      let rightLevel;
-      if (freq <= 1000) {
-        rightLevel = this.getRandomLevel(15, 25) as any;
-      } else {
-        rightLevel = this.getRandomLevel(30, 45) as any;
-      }
-
-      // Left ear: Moderately severe to severe loss
-      let leftLevel;
-      if (freq <= 1000) {
-        leftLevel = this.getRandomLevel(40, 55) as any;
-      } else {
-        leftLevel = this.getRandomLevel(60, 75) as any;
-      }
-
-      // Air conduction
-      thresholds.push({
-        frequency: freq,
-        hearingLevel: rightLevel,
-        ear: 'right',
-        testType: 'air',
-        responseStatus: 'threshold'
-      });
+      // --- Right ear ---
+      const rightBone = hasBone ? this.getRandomLevel(-10, 15, random) : null;
+      const rightAir = rightBone !== null
+        ? this.getRandomLevel(rightBone, rightBone + 5, random)
+        : this.getRandomLevel(-10, 15, random);
 
       thresholds.push({
         frequency: freq,
-        hearingLevel: leftLevel,
-        ear: 'left',
+        hearingLevel: rightAir,
+        ear: 'right',
         testType: 'air',
         responseStatus: 'threshold'
       });
 
-      // Bone conduction (similar to air for sensorineural loss)
-      if (freq <= 4000) {
+      if (rightBone !== null) {
         thresholds.push({
           frequency: freq,
-          hearingLevel: rightLevel,
+          hearingLevel: rightBone,
           ear: 'right',
           testType: 'bone',
           responseStatus: 'threshold'
         });
+      }
 
+      // --- Left ear ---
+      const leftBone = hasBone ? this.getRandomLevel(-10, 15, random) : null;
+      const leftAir = leftBone !== null
+        ? this.getRandomLevel(leftBone, leftBone + 5, random)
+        : this.getRandomLevel(-10, 15, random);
+
+      thresholds.push({
+        frequency: freq,
+        hearingLevel: leftAir,
+        ear: 'left',
+        testType: 'air',
+        responseStatus: 'threshold'
+      });
+
+      if (leftBone !== null) {
         thresholds.push({
           frequency: freq,
-          hearingLevel: leftLevel,
+          hearingLevel: leftBone,
           ear: 'left',
           testType: 'bone',
           responseStatus: 'threshold'
         });
       }
-    });
+    }
 
     return thresholds;
   }
 
   /**
-   * Generate thresholds for mixed hearing loss
+   * Mild high-frequency sensorineural loss: bone first (elevated at high freq),
+   * air = bone + 0..5
    */
-  private generateMixedLoss(): ThresholdPoint[] {
-    // UPDATED: Added 1500Hz to ensure all UI frequencies are covered
-    const frequencies = [250, 500, 750, 1000, 1500, 2000, 3000, 4000, 6000, 8000] as const;
+  private generateMildHighFrequencyLoss(random: () => number): ThresholdPoint[] {
     const thresholds: ThresholdPoint[] = [];
-    
-    // Air-bone gap of approximately 20-30 dB
-    const airBoneGap = 25;
+    const frequencies: Frequency[] = [250, 500, 750, 1000, 1500, 2000, 3000, 4000, 6000, 8000];
+    const boneFrequencies: Frequency[] = [250, 500, 1000, 2000, 3000, 4000];
 
-    frequencies.forEach(freq => {
-      // Sensorineural component
-      let rightBoneLevel, leftBoneLevel;
-      
-      if (freq <= 1000) {
-        rightBoneLevel = this.getRandomLevel(20, 30) as any;
-        leftBoneLevel = this.getRandomLevel(20, 30) as any;
+    for (const freq of frequencies) {
+      const hasBone = (boneFrequencies as number[]).includes(freq);
+
+      // Base level depends on frequency — progressive high-frequency loss
+      let baseMin: number;
+      let baseMax: number;
+      if (freq < 2000) {
+        baseMin = 5;
+        baseMax = 15;
       } else {
-        rightBoneLevel = this.getRandomLevel(40, 55) as any;
-        leftBoneLevel = this.getRandomLevel(40, 55) as any;
+        // Increases with frequency
+        const offset = Math.round((freq - 1500) / 100);
+        baseMin = 10 + offset - 5;
+        baseMax = Math.min(85, 10 + offset + 5);
       }
-      
-      // Air conduction with additional conductive component
-      const rightAirLevel = (rightBoneLevel + airBoneGap) as any;
-      const leftAirLevel = (leftBoneLevel + airBoneGap) as any;
 
-      // Air conduction
+      // --- Right ear ---
+      const rightBone = hasBone ? this.getRandomLevel(baseMin, baseMax, random) : null;
+      const rightAir = rightBone !== null
+        ? this.getRandomLevel(rightBone, rightBone + 5, random)
+        : this.getRandomLevel(baseMin, baseMax + 5, random);
+
       thresholds.push({
         frequency: freq,
-        hearingLevel: rightAirLevel,
+        hearingLevel: rightAir,
         ear: 'right',
         testType: 'air',
         responseStatus: 'threshold'
       });
 
+      if (rightBone !== null) {
+        thresholds.push({
+          frequency: freq,
+          hearingLevel: rightBone,
+          ear: 'right',
+          testType: 'bone',
+          responseStatus: 'threshold'
+        });
+      }
+
+      // --- Left ear ---
+      const leftBone = hasBone ? this.getRandomLevel(baseMin, baseMax, random) : null;
+      const leftAir = leftBone !== null
+        ? this.getRandomLevel(leftBone, leftBone + 5, random)
+        : this.getRandomLevel(baseMin, baseMax + 5, random);
+
       thresholds.push({
         frequency: freq,
-        hearingLevel: leftAirLevel,
+        hearingLevel: leftAir,
         ear: 'left',
         testType: 'air',
         responseStatus: 'threshold'
       });
 
-      // Bone conduction
-      if (freq <= 4000) {
+      if (leftBone !== null) {
         thresholds.push({
           frequency: freq,
-          hearingLevel: rightBoneLevel,
-          ear: 'right',
-          testType: 'bone',
-          responseStatus: 'threshold'
-        });
-
-        thresholds.push({
-          frequency: freq,
-          hearingLevel: leftBoneLevel,
+          hearingLevel: leftBone,
           ear: 'left',
           testType: 'bone',
           responseStatus: 'threshold'
         });
       }
-    });
+    }
 
     return thresholds;
   }
 
   /**
-   * Generate thresholds for severe-profound sensorineural hearing loss
+   * Conductive loss: bone is normal (-10..15), air = bone + air-bone gap (20..40)
    */
-  private generateSevereProfoundLoss(): ThresholdPoint[] {
-    // UPDATED: Added 1500Hz to ensure all UI frequencies are covered
-    const frequencies = [250, 500, 750, 1000, 1500, 2000, 3000, 4000, 6000, 8000] as const;
+  private generateConductiveLoss(random: () => number): ThresholdPoint[] {
     const thresholds: ThresholdPoint[] = [];
+    const frequencies: Frequency[] = [250, 500, 750, 1000, 1500, 2000, 3000, 4000, 6000, 8000];
+    const boneFrequencies: Frequency[] = [250, 500, 1000, 2000, 3000, 4000];
 
-    frequencies.forEach(freq => {
-      // Severe to profound hearing loss
-      const rightLevel = this.getRandomLevel(80, 110) as any;
-      const leftLevel = this.getRandomLevel(80, 110) as any;
+    for (const freq of frequencies) {
+      const hasBone = (boneFrequencies as number[]).includes(freq);
 
-      // Air conduction
+      // --- Right ear ---
+      const rightBone = hasBone ? this.getRandomLevel(-10, 15, random) : null;
+      const rightGap = this.getRandomLevel(20, 40, random) as number;
+      const rightAir = rightBone !== null
+        ? this.getRandomLevel(rightBone + rightGap, rightBone + rightGap, random)
+        : this.getRandomLevel(30, 55, random); // For freqs without bone, approximate
+
       thresholds.push({
         frequency: freq,
-        hearingLevel: rightLevel,
+        hearingLevel: rightAir,
         ear: 'right',
         testType: 'air',
         responseStatus: 'threshold'
       });
 
+      if (rightBone !== null) {
+        thresholds.push({
+          frequency: freq,
+          hearingLevel: rightBone,
+          ear: 'right',
+          testType: 'bone',
+          responseStatus: 'threshold'
+        });
+      }
+
+      // --- Left ear ---
+      const leftBone = hasBone ? this.getRandomLevel(-10, 15, random) : null;
+      const leftGap = this.getRandomLevel(20, 40, random) as number;
+      const leftAir = leftBone !== null
+        ? this.getRandomLevel(leftBone + leftGap, leftBone + leftGap, random)
+        : this.getRandomLevel(30, 55, random);
+
       thresholds.push({
         frequency: freq,
-        hearingLevel: leftLevel,
+        hearingLevel: leftAir,
         ear: 'left',
         testType: 'air',
         responseStatus: 'threshold'
       });
 
-      // Bone conduction (similar to air for sensorineural loss)
-      if (freq <= 4000) {
+      if (leftBone !== null) {
         thresholds.push({
           frequency: freq,
-          hearingLevel: rightLevel,
+          hearingLevel: leftBone,
+          ear: 'left',
+          testType: 'bone',
+          responseStatus: 'threshold'
+        });
+      }
+    }
+
+    return thresholds;
+  }
+
+  /**
+   * Asymmetrical sensorineural loss:
+   *   Right ear: mild-moderate SNHL (bone ~ air, both elevated)
+   *   Left ear: moderately severe-severe SNHL (bone ~ air, both more elevated)
+   */
+  private generateAsymmetricalLoss(random: () => number): ThresholdPoint[] {
+    const frequencies: Frequency[] = [250, 500, 750, 1000, 1500, 2000, 3000, 4000, 6000, 8000];
+    const thresholds: ThresholdPoint[] = [];
+
+    for (const freq of frequencies) {
+      const hasBone = freq <= 4000;
+
+      // --- Right ear: mild to moderate ---
+      let rightBoneMin: number;
+      let rightBoneMax: number;
+      if (freq <= 1000) {
+        rightBoneMin = 15;
+        rightBoneMax = 25;
+      } else {
+        rightBoneMin = 30;
+        rightBoneMax = 45;
+      }
+
+      const rightBone = hasBone ? this.getRandomLevel(rightBoneMin, rightBoneMax, random) : null;
+      const rightAir = rightBone !== null
+        ? this.getRandomLevel(rightBone, rightBone + 5, random)
+        : this.getRandomLevel(rightBoneMin, rightBoneMax + 5, random);
+
+      thresholds.push({
+        frequency: freq,
+        hearingLevel: rightAir,
+        ear: 'right',
+        testType: 'air',
+        responseStatus: 'threshold'
+      });
+
+      if (rightBone !== null) {
+        thresholds.push({
+          frequency: freq,
+          hearingLevel: rightBone,
           ear: 'right',
           testType: 'bone',
-          responseStatus: freq <= 1000 ? 'threshold' : 'no_response' // May not get bone response at higher frequencies
+          responseStatus: 'threshold'
         });
+      }
 
+      // --- Left ear: moderately severe to severe ---
+      let leftBoneMin: number;
+      let leftBoneMax: number;
+      if (freq <= 1000) {
+        leftBoneMin = 40;
+        leftBoneMax = 55;
+      } else {
+        leftBoneMin = 60;
+        leftBoneMax = 75;
+      }
+
+      const leftBone = hasBone ? this.getRandomLevel(leftBoneMin, leftBoneMax, random) : null;
+      const leftAir = leftBone !== null
+        ? this.getRandomLevel(leftBone, leftBone + 5, random)
+        : this.getRandomLevel(leftBoneMin, leftBoneMax + 5, random);
+
+      thresholds.push({
+        frequency: freq,
+        hearingLevel: leftAir,
+        ear: 'left',
+        testType: 'air',
+        responseStatus: 'threshold'
+      });
+
+      if (leftBone !== null) {
         thresholds.push({
           frequency: freq,
-          hearingLevel: leftLevel,
+          hearingLevel: leftBone,
+          ear: 'left',
+          testType: 'bone',
+          responseStatus: 'threshold'
+        });
+      }
+    }
+
+    return thresholds;
+  }
+
+  /**
+   * Mixed loss: bone elevated (sensorineural component), air = bone + gap (15..30)
+   */
+  private generateMixedLoss(random: () => number): ThresholdPoint[] {
+    const frequencies: Frequency[] = [250, 500, 750, 1000, 1500, 2000, 3000, 4000, 6000, 8000];
+    const thresholds: ThresholdPoint[] = [];
+
+    for (const freq of frequencies) {
+      const hasBone = freq <= 4000;
+
+      // Sensorineural component ranges
+      let boneMin: number;
+      let boneMax: number;
+      if (freq <= 1000) {
+        boneMin = 20;
+        boneMax = 30;
+      } else {
+        boneMin = 40;
+        boneMax = 55;
+      }
+
+      // --- Right ear ---
+      const rightBone = hasBone ? this.getRandomLevel(boneMin, boneMax, random) : null;
+      const rightGap = this.getRandomLevel(15, 30, random) as number;
+      const rightAir = rightBone !== null
+        ? this.getRandomLevel(rightBone + rightGap, rightBone + rightGap, random)
+        : this.getRandomLevel(boneMin + 15, boneMax + 30, random);
+
+      thresholds.push({
+        frequency: freq,
+        hearingLevel: rightAir,
+        ear: 'right',
+        testType: 'air',
+        responseStatus: 'threshold'
+      });
+
+      if (rightBone !== null) {
+        thresholds.push({
+          frequency: freq,
+          hearingLevel: rightBone,
+          ear: 'right',
+          testType: 'bone',
+          responseStatus: 'threshold'
+        });
+      }
+
+      // --- Left ear ---
+      const leftBone = hasBone ? this.getRandomLevel(boneMin, boneMax, random) : null;
+      const leftGap = this.getRandomLevel(15, 30, random) as number;
+      const leftAir = leftBone !== null
+        ? this.getRandomLevel(leftBone + leftGap, leftBone + leftGap, random)
+        : this.getRandomLevel(boneMin + 15, boneMax + 30, random);
+
+      thresholds.push({
+        frequency: freq,
+        hearingLevel: leftAir,
+        ear: 'left',
+        testType: 'air',
+        responseStatus: 'threshold'
+      });
+
+      if (leftBone !== null) {
+        thresholds.push({
+          frequency: freq,
+          hearingLevel: leftBone,
+          ear: 'left',
+          testType: 'bone',
+          responseStatus: 'threshold'
+        });
+      }
+    }
+
+    return thresholds;
+  }
+
+  /**
+   * Severe-profound sensorineural loss: bone first (80..110), air = bone + 0..5
+   */
+  private generateSevereProfoundLoss(random: () => number): ThresholdPoint[] {
+    const frequencies: Frequency[] = [250, 500, 750, 1000, 1500, 2000, 3000, 4000, 6000, 8000];
+    const thresholds: ThresholdPoint[] = [];
+
+    for (const freq of frequencies) {
+      const hasBone = freq <= 4000;
+
+      // --- Right ear ---
+      const rightBone = hasBone ? this.getRandomLevel(80, 110, random) : null;
+      const rightAir = rightBone !== null
+        ? this.getRandomLevel(rightBone, rightBone + 5, random)
+        : this.getRandomLevel(80, 115, random);
+
+      thresholds.push({
+        frequency: freq,
+        hearingLevel: rightAir,
+        ear: 'right',
+        testType: 'air',
+        responseStatus: 'threshold'
+      });
+
+      if (rightBone !== null) {
+        thresholds.push({
+          frequency: freq,
+          hearingLevel: rightBone,
+          ear: 'right',
+          testType: 'bone',
+          responseStatus: freq <= 1000 ? 'threshold' : 'no_response'
+        });
+      }
+
+      // --- Left ear ---
+      const leftBone = hasBone ? this.getRandomLevel(80, 110, random) : null;
+      const leftAir = leftBone !== null
+        ? this.getRandomLevel(leftBone, leftBone + 5, random)
+        : this.getRandomLevel(80, 115, random);
+
+      thresholds.push({
+        frequency: freq,
+        hearingLevel: leftAir,
+        ear: 'left',
+        testType: 'air',
+        responseStatus: 'threshold'
+      });
+
+      if (leftBone !== null) {
+        thresholds.push({
+          frequency: freq,
+          hearingLevel: leftBone,
           ear: 'left',
           testType: 'bone',
           responseStatus: freq <= 1000 ? 'threshold' : 'no_response'
         });
       }
-    });
+    }
 
     return thresholds;
   }
 
-  /**
-   * Get a random hearing level within a specified range
-   * @param min - Minimum hearing level
-   * @param max - Maximum hearing level
-   * @returns Random hearing level
-   */
-  private getRandomLevel(min: number, max: number): number {
-    // Round to nearest 5
-    const value = Math.round((Math.random() * (max - min) + min) / 5) * 5;
-    return Math.min(120, Math.max(-10, value));
-  }
+  // ---------------------------------------------------------------------------
+  // Public API
+  // ---------------------------------------------------------------------------
 
   /**
    * Get all patients
-   * @returns Array of all patient profiles
    */
   public getAllPatients(): HearingProfile[] {
     return [...this.patients];
@@ -487,8 +614,6 @@ class PatientService {
 
   /**
    * Get a patient by ID
-   * @param id - Patient ID
-   * @returns Patient profile or undefined if not found
    */
   public getPatientById(id: string): HearingProfile | undefined {
     return this.patients.find(patient => patient.id === id);
@@ -496,8 +621,6 @@ class PatientService {
 
   /**
    * Get patients by difficulty level
-   * @param difficulty - Difficulty level
-   * @returns Array of patient profiles matching the difficulty
    */
   public getPatientsByDifficulty(difficulty: 'beginner' | 'intermediate' | 'advanced'): HearingProfile[] {
     return this.patients.filter(patient => patient.difficulty === difficulty);
@@ -505,8 +628,6 @@ class PatientService {
 
   /**
    * Get patients by hearing loss type
-   * @param type - Type of hearing loss
-   * @returns Array of patient profiles matching the hearing loss type
    */
   public getPatientsByType(type: 'normal' | 'conductive' | 'sensorineural' | 'mixed' | 'asymmetrical'): HearingProfile[] {
     return this.patients.filter(patient => patient.hearingLossType === type);

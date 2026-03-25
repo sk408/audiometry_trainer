@@ -6,7 +6,7 @@
 export type Frequency = 125 | 250 | 500 | 750 | 1000 | 1500 | 2000 | 3000 | 4000 | 6000 | 8000;
 
 // Hearing levels in dB HL
-export type HearingLevel = -10 | -5 | 0 | 5 | 10 | 15 | 20 | 25 | 30 | 35 | 40 | 45 | 50 | 
+export type HearingLevel = -10 | -5 | 0 | 5 | 10 | 15 | 20 | 25 | 30 | 35 | 40 | 45 | 50 |
                            55 | 60 | 65 | 70 | 75 | 80 | 85 | 90 | 95 | 100 | 105 | 110 | 115 | 120;
 
 // Type of audiometric testing
@@ -50,7 +50,11 @@ export interface TestResult {
   timestamp: string;
   userThresholds: ThresholdPoint[];
   actualThresholds: ThresholdPoint[];
-  accuracy: number; // Percentage of accuracy
+  accuracy: number; // Percentage within +/-5 dB (primary metric)
+  within5dB?: number; // Percentage within +/-5 dB (same as accuracy, explicit)
+  within10dB?: number; // Percentage within +/-10 dB (reference metric)
+  accuracyByEar?: { right: number; left: number }; // Per-ear +/-5 dB accuracy
+  accuracyByType?: { air: number; bone: number }; // Per-type +/-5 dB accuracy
   testDuration: number; // In seconds
   technicalErrors: string[]; // Description of errors in technique
 }
@@ -76,4 +80,5 @@ export interface TestStep {
   completed: boolean;
   responses: { level: HearingLevel, response: boolean }[];
   responseStatus?: 'threshold' | 'no_response' | 'not_tested';
-} 
+  isRetest?: boolean; // True for 1000 Hz retest steps
+}

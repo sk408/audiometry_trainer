@@ -32,35 +32,12 @@ import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
 import patientService from '../services/PatientService';
 import { useTheme } from '@mui/material/styles';
+import TabPanel, { a11yProps } from './shared/TabPanel';
 
 interface TestResultsProps {
   session: TestSession;
   onNewTest: () => void;
 }
-
-interface TabPanelProps {
-  children?: React.ReactNode;
-  index: number;
-  value: number;
-}
-
-const TabPanel: React.FC<TabPanelProps> = ({ children, value, index, ...other }) => {
-  return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      id={`results-tabpanel-${index}`}
-      aria-labelledby={`results-tab-${index}`}
-      {...other}
-    >
-      {value === index && (
-        <Box sx={{ p: 3 }}>
-          {children}
-        </Box>
-      )}
-    </div>
-  );
-};
 
 const TestResults: React.FC<TestResultsProps> = ({ session, onNewTest }) => {
   const [tabValue, setTabValue] = useState(0);
@@ -195,13 +172,13 @@ const TestResults: React.FC<TestResultsProps> = ({ session, onNewTest }) => {
         <Box sx={{ width: '100%' }}>
           <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
             <Tabs value={tabValue} onChange={handleTabChange} aria-label="results tabs">
-              <Tab label="Overview" id="results-tab-0" aria-controls="results-tabpanel-0" />
-              <Tab label="Audiogram" id="results-tab-1" aria-controls="results-tabpanel-1" />
-              <Tab label="Technique Analysis" id="results-tab-2" aria-controls="results-tabpanel-2" />
+              <Tab label="Overview" {...a11yProps(0, 'results')} />
+              <Tab label="Audiogram" {...a11yProps(1, 'results')} />
+              <Tab label="Technique Analysis" {...a11yProps(2, 'results')} />
             </Tabs>
           </Box>
           
-          <TabPanel value={tabValue} index={0}>
+          <TabPanel value={tabValue} index={0} idPrefix="results">
             <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 3 }}>
               <Box sx={{ flex: 1 }}>
                 <Paper elevation={2} sx={{ 
@@ -322,7 +299,7 @@ const TestResults: React.FC<TestResultsProps> = ({ session, onNewTest }) => {
             </Box>
           </TabPanel>
           
-          <TabPanel value={tabValue} index={1}>
+          <TabPanel value={tabValue} index={1} idPrefix="results">
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
               <Audiogram 
                 thresholds={results.userThresholds} 
@@ -350,7 +327,7 @@ const TestResults: React.FC<TestResultsProps> = ({ session, onNewTest }) => {
             </Box>
           </TabPanel>
           
-          <TabPanel value={tabValue} index={2}>
+          <TabPanel value={tabValue} index={2} idPrefix="results">
             <TableContainer component={Paper} elevation={2}>
               <Table sx={{ minWidth: 650 }}>
                 <TableHead>

@@ -1,6 +1,7 @@
 export interface ContourTestLoudnessRating {
   intensity: number; // dB HL
-  rating: number;    // 0-7 loudness rating
+  /** Rating value from 0 (Cannot Hear) to 7 (Uncomfortably Loud) */
+  rating: number;
 }
 
 export interface ContourTestResults {

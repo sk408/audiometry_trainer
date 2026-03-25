@@ -6,6 +6,13 @@ import { ContourTestResults, ContourTestAnalysis, ContourTestLoudnessRating } fr
 export class ContourTestService {
   
   /**
+   * Clamps a rating value to the valid [0, 7] range and rounds to the nearest integer
+   */
+  private static clampRating(rating: number): number {
+    return Math.round(Math.min(7, Math.max(0, rating)));
+  }
+
+  /**
    * Loudness categories for 7-point scale
    */
   static readonly LOUDNESS_CATEGORIES = [
@@ -32,8 +39,8 @@ export class ContourTestService {
     
     const recommendations: string[] = [];
 
-    // Sort ratings by intensity
-    const sortedRatings = [...results.ratings].sort((a, b) => a.intensity - b.intensity);
+    // Sort ratings by intensity, clamping all ratings to valid range
+    const sortedRatings = [...results.ratings].map(r => ({ ...r, rating: ContourTestService.clampRating(r.rating) })).sort((a, b) => a.intensity - b.intensity);
     
     // Check for normal growth pattern
     if (sortedRatings.length >= 3) {
@@ -111,8 +118,8 @@ export class ContourTestService {
    * Determines Most Comfortable Level (MCL) from contour test results
    */
   static findMCL(ratings: ContourTestLoudnessRating[]): number | undefined {
-    // Find ratings with category 4 (Comfortable)
-    const comfortableRatings = ratings.filter(r => r.rating === 4);
+    // Find ratings with category 4 (Comfortable), clamping to valid range
+    const comfortableRatings = ratings.filter(r => ContourTestService.clampRating(r.rating) === 4);
     
     if (comfortableRatings.length === 0) {
       return undefined;
@@ -126,8 +133,8 @@ export class ContourTestService {
    * Determines Uncomfortable Level (UCL) from contour test results
    */
   static findUCL(ratings: ContourTestLoudnessRating[]): number | undefined {
-    // Find the lowest intensity rated as 7 (Uncomfortably Loud)
-    const uncomfortableRatings = ratings.filter(r => r.rating === 7);
+    // Find the lowest intensity rated as 7 (Uncomfortably Loud), clamping to valid range
+    const uncomfortableRatings = ratings.filter(r => ContourTestService.clampRating(r.rating) === 7);
     
     if (uncomfortableRatings.length === 0) {
       return undefined;
