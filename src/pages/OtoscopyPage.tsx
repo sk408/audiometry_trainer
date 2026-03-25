@@ -50,7 +50,7 @@ import {
 const otoscopeImg = "/audiometry_trainer/assets/otoscope.jpg";
 const otoscopyTechniqueImg = "/audiometry_trainer/assets/otoscopy.webp";
 const normalTympanicMembraneImg = "/audiometry_trainer/assets/TM.jpg";
-const earCanalImg = "https://placeholder.com/ear-canal";
+const earCanalImg = "";
 const otitisMediaImg = "/audiometry_trainer/assets/OM.jpg";
 const cerumenImpactionImg = "/audiometry_trainer/assets/impacted.webp";
 const perforatedTMImg = "/audiometry_trainer/assets/perforation.webp";

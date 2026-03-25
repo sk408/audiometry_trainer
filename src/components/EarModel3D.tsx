@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect, Suspense } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Environment, useGLTF, Html } from '@react-three/drei';
-import { Box, CircularProgress, Chip, ToggleButton, ToggleButtonGroup, Typography, Paper, Alert, Button, Link } from '@mui/material';
+import { Box, CircularProgress, Chip, ToggleButton, ToggleButtonGroup, Typography, Paper, Alert, Button, Link, Snackbar } from '@mui/material';
 import { Group } from 'three';
 
 // Parts of the ear that can be highlighted
@@ -17,16 +17,14 @@ const earParts = [
 
 // Helper function to get the correct asset path
 const getAssetPath = (assetPath: string) => {
-  // Read the homepage from package.json's PUBLIC_URL
-  const publicUrl = process.env.PUBLIC_URL || '';
-  
-  // If the path already starts with the public URL, return it as is
-  if (assetPath.startsWith(publicUrl)) {
+  const base = import.meta.env.BASE_URL || '/';
+  const cleanBase = base.endsWith('/') ? base.slice(0, -1) : base;
+
+  if (assetPath.startsWith(cleanBase)) {
     return assetPath;
   }
-  
-  // Otherwise, join the public URL with the asset path
-  return `${publicUrl}${assetPath.startsWith('/') ? '' : '/'}${assetPath}`;
+
+  return `${cleanBase}${assetPath.startsWith('/') ? '' : '/'}${assetPath}`;
 };
 
 // Model component for the ear with error handling
@@ -41,8 +39,6 @@ function EarModel({
   onPartHover?: (part: string | null) => void;
   onError?: (error: any) => void;
 }) {
-  console.log(`Attempting to load 3D model from: ${modelPath}`);
-  
   // Hooks must be at the top level, not inside conditionals
   const modelRef = useRef<Group>(null);
   const [isRotating, setIsRotating] = useState(true);
@@ -57,7 +53,6 @@ function EarModel({
   useEffect(() => {
     try {
       if (model) {
-        console.log(`Successfully loaded 3D model:`, { scene: model, ...gltfResult });
       }
     } catch (error: unknown) {
       console.error('Error loading model:', error);
@@ -169,18 +164,20 @@ const EarModel3D: React.FC<{ height?: string | number }> = ({ height = 400 }) =>
     setLoading(false);
   };
   
+  const [verifyMessage, setVerifyMessage] = useState<string | null>(null);
+
   // Function to verify the model file exists
   const verifyModelExists = async () => {
     const modelPath = getAssetPath('/assets/Main_ear_default.glb');
     try {
       const response = await fetch(modelPath, { method: 'HEAD' });
       if (response.ok) {
-        alert(`Success! Model file found at ${modelPath}\nContent-Type: ${response.headers.get('Content-Type')}\nContent-Length: ${response.headers.get('Content-Length')} bytes`);
+        setVerifyMessage(`Model file found at ${modelPath} (${response.headers.get('Content-Length')} bytes)`);
       } else {
-        alert(`Error: Could not find model at ${modelPath}\nStatus: ${response.status} ${response.statusText}`);
+        setVerifyMessage(`Could not find model at ${modelPath} (${response.status})`);
       }
     } catch (err) {
-      alert(`Error checking model file: ${err}`);
+      setVerifyMessage(`Error checking model file: ${err}`);
     }
   };
 
@@ -321,6 +318,12 @@ const EarModel3D: React.FC<{ height?: string | number }> = ({ height = 400 }) =>
           </Typography>
         </Box>
       )}
+      <Snackbar
+        open={!!verifyMessage}
+        autoHideDuration={6000}
+        onClose={() => setVerifyMessage(null)}
+        message={verifyMessage}
+      />
     </Box>
   );
 };

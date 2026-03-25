@@ -23,7 +23,8 @@ import {
   Tabs,
   Divider,
   CircularProgress,
-  SelectChangeEvent
+  SelectChangeEvent,
+  useMediaQuery
 } from '@mui/material';
 import {
   PlayArrow,
@@ -34,7 +35,7 @@ import {
   Hearing
 } from '@mui/icons-material';
 
-import RealEarMeasurementService from '../services/RealEarMeasurementService';
+import remService from '../services/RealEarMeasurementService';
 import REMChart from '../components/REMChart';
 import {
   REMType,
@@ -99,8 +100,7 @@ const MeasurementLegend: React.FC<{ measurements: REMCurve[] }> = ({ measurement
  * RealEarMeasurementPage - Interactive page for practicing real ear measurements
  */
 const RealEarMeasurementPage: React.FC = () => {
-  // Services
-  const [remService, setRemService] = useState<RealEarMeasurementService | null>(null);
+  // Services (singleton imported directly)
   
   // Session state
   const [session, setSession] = useState<REMSession | null>(null);
@@ -127,6 +127,9 @@ const RealEarMeasurementPage: React.FC = () => {
   const [prescriptionMethod, setPrescriptionMethod] = useState<'NAL-NL2' | 'DSL' | 'NAL-NL1' | 'custom'>('NAL-NL2');
   const [selectedVentType, setSelectedVentType] = useState<VentType>(VentType.OCCLUDED);
   
+  // Responsive layout
+  const isSmallScreen = useMediaQuery('(max-width:600px)');
+
   // New state for adjustable REAR
   const [adjustedREAR, setAdjustedREAR] = useState<REMCurve | null>(null);
   const [matchAccuracy, setMatchAccuracy] = useState<number | null>(null);
@@ -146,28 +149,31 @@ const RealEarMeasurementPage: React.FC = () => {
   
   // Initialize services
   useEffect(() => {
-    const service = new RealEarMeasurementService();
-    setRemService(service);
-    
-    // Get available hearing aids
-    setHearingAids(service.getHearingAids());
-
-    return () => {
-      service.dispose();
-    };
+    // Use the imported singleton
+    setHearingAids(remService.getHearingAids());
   }, []);
   
-  // Initialize adjustable REAR when on adjustment step
+  // React to activeStep changes to set measurement type and initialize adjustment step
   useEffect(() => {
-    if (activeStep === 7 && !adjustedREAR) {
+    if (activeStep === 2) {
+      setMeasurementType('REUR');
+    } else if (activeStep === 3) {
+      setMeasurementType('REOR');
+    } else if (activeStep === 4) {
+      setMeasurementType('REAR');
+    } else if (activeStep === 5) {
+      setMeasurementType('REIG');
+    } else if (activeStep === 7) {
+      setMatchAccuracy(null);
+      setAdjustmentFeedback(null);
       initializeAdjustableREAR();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeStep, adjustedREAR]);
+  }, [activeStep]);
   
   // Initialize a new session
   const startNewSession = () => {
-    if (remService && selectedPatient && selectedHearingAid) {
+    if (selectedPatient && selectedHearingAid) {
       const newSession = remService.createSession(selectedPatient, selectedHearingAid);
       setSession(newSession);
       setActiveStep(0);
@@ -184,31 +190,29 @@ const RealEarMeasurementPage: React.FC = () => {
   
   // Handle probe tube positioning
   const handlePositionProbeTube = () => {
-    if (remService) {
-      try {
-        const position = remService.positionProbeTube(probeTubeDepth);
-        setProbePosition(position);
-        
-        if (position === ProbePosition.CORRECT) {
-          setSuccess('Probe tube correctly positioned');
-          setError(null);
-        } else if (position === ProbePosition.TOO_SHALLOW) {
-          setError('Probe tube is too shallow - adjust depth');
-          setSuccess(null);
-        } else if (position === ProbePosition.TOO_DEEP) {
-          setError('Probe tube is too deep - adjust depth');
-          setSuccess(null);
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'An unknown error occurred');
+    try {
+      const position = remService.positionProbeTube(probeTubeDepth);
+      setProbePosition(position);
+      
+      if (position === ProbePosition.CORRECT) {
+        setSuccess('Probe tube correctly positioned');
+        setError(null);
+      } else if (position === ProbePosition.TOO_SHALLOW) {
+        setError('Probe tube is too shallow - adjust depth');
+        setSuccess(null);
+      } else if (position === ProbePosition.TOO_DEEP) {
+        setError('Probe tube is too deep - adjust depth');
         setSuccess(null);
       }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An unknown error occurred');
+      setSuccess(null);
     }
   };
   
   // Perform measurement
   const performMeasurement = async () => {
-    if (!remService || !session) return;
+    if (!session) return;
     
     setIsLoading(true);
     setError(null);
@@ -264,7 +268,7 @@ const RealEarMeasurementPage: React.FC = () => {
   
   // Generate targets
   const generateTargets = () => {
-    if (remService && selectedPatient) {
+    if (selectedPatient) {
       try {
         const targets = remService.generateTargets(selectedPatient, prescriptionMethod);
         if (targets.length > 0) {
@@ -286,42 +290,19 @@ const RealEarMeasurementPage: React.FC = () => {
   
   // Play test signal
   const playTestSignal = () => {
-    if (remService) {
-      remService.playTestSignal(signalType, inputLevel, selectedEar);
-      setIsPlaying(true);
-    }
+    remService.playTestSignal(signalType, inputLevel, selectedEar);
+    setIsPlaying(true);
   };
   
   // Stop test signal
   const stopTestSignal = () => {
-    if (remService) {
-      remService.stopTestSignal();
-      setIsPlaying(false);
-    }
+    remService.stopTestSignal();
+    setIsPlaying(false);
   };
   
   // Navigate through steps
   const handleNext = () => {
-    setActiveStep((prevStep) => {
-      // Auto-update measurement type based on step
-      const newStep = prevStep + 1;
-      if (newStep === 2) {
-        setMeasurementType('REUR');
-      } else if (newStep === 3) {
-        setMeasurementType('REOR');
-      } else if (newStep === 4) {
-        setMeasurementType('REAR');
-      } else if (newStep === 5) {
-        setMeasurementType('REIG');
-      } else if (newStep === 7) {
-        // Initialize adjustable REAR when reaching the adjustment step
-        setMatchAccuracy(null);
-        setAdjustmentFeedback(null);
-        initializeAdjustableREAR();
-      }
-      
-      return newStep;
-    });
+    setActiveStep((prevStep) => prevStep + 1);
   };
   
   const handleBack = () => {
@@ -414,7 +395,7 @@ const RealEarMeasurementPage: React.FC = () => {
   
   // Check if adjustments match the target
   const checkTargetMatch = () => {
-    if (remService && adjustedREAR && session) {
+    if (adjustedREAR && session) {
       // Look for REIG target specifically, which is most commonly used for matching
       let targetToCompare = currentTarget;
       
@@ -452,7 +433,7 @@ const RealEarMeasurementPage: React.FC = () => {
   
   // Set vent type in the service
   useEffect(() => {
-    if (remService && session && measurementType === 'REOR') {
+    if (session && measurementType === 'REOR') {
       // Only update if ventType is different to avoid infinite loop
       if (session.ventType !== selectedVentType) {
         const updatedSession = { ...session, ventType: selectedVentType };
@@ -736,7 +717,7 @@ const RealEarMeasurementPage: React.FC = () => {
                   measurements={allMeasurements.length > 0 ? allMeasurements : null}
                   target={currentTarget}
                   height={300}
-                  width={window.innerWidth < 600 ? window.innerWidth - 50 : 700}
+                  width={isSmallScreen ? 550 : 700}
                 />
               </Box>
               
@@ -770,7 +751,7 @@ const RealEarMeasurementPage: React.FC = () => {
                   measurements={allMeasurements.length > 0 ? allMeasurements : null}
                   target={currentTarget}
                   height={300}
-                  width={window.innerWidth < 600 ? window.innerWidth - 50 : 700}
+                  width={isSmallScreen ? 550 : 700}
                 />
               </Box>
             </Paper>
@@ -834,7 +815,7 @@ const RealEarMeasurementPage: React.FC = () => {
                   measurements={allMeasurements.length > 0 ? allMeasurements : null}
                   target={currentTarget}
                   height={300}
-                  width={window.innerWidth < 600 ? window.innerWidth - 50 : 700}
+                  width={isSmallScreen ? 550 : 700}
                 />
               </Box>
               
@@ -872,7 +853,7 @@ const RealEarMeasurementPage: React.FC = () => {
                   }
                   target={reigTarget || currentTarget}
                   height={300}
-                  width={window.innerWidth < 600 ? window.innerWidth - 50 : 700}
+                  width={isSmallScreen ? 550 : 700}
                 />
               </Box>
               

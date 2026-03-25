@@ -51,7 +51,7 @@ import {
   ArrowBack,
   Assignment
 } from '@mui/icons-material';
-import QRCode from 'qrcode.react'; // QR code generation for videos and instructions
+import { QRCodeSVG as QRCode } from 'qrcode.react';
 
 // Define type for hearing aid brand
 interface HearingAidBrand {
@@ -454,14 +454,12 @@ const TroubleshootingGuidePage: React.FC = () => {
       document.body.appendChild(a);
       a.click();
       
-      // Clean up
+      // Clean up - revoke after download has time to complete
       document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      
-      // Save a copy to the public directory for access via URL
-      // This is typically handled server-side, but we'll assume it's saved to the right location
-      const publicPath = `/audiometry_trainer/assets/guides/${filename}`;
-      
+      setTimeout(() => {
+        URL.revokeObjectURL(url);
+      }, 10000);
+
       // Open the preview dialog
       setPreviewDialogOpen(true);
     }

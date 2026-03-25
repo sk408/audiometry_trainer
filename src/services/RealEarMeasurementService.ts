@@ -13,6 +13,8 @@ class RealEarMeasurementService {
   private analyzer: AnalyserNode | null = null;
   private oscillator: OscillatorNode | null = null;
   private gainNode: GainNode | null = null;
+  private panNode: StereoPannerNode | null = null;
+  private noiseSource: AudioBufferSourceNode | null = null;
   private currentSession: REMSession | null = null;
   private virtualHearingAids: Map<string, VirtualHearingAid> = new Map();
   private sampleRate: number = 44100;
@@ -591,6 +593,7 @@ class RealEarMeasurementService {
           const whiteNoise = this.audioContext.createBufferSource();
           whiteNoise.buffer = noiseBuffer;
           whiteNoise.loop = true;
+          this.noiseSource = whiteNoise;
           whiteNoise.connect(this.gainNode);
           whiteNoise.start();
           break;
@@ -602,15 +605,15 @@ class RealEarMeasurementService {
       this.gainNode.gain.value = gainValue;
       
       // Set panning based on ear
-      const panNode = this.audioContext.createStereoPanner();
-      panNode.pan.value = ear === 'left' ? -1 : 1;
-      
+      this.panNode = this.audioContext.createStereoPanner();
+      this.panNode.pan.value = ear === 'left' ? -1 : 1;
+
       // Connect nodes
       if (this.oscillator) {
         this.oscillator.connect(this.gainNode);
       }
-      this.gainNode.connect(panNode);
-      panNode.connect(this.audioContext.destination);
+      this.gainNode.connect(this.panNode);
+      this.panNode.connect(this.audioContext.destination);
       
       // Start oscillator if it exists
       if (this.oscillator) {
@@ -631,12 +634,35 @@ class RealEarMeasurementService {
         this.oscillator.disconnect();
         this.oscillator = null;
       }
-      
+
+      if (this.noiseSource) {
+        try {
+          this.noiseSource.stop();
+        } catch (e) {
+          // Ignore errors if already stopped
+        }
+        try {
+          this.noiseSource.disconnect();
+        } catch (e) {
+          // Ignore errors
+        }
+        this.noiseSource = null;
+      }
+
       if (this.gainNode) {
         this.gainNode.disconnect();
         this.gainNode = null;
       }
-      
+
+      if (this.panNode) {
+        try {
+          this.panNode.disconnect();
+        } catch (e) {
+          // Ignore errors
+        }
+        this.panNode = null;
+      }
+
       this.isPlaying = false;
     } catch (error) {
       console.error('Error stopping test signal:', error);
@@ -662,4 +688,5 @@ class RealEarMeasurementService {
   }
 }
 
-export default RealEarMeasurementService; 
+const realEarMeasurementService = new RealEarMeasurementService();
+export default realEarMeasurementService;

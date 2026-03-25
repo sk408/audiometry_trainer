@@ -1,9 +1,10 @@
 import { v4 as uuidv4 } from 'uuid';
-import { 
-  TestSession, TestStep, HearingProfile, ThresholdPoint, 
-  Frequency, HearingLevel, TestResult, Ear 
+import {
+  TestSession, TestStep, HearingProfile, ThresholdPoint,
+  Frequency, HearingLevel, TestResult, Ear
 } from '../interfaces/AudioTypes';
 import audioService from './AudioService';
+import patientService from './PatientService';
 
 /**
  * Interface for test session configuration
@@ -24,11 +25,11 @@ class TestingService {
 
   // Standard test frequencies in Hz (from low to high)
   // UPDATED: Added 1500Hz to match UI selector options
-  private testFrequencies: Frequency[] = [1000, 2000, 4000, 8000, 1000, 750, 500, 250, 1500, 3000, 6000];
+  private testFrequencies: Frequency[] = [1000, 2000, 3000, 4000, 6000, 8000, 500, 250];
   
   // Bone conduction test frequencies (typically 250-4000 Hz)
   // UPDATED: Added 1500Hz to match UI selector options
-  private boneTestFrequencies: Frequency[] = [1000, 2000, 4000, 1000, 750, 500, 250, 1500, 3000];
+  private boneTestFrequencies: Frequency[] = [1000, 2000, 3000, 4000, 500, 250];
   
   // Test types to include in sequence
   private testTypes: ('air' | 'bone')[] = ['air', 'bone'];
@@ -53,6 +54,10 @@ class TestingService {
    * @returns New test session
    */
   public startSession(patient: HearingProfile, config?: TestSessionConfig): TestSession {
+    // Reset state from previous sessions
+    this.includeAirConduction = true;
+    this.includeBoneConduction = true;
+
     // Apply configuration settings
     if (config) {
       if (config.includeAirConduction !== undefined) {
@@ -218,9 +223,6 @@ class TestingService {
     // Store the current frequency and ear to ensure we're only updating the correct step
     const currentFrequency = step.frequency;
     const currentEar = step.ear;
-    
-    console.log(`TestingService: Setting level for frequency ${currentFrequency}Hz, ${currentEar} ear to ${level}dB`);
-    
     // Only update the current step to prevent affecting other frequencies
     step.currentLevel = level;
     
@@ -239,7 +241,6 @@ class TestingService {
       // Patient responded - ALWAYS decrease level by 10dB (make it softer)
       // This is a core principle of Hughson-Westlake: any response triggers 10 dB descent
       step.currentLevel = Math.max(-10, step.currentLevel - 10) as HearingLevel;
-      console.log(`Patient responded: Decreasing by 10 dB to ${step.currentLevel} dB (Hughson-Westlake protocol)`);
     } else {
       // Patient did not respond - increase by 5 dB
       // In Hughson-Westlake, after no response during bracketing, always use 5 dB ascent
@@ -247,7 +248,6 @@ class TestingService {
       const isInitialPhase = responses.length < 2; 
       const stepSize = isInitialPhase ? this.initialStepSize : this.finalStepSize;
       step.currentLevel = Math.min(120, step.currentLevel + stepSize) as HearingLevel;
-      console.log(`No response: Increasing by ${stepSize} dB to ${step.currentLevel} dB (${isInitialPhase ? 'Initial phase' : 'Bracketing phase'})`);
     }
     
     // Check if threshold is established per Hughson-Westlake criteria
@@ -314,13 +314,11 @@ class TestingService {
         if (!isThresholdFound || (lowestThresholdLevel !== null && level < lowestThresholdLevel)) {
           isThresholdFound = true;
           lowestThresholdLevel = level;
-          console.log(`Threshold identified at ${level} dB with ${counts.heard}/${counts.total} responses`);
         }
       }
     });
     
     if (isThresholdFound) {
-      console.log(`Final threshold established at ${lowestThresholdLevel} dB`);
     }
     
     return isThresholdFound;
@@ -335,8 +333,6 @@ class TestingService {
     // Log the current step's level and status before moving
     const currentStep = this.getCurrentStep();
     if (currentStep) {
-      console.log(`Completing step at level: ${currentStep.currentLevel}dB before moving to next step`);
-      console.log(`Step completed status: ${currentStep.completed}, responseStatus: ${currentStep.responseStatus || 'not set'}`);
     }
     
     // Simply change the currentStep index without modifying the step itself
@@ -355,10 +351,7 @@ class TestingService {
    * @returns The next test step or null if test is complete
    */
   public skipCurrentStep(markCompleted: boolean = false): TestStep | null {
-    console.log("=== Debug: skipCurrentStep called with markCompleted =", markCompleted);
-    
     if (!this.currentSession) {
-      console.log("=== Debug: skipCurrentStep - no current session");
       return null;
     }
     
@@ -368,7 +361,6 @@ class TestingService {
       // when navigating between frequencies
       if (markCompleted) {
         // Only mark as completed if explicitly requested
-        console.log(`Marking step as completed with threshold at: ${step.currentLevel}dB`);
         step.completed = true;
         
         // If we're marking as completed, also set responseStatus if not already set
@@ -376,7 +368,6 @@ class TestingService {
           step.responseStatus = 'threshold';
         }
       } else {
-        console.log(`Skipping to next step without marking current step as completed`);
         // FIXED: Do not modify the completed or responseStatus properties if they're already set
         // This preserves thresholds when navigating between frequencies
       }
@@ -384,13 +375,8 @@ class TestingService {
       const beforeStep = this.currentSession.currentStep;
       this.moveToNextStep();
       const afterStep = this.currentSession.currentStep;
-      console.log(`=== Debug: skipCurrentStep - moved from step ${beforeStep} to ${afterStep}`);
-      
       // Debug - check if the session sequence length matches
-      console.log(`=== Debug: session has ${this.currentSession.testSequence.length} total steps`);
-      console.log(`=== Debug: returning new step with frequency ${this.getCurrentStep()?.frequency || 'null'}`);
     } else {
-      console.log("=== Debug: skipCurrentStep - no current step found");
     }
     
     return this.getCurrentStep();
@@ -424,20 +410,47 @@ class TestingService {
    * @returns Test results
    */
   private calculateResults(session: TestSession): TestResult {
-    // This would normally require accessing the actual patient thresholds
-    // and comparing with the user's measurements
-    
-    // For now, generate a placeholder result
+    const userThresholds = this.extractThresholds(session);
+
+    // Get actual patient thresholds from PatientService
+    const patient = patientService.getPatientById(session.patientId);
+    const actualThresholds = patient ? patient.thresholds : [];
+
+    // Calculate accuracy by comparing user vs actual thresholds
+    let totalComparisons = 0;
+    let within5dB = 0;
+    let within10dB = 0;
+
+    userThresholds.forEach(userT => {
+      if (userT.responseStatus === 'not_tested') return;
+
+      const actual = actualThresholds.find(
+        a => a.frequency === userT.frequency &&
+             a.ear === userT.ear &&
+             a.testType === userT.testType
+      );
+      if (!actual) return;
+
+      totalComparisons++;
+      const diff = Math.abs(userT.hearingLevel - actual.hearingLevel);
+      if (diff <= 5) within5dB++;
+      if (diff <= 10) within10dB++;
+    });
+
+    const accuracy = totalComparisons > 0
+      ? Math.round((within10dB / totalComparisons) * 100)
+      : 0;
+
     const result: TestResult = {
       patientId: session.patientId,
       timestamp: new Date().toISOString(),
-      userThresholds: this.extractThresholds(session),
-      actualThresholds: [], // Would need to get these from the patient profile
-      accuracy: 0, // To be calculated
+      userThresholds,
+      actualThresholds,
+      accuracy,
       testDuration: this.calculateTestDuration(session),
       technicalErrors: this.identifyTechnicalErrors(session)
     };
-    
+
     return result;
   }
 
@@ -478,8 +491,6 @@ class TestingService {
         
         // If we found a validated threshold, use it; otherwise fall back to currentLevel
         const thresholdLevel = validatedThreshold !== null ? validatedThreshold : step.currentLevel;
-        console.log(`Extracting threshold for completed step: ${thresholdLevel}dB (was ${step.currentLevel}dB)`);
-        
         thresholds.push({
           frequency: step.frequency,
           hearingLevel: thresholdLevel,
@@ -489,8 +500,6 @@ class TestingService {
         });
       } else if (step.responses.length > 0) {
         // For incomplete steps with responses, find the lowest level with at least 2 responses
-        console.log(`Extracting threshold data for incomplete step with ${step.responses.length} responses`);
-        
         const levelCounts = new Map<HearingLevel, number>();
         
         step.responses.forEach(response => {
@@ -512,8 +521,6 @@ class TestingService {
         });
         
         if (thresholdLevel !== null) {
-          console.log(`Found valid threshold in incomplete step at: ${thresholdLevel}dB`);
-          
           thresholds.push({
             frequency: step.frequency,
             hearingLevel: thresholdLevel,
@@ -524,8 +531,6 @@ class TestingService {
         } else if (step.responses.length > 0) {
           // No threshold established, use highest level tested
           const highestLevel = Math.max(...step.responses.map(r => r.level)) as HearingLevel;
-          console.log(`No valid threshold found, using highest level: ${highestLevel}dB`);
-          
           thresholds.push({
             frequency: step.frequency,
             hearingLevel: highestLevel,

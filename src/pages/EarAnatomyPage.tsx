@@ -45,12 +45,12 @@ import {
 } from '@mui/icons-material';
 import EarModel3D from '../components/EarModel3D';
 
-// Placeholder for actual images
-const outerEarImg = "https://placeholder.com/ear-outer";
-const middleEarImg = "https://placeholder.com/ear-middle";
-const innerEarImg = "https://placeholder.com/ear-inner";
-const soundWavesImg = "https://placeholder.com/sound-waves";
-const hearingProcessImg = "https://placeholder.com/hearing-process";
+// Placeholder images - these should be replaced with real assets when available
+const outerEarImg = "";
+const middleEarImg = "";
+const innerEarImg = "";
+const soundWavesImg = "";
+const hearingProcessImg = "";
 
 const EarAnatomyPage: React.FC = () => {
   const theme = useTheme();

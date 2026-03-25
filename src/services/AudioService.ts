@@ -12,8 +12,11 @@ class AudioService {
   private calibrationValues: Map<Frequency, number> = new Map();
   private boneCalibrationValues: Map<Frequency, number> = new Map();
   private panNode: StereoPannerNode | null = null;
+  private boneFilter: BiquadFilterNode | null = null;
+  private maskingNoiseSource: AudioBufferSourceNode | null = null;
+  private maskingGainNode: GainNode | null = null;
   private currentFrequency: number = 0;
-  private debugMode: boolean = true; // Enable debug logs
+  private debugMode: boolean = false; // Enable debug logs
   private pulseInterval: number | null = null; // For pulsing tone
   private pulseDuration: number = 200; // Default pulse duration in ms
   private pauseDuration: number = 200; // Default pause between pulses in ms
@@ -211,7 +214,8 @@ class AudioService {
     boneFilter.type = 'lowpass';
     boneFilter.frequency.value = 2000; // Bone conduction has limited high-frequency response
     boneFilter.Q.value = 0.5;
-    
+    this.boneFilter = boneFilter;
+
     // Insert filter into the audio chain
     if (this.oscillator && this.gainNode) {
       this.oscillator.disconnect();
@@ -279,6 +283,38 @@ class AudioService {
       }
       this.panNode = null;
     }
+
+    if (this.boneFilter) {
+      try {
+        this.boneFilter.disconnect();
+      } catch (e) {
+        // Ignore errors
+      }
+      this.boneFilter = null;
+    }
+
+    if (this.maskingNoiseSource) {
+      try {
+        this.maskingNoiseSource.stop();
+      } catch (e) {
+        // Ignore errors if already stopped
+      }
+      try {
+        this.maskingNoiseSource.disconnect();
+      } catch (e) {
+        // Ignore errors
+      }
+      this.maskingNoiseSource = null;
+    }
+
+    if (this.maskingGainNode) {
+      try {
+        this.maskingGainNode.disconnect();
+      } catch (e) {
+        // Ignore errors
+      }
+      this.maskingGainNode = null;
+    }
   }
 
   /**
@@ -319,17 +355,95 @@ class AudioService {
    * @param ear - Which ear to present to
    */
   public playMaskingNoise(intensity: number, ear: string = EAR.BOTH): void {
-    // Implementation for masking noise would go here
-    // This would typically use filtered noise rather than a pure tone
-    console.log(`Playing masking noise at ${intensity} dB HL to ${ear} ear`);
+    if (!this.audioContext) {
+      this.initializeAudioContext();
+    }
+
+    if (!this.audioContext) {
+      console.error('Could not initialize AudioContext for masking noise');
+      return;
+    }
+
+    this.resumeAudioContext();
+
+    // Stop any existing masking noise
+    this.stopMaskingNoise();
+
+    // Create white noise buffer (2 seconds, looped)
+    const bufferSize = 2 * this.audioContext.sampleRate;
+    const noiseBuffer = this.audioContext.createBuffer(1, bufferSize, this.audioContext.sampleRate);
+    const channelData = noiseBuffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      channelData[i] = Math.random() * 2 - 1;
+    }
+
+    // Create buffer source
+    this.maskingNoiseSource = this.audioContext.createBufferSource();
+    this.maskingNoiseSource.buffer = noiseBuffer;
+    this.maskingNoiseSource.loop = true;
+
+    // Create gain node and set level based on dB HL
+    this.maskingGainNode = this.audioContext.createGain();
+    const gainValue = 0.0001 * Math.pow(10, intensity / 20);
+    this.maskingGainNode.gain.value = gainValue;
+
+    // Create panner to route to specified ear
+    const maskingPanNode = this.audioContext.createStereoPanner();
+    switch (ear) {
+      case EAR.LEFT:
+        maskingPanNode.pan.value = -1;
+        break;
+      case EAR.RIGHT:
+        maskingPanNode.pan.value = 1;
+        break;
+      case EAR.BOTH:
+      default:
+        maskingPanNode.pan.value = 0;
+        break;
+    }
+
+    // Connect: source -> gain -> panner -> destination
+    this.maskingNoiseSource.connect(this.maskingGainNode);
+    this.maskingGainNode.connect(maskingPanNode);
+    maskingPanNode.connect(this.audioContext.destination);
+
+    this.maskingNoiseSource.start();
+
+    if (this.debugMode) {
+      console.log(`Playing masking noise at ${intensity} dB HL to ${ear} ear`);
+    }
   }
-  
+
   /**
    * Stop masking noise
    */
   public stopMaskingNoise(): void {
-    // Implementation to stop masking noise would go here
-    console.log('Stopping masking noise');
+    if (this.maskingNoiseSource) {
+      try {
+        this.maskingNoiseSource.stop();
+      } catch (e) {
+        // Ignore errors if already stopped
+      }
+      try {
+        this.maskingNoiseSource.disconnect();
+      } catch (e) {
+        // Ignore errors
+      }
+      this.maskingNoiseSource = null;
+    }
+
+    if (this.maskingGainNode) {
+      try {
+        this.maskingGainNode.disconnect();
+      } catch (e) {
+        // Ignore errors
+      }
+      this.maskingGainNode = null;
+    }
+
+    if (this.debugMode) {
+      console.log('Stopping masking noise');
+    }
   }
 
   /**
