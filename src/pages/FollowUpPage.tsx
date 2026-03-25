@@ -70,6 +70,13 @@ const FollowUpPage: React.FC = () => {
     feedback: '',
   });
 
+  // Gain adjustment sliders — wired to state so values are tracked
+  const [gainAdjustments, setGainAdjustments] = useState({
+    lowFreq: 0,
+    midFreq: 0,
+    highFreq: 0,
+  });
+
   const handleInputChange = (field: string, value: string) => {
     setFollowUpData({
       ...followUpData,
@@ -420,37 +427,40 @@ const FollowUpPage: React.FC = () => {
               
               <Box sx={{ width: '100%', mt: 2 }}>
                 <Typography id="low-freq-slider" gutterBottom>
-                  Low Frequencies (250-1000 Hz)
+                  Low Frequencies (250-1000 Hz): {gainAdjustments.lowFreq > 0 ? '+' : ''}{gainAdjustments.lowFreq} dB
                 </Typography>
                 <Slider
                   aria-labelledby="low-freq-slider"
-                  defaultValue={0}
+                  value={gainAdjustments.lowFreq}
+                  onChange={(_, val) => setGainAdjustments(prev => ({ ...prev, lowFreq: val as number }))}
                   step={1}
                   marks
                   min={-10}
                   max={10}
                   valueLabelDisplay="auto"
                 />
-                
+
                 <Typography id="mid-freq-slider" gutterBottom>
-                  Mid Frequencies (1000-3000 Hz)
+                  Mid Frequencies (1000-3000 Hz): {gainAdjustments.midFreq > 0 ? '+' : ''}{gainAdjustments.midFreq} dB
                 </Typography>
                 <Slider
                   aria-labelledby="mid-freq-slider"
-                  defaultValue={0}
+                  value={gainAdjustments.midFreq}
+                  onChange={(_, val) => setGainAdjustments(prev => ({ ...prev, midFreq: val as number }))}
                   step={1}
                   marks
                   min={-10}
                   max={10}
                   valueLabelDisplay="auto"
                 />
-                
+
                 <Typography id="high-freq-slider" gutterBottom>
-                  High Frequencies (3000-8000 Hz)
+                  High Frequencies (3000-8000 Hz): {gainAdjustments.highFreq > 0 ? '+' : ''}{gainAdjustments.highFreq} dB
                 </Typography>
                 <Slider
                   aria-labelledby="high-freq-slider"
-                  defaultValue={0}
+                  value={gainAdjustments.highFreq}
+                  onChange={(_, val) => setGainAdjustments(prev => ({ ...prev, highFreq: val as number }))}
                   step={1}
                   marks
                   min={-10}

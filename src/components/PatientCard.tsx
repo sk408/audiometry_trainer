@@ -27,12 +27,14 @@ const difficultyColors = {
 };
 
 // Hearing loss type color mapping
-const hearingLossColors = {
+const hearingLossColors: Record<string, string> = {
   normal: 'success',
   conductive: 'info',
   sensorineural: 'warning',
   mixed: 'error',
-  asymmetrical: 'secondary'
+  asymmetrical: 'secondary',
+  'noise-induced': 'warning',
+  presbycusis: 'info'
 };
 
 // Get initials from patient name
@@ -98,7 +100,7 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient, onSelect, selected =
                 color={difficultyColors[patient.difficulty] as any}
               />
               <Chip 
-                label={patient.hearingLossType.replace('_', ' ')} 
+                label={patient.hearingLossType.replace(/[-_]/g, ' ')} 
                 size="small" 
                 color={hearingLossColors[patient.hearingLossType] as any}
               />

@@ -166,10 +166,19 @@ const RealEarMeasurementPage: React.FC = () => {
     } else if (activeStep === 7) {
       setMatchAccuracy(null);
       setAdjustmentFeedback(null);
-      initializeAdjustableREAR();
+      // Initialize adjustable REAR inline to avoid stale closure over allMeasurements
+      const rearMeasurement = allMeasurements.find(m => m.type === 'REAR');
+      if (rearMeasurement) {
+        const adjustable: REMCurve = {
+          ...rearMeasurement,
+          type: 'REAR',
+          timestamp: new Date().toISOString(),
+          measurementPoints: [...rearMeasurement.measurementPoints.map(p => ({...p}))]
+        };
+        setAdjustedREAR(adjustable);
+      }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeStep]);
+  }, [activeStep, allMeasurements]);
   
   // Initialize a new session
   const startNewSession = () => {
@@ -220,10 +229,9 @@ const RealEarMeasurementPage: React.FC = () => {
     try {
       // For REOR measurements, make sure the vent type is set in the session
       if (measurementType === 'REOR') {
-        const updatedSession = { ...session, ventType: selectedVentType };
-        setSession(updatedSession);
+        setSession(prev => prev ? { ...prev, ventType: selectedVentType } : prev);
       }
-      
+
       // Perform the measurement
       const measurement = await remService.performMeasurement(
         measurementType,
@@ -231,19 +239,19 @@ const RealEarMeasurementPage: React.FC = () => {
         signalType,
         inputLevel
       );
-      
-      // Add the measurement to the session
-      const updatedMeasurements = [...session.measurements.filter(m => m.type !== measurementType), measurement];
-      
-      const updatedSession = {
-        ...session,
-        measurements: updatedMeasurements,
-        currentStep: measurementType
-      };
-      
-      setAllMeasurements(updatedMeasurements);
-      setCurrentMeasurement(measurement);
-      setSession(updatedSession);
+
+      // Add the measurement to the session using functional form to avoid race conditions
+      setSession(prev => {
+        if (!prev) return prev;
+        const updatedMeasurements = [...prev.measurements.filter(m => m.type !== measurementType), measurement];
+        setAllMeasurements(updatedMeasurements);
+        setCurrentMeasurement(measurement);
+        return {
+          ...prev,
+          measurements: updatedMeasurements,
+          currentStep: measurementType
+        };
+      });
       setSuccess(`${measurementType} measurement completed successfully`);
       
       // Move to the next step if we are in the measurement steps (2, 3, 4)
@@ -431,16 +439,15 @@ const RealEarMeasurementPage: React.FC = () => {
     setAdjustmentFeedback(null);
   };
   
-  // Set vent type in the service
+  // Set vent type in the service — use functional setState to avoid race conditions
   useEffect(() => {
-    if (session && measurementType === 'REOR') {
-      // Only update if ventType is different to avoid infinite loop
-      if (session.ventType !== selectedVentType) {
-        const updatedSession = { ...session, ventType: selectedVentType };
-        setSession(updatedSession);
-      }
+    if (measurementType === 'REOR') {
+      setSession(prev => {
+        if (!prev || prev.ventType === selectedVentType) return prev;
+        return { ...prev, ventType: selectedVentType };
+      });
     }
-  }, [selectedVentType, remService, session, measurementType]);
+  }, [selectedVentType, measurementType]);
   
   // Handle vent type change
   const handleVentTypeChange = (event: SelectChangeEvent) => {
@@ -927,22 +934,23 @@ const RealEarMeasurementPage: React.FC = () => {
                     color="success"
                     onClick={() => {
                       setSuccess("REM procedure completed successfully!");
-                      if (session) {
-                        // Save adjusted REAR to session and mark as completed
-                        const updatedMeasurements = [...allMeasurements.filter(m => m.type !== 'REAR')];
-                        if (adjustedREAR) {
-                          updatedMeasurements.push(adjustedREAR);
+                      // Save adjusted REAR to session and mark as completed — functional setState
+                      const capturedAdjustedREAR = adjustedREAR;
+                      const capturedMatchAccuracy = matchAccuracy;
+                      setSession(prev => {
+                        if (!prev) return prev;
+                        const updatedMeasurements = [...prev.measurements.filter(m => m.type !== 'REAR')];
+                        if (capturedAdjustedREAR) {
+                          updatedMeasurements.push(capturedAdjustedREAR);
                           setAllMeasurements(updatedMeasurements);
                         }
-                        
-                        const updatedSession = {
-                          ...session, 
+                        return {
+                          ...prev,
                           completed: true,
                           measurements: updatedMeasurements,
-                          accuracy: matchAccuracy || 0
+                          accuracy: capturedMatchAccuracy || 0
                         };
-                        setSession(updatedSession);
-                      }
+                      });
                     }}
                   >
                     Complete REM Procedure

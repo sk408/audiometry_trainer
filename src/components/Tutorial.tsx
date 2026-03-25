@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Paper,
@@ -52,6 +52,13 @@ const Tutorial: React.FC<TutorialProps> = ({ onComplete }) => {
   const handleFinish = () => {
     onComplete();
   };
+
+  // Stop any playing audio when component unmounts
+  useEffect(() => {
+    return () => {
+      audioService.stopTone();
+    };
+  }, []);
 
   // Play a sample tone
   const playSampleTone = (frequency: number) => {

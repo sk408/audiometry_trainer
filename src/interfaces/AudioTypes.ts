@@ -41,7 +41,16 @@ export interface HearingProfile {
   description: string;
   thresholds: ThresholdPoint[];
   difficulty: 'beginner' | 'intermediate' | 'advanced';
-  hearingLossType: 'normal' | 'conductive' | 'sensorineural' | 'mixed' | 'asymmetrical';
+  hearingLossType: 'normal' | 'conductive' | 'sensorineural' | 'mixed' | 'asymmetrical' | 'noise-induced' | 'presbycusis';
+  age?: number;
+  gender?: 'male' | 'female';
+  caseHistory?: {
+    chiefComplaint: string;
+    medicalHistory: string[];
+    noiseExposure: string;
+    otoscopicFindings: { rightEar: string; leftEar: string };
+  };
+  expectedDiagnosis?: string;
 }
 
 // Test result

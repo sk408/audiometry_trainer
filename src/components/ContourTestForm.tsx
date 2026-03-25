@@ -43,19 +43,23 @@ const ContourTestForm: React.FC<ContourTestFormProps> = ({ onSaveResults, initia
   const [newRating, setNewRating] = useState<number>(4);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Update MCL and UCL when ratings change
+  // Update MCL and UCL when ratings change.
+  // Use ratings.length as the dependency to avoid infinite re-render from array reference changes.
+  const ratingsLength = testResults.ratings.length;
+  const ratingsKey = testResults.ratings.map(r => `${r.intensity}:${r.rating}`).join(',');
   useEffect(() => {
     if (testResults.ratings.length > 0) {
       const mcl = ContourTestService.findMCL(testResults.ratings);
       const ucl = ContourTestService.findUCL(testResults.ratings);
-      
-      setTestResults(prev => ({
-        ...prev,
-        mcl,
-        ucl
-      }));
+
+      // Only update if values actually changed to prevent unnecessary re-renders
+      setTestResults(prev => {
+        if (prev.mcl === mcl && prev.ucl === ucl) return prev;
+        return { ...prev, mcl, ucl };
+      });
     }
-  }, [testResults.ratings]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ratingsKey]);
 
   const handleFrequencyChange = (event: SelectChangeEvent<number>) => {
     setTestResults({

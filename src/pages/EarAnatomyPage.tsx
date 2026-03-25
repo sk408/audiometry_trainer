@@ -99,6 +99,17 @@ const EarAnatomyPage: React.FC = () => {
 
   const handleReset = () => {
     setActiveStep(0);
+    // Also reset quiz state so users can redo the quiz without page refresh
+    setSelectedAnswers({
+      'question1': null,
+      'question2': null,
+      'question3': null
+    });
+    setShowAnswers({
+      'question1': false,
+      'question2': false,
+      'question3': false
+    });
   };
 
   const handleAccordionChange = (panel: string) => (event: React.SyntheticEvent, isExpanded: boolean) => {
@@ -110,9 +121,9 @@ const EarAnatomyPage: React.FC = () => {
     setGlossaryOpen(!glossaryOpen);
   };
 
-  // Filter glossary terms based on search
+  // Filter glossary terms based on search — keep original case in state
   const handleGlossarySearch = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setGlossarySearchTerm(event.target.value.toLowerCase());
+    setGlossarySearchTerm(event.target.value);
   };
 
   // Glossary terms data
@@ -207,12 +218,13 @@ const EarAnatomyPage: React.FC = () => {
     }
   ];
 
-  // Filter terms based on search
-  const filteredTerms = glossarySearchTerm 
-    ? glossaryTerms.filter(item => 
-        item.term.toLowerCase().includes(glossarySearchTerm) || 
-        item.definition.toLowerCase().includes(glossarySearchTerm)
-      )
+  // Filter terms based on search — apply toLowerCase at filter time, not on stored value
+  const filteredTerms = glossarySearchTerm
+    ? glossaryTerms.filter(item => {
+        const search = glossarySearchTerm.toLowerCase();
+        return item.term.toLowerCase().includes(search) ||
+               item.definition.toLowerCase().includes(search);
+      })
     : glossaryTerms;
 
   // Tutorial steps content for ear anatomy

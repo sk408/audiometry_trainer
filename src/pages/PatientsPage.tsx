@@ -262,7 +262,7 @@ const PatientsPage: React.FC = () => {
               )}
               {hearingLossTypeFilter !== 'all' && (
                 <Chip 
-                  label={`Type: ${hearingLossTypeFilter.replace('_', ' ')}`}
+                  label={`Type: ${hearingLossTypeFilter.replace(/[-_]/g, ' ')}`}
                   onDelete={() => setHearingLossTypeFilter('all')}
                   size="small"
                   color="secondary"
@@ -312,6 +312,8 @@ const PatientsPage: React.FC = () => {
               <MenuItem value="sensorineural">Sensorineural</MenuItem>
               <MenuItem value="mixed">Mixed</MenuItem>
               <MenuItem value="asymmetrical">Asymmetrical</MenuItem>
+              <MenuItem value="noise-induced">Noise-Induced</MenuItem>
+              <MenuItem value="presbycusis">Presbycusis</MenuItem>
             </Select>
           </FormControl>
         </DialogContent>
@@ -412,7 +414,7 @@ const PatientsPage: React.FC = () => {
               }
             />
             <Chip 
-              label={`Type: ${selectedPatient.hearingLossType.replace('_', ' ')}`} 
+              label={`Type: ${selectedPatient.hearingLossType.replace(/[-_]/g, ' ')}`}
               color="secondary"
             />
           </Box>
