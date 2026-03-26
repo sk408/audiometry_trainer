@@ -112,7 +112,7 @@ export interface QuizQuestion {
   explanation: string;
 }
 
-export const middleEarQuizQuestions: QuizQuestion[] = [
+export const quizQuestions: QuizQuestion[] = [
   {
     id: 'question1',
     question: '1. Which of the following is the main purpose of the middle ear?',
@@ -222,6 +222,15 @@ export const pinnaLandmarks: PinnaLandmark[] = [
     clinicalDescription: 'The aperture or opening of the external auditory canal, located at the depth of the concha. It forms the boundary between the external ear and the ear canal, and serves as a reference point for many hearing aid measurements.'
   }
 ];
+
+// ── Placeholder images ──────────────────────────────────────────────────
+// These should be replaced with real assets when available.
+
+export const outerEarImg = "";
+export const middleEarImg = "";
+export const innerEarImg = "";
+export const soundWavesImg = "";
+export const hearingProcessImg = "";
 
 // ── Step labels ─────────────────────────────────────────────────────────
 

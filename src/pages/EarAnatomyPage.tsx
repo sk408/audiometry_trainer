@@ -9,8 +9,11 @@ import {
   StepLabel,
   StepContent,
   Button,
+  Fab,
+  Tooltip,
   useTheme
 } from '@mui/material';
+import { MenuBook } from '@mui/icons-material';
 import { AnatomyGlossary, AnatomyViewer } from '../components/anatomy';
 import {
   IntroductionStep,
@@ -26,6 +29,7 @@ import { stepLabels } from '../data/anatomyData';
 const EarAnatomyPage: React.FC = () => {
   const theme = useTheme();
   const [activeStep, setActiveStep] = useState(0);
+  const [glossaryOpen, setGlossaryOpen] = useState(false);
 
   const handleNext = useCallback(() => {
     setActiveStep(prev => prev + 1);
@@ -37,6 +41,10 @@ const EarAnatomyPage: React.FC = () => {
 
   const handleReset = useCallback(() => {
     setActiveStep(0);
+  }, []);
+
+  const toggleGlossary = useCallback(() => {
+    setGlossaryOpen(prev => !prev);
   }, []);
 
   const steps = useMemo(() => [
@@ -114,8 +122,25 @@ const EarAnatomyPage: React.FC = () => {
           </Paper>
         )}
 
-        {/* Glossary FAB + Drawer */}
-        <AnatomyGlossary />
+        {/* Floating Glossary Button */}
+        <Tooltip title="Ear Anatomy Glossary" arrow placement="left">
+          <Fab
+            color="primary"
+            aria-label="glossary"
+            onClick={toggleGlossary}
+            sx={{
+              position: 'fixed',
+              bottom: 20,
+              right: 20,
+              zIndex: 1000
+            }}
+          >
+            <MenuBook />
+          </Fab>
+        </Tooltip>
+
+        {/* Glossary Drawer */}
+        <AnatomyGlossary open={glossaryOpen} onClose={toggleGlossary} />
       </Paper>
     </Container>
   );

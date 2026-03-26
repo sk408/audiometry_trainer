@@ -8,15 +8,14 @@ import {
   useTheme,
   alpha
 } from '@mui/material';
-import { QuizQuestion } from '../../data/anatomyData';
+import { quizQuestions } from '../../data/anatomyData';
 
 interface AnatomyQuizProps {
-  questions: QuizQuestion[];
-  /** Footer text shown below the quiz */
-  footerText?: string;
+  onReset?: () => void;
 }
 
-const AnatomyQuiz: React.FC<AnatomyQuizProps> = ({ questions, footerText }) => {
+const AnatomyQuiz: React.FC<AnatomyQuizProps> = ({ onReset }) => {
+  const questions = quizQuestions;
   const theme = useTheme();
 
   const [selectedAnswers, setSelectedAnswers] = useState<Record<string, string | null>>(() => {
@@ -48,7 +47,8 @@ const AnatomyQuiz: React.FC<AnatomyQuizProps> = ({ questions, footerText }) => {
     });
     setSelectedAnswers(emptyAnswers);
     setShowAnswers(emptyShown);
-  }, [questions]);
+    onReset?.();
+  }, [questions, onReset]);
 
   const allRevealed = questions.every(q => showAnswers[q.id]);
   const score = questions.filter(q => selectedAnswers[q.id] === q.correctKey).length;
@@ -158,13 +158,12 @@ const AnatomyQuiz: React.FC<AnatomyQuizProps> = ({ questions, footerText }) => {
         </Box>
       )}
 
-      {footerText && (
-        <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-          <Typography variant="body2" sx={{ fontStyle: 'italic', maxWidth: '80%', textAlign: 'center' }}>
-            {footerText}
-          </Typography>
-        </Box>
-      )}
+      <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+        <Typography variant="body2" sx={{ fontStyle: 'italic', maxWidth: '80%', textAlign: 'center' }}>
+          These quick checks help reinforce your understanding of key concepts about the middle ear.
+          Remember these fundamental points as we move on to explore the inner ear.
+        </Typography>
+      </Box>
     </Paper>
   );
 };

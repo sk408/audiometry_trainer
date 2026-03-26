@@ -38,7 +38,11 @@ import {
   KeyboardArrowDown,
   HearingDisabled,
   ZoomIn,
-  VolumeUp
+  VolumeUp,
+  Settings as SettingsIcon,
+  RecordVoiceOver,
+  PersonAdd,
+  Shield,
 } from '@mui/icons-material';
 
 // Lazy-loaded page components for code splitting
@@ -52,6 +56,10 @@ const EarAnatomyPage = React.lazy(() => import('./pages/EarAnatomyPage'));
 const OtoscopyPage = React.lazy(() => import('./pages/OtoscopyPage'));
 const ContourTestPage = React.lazy(() => import('./pages/ContourTestPage'));
 const ProgressPage = React.lazy(() => import('./pages/ProgressPage'));
+const MaskingPracticePage = React.lazy(() => import('./pages/MaskingPracticePage'));
+const CustomPatientPage = React.lazy(() => import('./pages/CustomPatientPage'));
+const SpeechAudiometryPage = React.lazy(() => import('./pages/SpeechAudiometryPage'));
+const SettingsPage = React.lazy(() => import('./pages/SettingsPage'));
 
 // Import logo for splash screen
 import logo from './logo512.png';
@@ -223,6 +231,10 @@ function App() {
     { text: 'Real Ear', icon: <HearingIcon />, path: '/real-ear-measurement' },
     { text: 'Contour Test', icon: <VolumeUp />, path: '/contour-test' },
     { text: 'Progress', icon: <AssessmentIcon />, path: '/progress' },
+    { text: 'Masking Practice', icon: <Shield />, path: '/masking-practice' },
+    { text: 'Speech Audiometry', icon: <RecordVoiceOver />, path: '/speech-audiometry' },
+    { text: 'Custom Patients', icon: <PersonAdd />, path: '/custom-patients' },
+    { text: 'Settings', icon: <SettingsIcon />, path: '/settings' },
   ];
 
   if (showSplash) {
@@ -463,6 +475,10 @@ function AppContent({
               <Route path="/otoscopy" element={<OtoscopyPage />} />
               <Route path="/contour-test" element={<ContourTestPage />} />
               <Route path="/progress" element={<ProgressPage />} />
+              <Route path="/masking-practice" element={<MaskingPracticePage />} />
+              <Route path="/custom-patients" element={<CustomPatientPage />} />
+              <Route path="/speech-audiometry" element={<SpeechAudiometryPage />} />
+              <Route path="/settings" element={<SettingsPage />} />
             </Routes>
           </Suspense>
         </Box>
@@ -502,6 +518,15 @@ function AppContent({
                 </Link>
                 <Link to="/progress" style={{ color: 'inherit', textDecoration: 'none' }}>
                   Progress
+                </Link>
+                <Link to="/masking-practice" style={{ color: 'inherit', textDecoration: 'none' }}>
+                  Masking
+                </Link>
+                <Link to="/speech-audiometry" style={{ color: 'inherit', textDecoration: 'none' }}>
+                  Speech
+                </Link>
+                <Link to="/settings" style={{ color: 'inherit', textDecoration: 'none' }}>
+                  Settings
                 </Link>
               </Box>
             </Typography>

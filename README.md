@@ -1,200 +1,139 @@
 # Audiometry Trainer
 
-A professional web application for Pure Tone Audiometry Training designed for audiology students and professionals. This application provides a simulation of standard audiology procedures, with a focus on the Hughson-Westlake procedure, allowing students to practice and master audiometric testing techniques.
+A professional web-based clinical simulation platform for audiometry training. Designed for audiology students and professionals, it simulates standard audiometric procedures with clinical fidelity, interactive practice, and meaningful feedback.
 
-![Audiometry Trainer Screenshot](./screenshot.png)
-
-## Project Overview
-
-The Audiometry Trainer is a comprehensive React-based application that simulates various audiology procedures including:
-
-- Pure Tone Audiometry with Hughson-Westlake procedure
-- Real Ear Measurement (REM)
-- Contour Test
-- Otoscopy examination
-- 3D Ear Anatomy exploration
-
-The application is designed to be educational, providing interactive simulations, tutorials, and feedback to help users learn and practice audiology techniques.
+**Live demo**: [https://sk408.github.io/audiometry_trainer](https://sk408.github.io/audiometry_trainer)
 
 ## Features
 
-- **Interactive Audiogram**: Visualize and plot hearing thresholds across different frequencies
-- **Virtual Patient System**: Practice with simulated patients having various hearing profiles
-- **Hughson-Westlake Procedure**: Learn and apply the standard "5-up, 10-down" testing protocol
-- **Real Ear Measurement (REM)**: Simulate fitting hearing aids using real ear measurement techniques
-- **3D Ear Anatomy**: Interactive 3D model of ear anatomy for educational purposes
-- **Otoscopy Simulation**: Practice otoscopy examination techniques
-- **Contour Test**: Perform speech audiometry contour testing
-- **Educational Feedback**: Receive guidance and performance assessment after each test
-- **Keyboard Shortcuts**: Efficient testing with keyboard controls
-- **Progress Tracking**: Monitor improvement over time
-- **Responsive Design**: Works on desktop, tablet, and mobile devices
-- **Accessibility Features**: High contrast mode and screen reader support
+### Core Clinical Modules
 
-## Project Structure
+- **Pure Tone Audiometry** — Full Hughson-Westlake procedure (10-down/5-up bracketing) with 23 virtual patients covering normal hearing through profound loss, conductive, mixed, asymmetric, noise-induced, and presbycusis configurations
+- **Masking Practice** — Dedicated masking decision training: interaural attenuation rules for AC (>=40 dB supra-aural), BC (always when ABG >=10 dB), effective masking level calculation, scored clinical scenarios
+- **Speech Audiometry** — Educational module covering SRT, WRS, PTA-SRT agreement, WRS interpretation guide, interactive PTA calculator, and clinical decision-making quiz
+- **Real Ear Measurement (REM)** — Hearing aid verification simulation with patient-specific NAL-NL2 and DSL v5.0 prescription targets, probe positioning, gain adjustment, accuracy scoring
+- **Contour Test** — Loudness scaling with Cox 7-point scale, MCL/UCL determination, dynamic range and recruitment analysis
 
-The application follows a component-based architecture with the following structure:
+### Educational Content
 
-```
-src/
-├── assets/           # Images, sounds, and other static files
-├── components/       # Reusable UI components (Audiogram, TestingInterface, etc.)
-├── constants/        # Application-wide constants and configuration
-├── interfaces/       # TypeScript type definitions for the application
-├── pages/            # Main application views (HomePage, TutorialPage, etc.)
-├── services/         # Business logic and data handling (AudioService, TestingService, etc.)
-├── types/            # Additional type definitions
-└── App.tsx           # Main application component
-```
+- **Ear Anatomy** — Interactive 3D model (Three.js), step-by-step outer/middle/inner ear exploration, glossary, knowledge quizzes
+- **Otoscopy** — Reference images of normal and pathological findings, identification practice
+- **Tutorial System** — Progressive step-through lessons on audiometric fundamentals
+- **Troubleshooting Guide** — Hearing aid troubleshooting flowcharts and checklists
 
-### Key Components
+### Patient System
 
-- **TestingInterface**: Core component for audiometric testing, implements the Hughson-Westlake procedure
-- **Audiogram**: Visual representation of hearing thresholds across frequencies
-- **EarModel3D**: Three.js-based 3D model of ear anatomy
-- **RealEarMeasurementPage**: Simulation of real ear measurement procedures
-- **OtoscopyPage**: Interactive otoscopy simulation
-- **ContourTestPage**: Implementation of speech audiometry contour testing
+- **23 Virtual Patients** — Clinically valid audiograms (bone <= air enforced), deterministic thresholds, case histories, difficulty ratings (beginner/intermediate/advanced)
+- **Custom Patient Builder** — Create, edit, delete custom patients with per-frequency/per-ear threshold entry, audiogram preview, validation, audiometric presets, localStorage persistence
+- **Patient Filtering** — Search and filter by difficulty, hearing loss type, tags
 
-### Core Services
+### Progress Tracking
 
-- **AudioService**: Handles generation of pure tones using Web Audio API
-- **TestingService**: Implements the Hughson-Westlake procedure and testing logic
-- **PatientService**: Manages virtual patient profiles and hearing data
-- **RealEarMeasurementService**: Handles the simulation of real ear measurements
-- **ContourTestService**: Implements contour test functionality
+- **Session History** — Accuracy tracking per session with per-frequency and per-ear breakdown
+- **Improvement Trends** — Line charts showing accuracy over time, weakest areas identification
+- **Masking Practice Scores** — Separate tracking for masking decision accuracy
 
-## Technical Details
+### Settings & Configuration
 
-### Built With
+- **Appearance** — Light, dark, and high-contrast themes; adjustable font size
+- **Audiogram Conventions** — ASHA or BSA symbol standards
+- **Test Configuration** — Air/bone conduction toggles, starting level, pulsed/continuous tones, frequency display range
+- **Masking Protocol** — Hood plateau method or formula-based preference
+- **Data Management** — Clear progress data, clear custom patients, reset all settings
 
-- **React 19.0.0**: Modern frontend framework for building the UI
-- **TypeScript 4.9.5**: Type-safe JavaScript for more robust code
-- **Material UI 6.4.6**: UI component library for a professional look and feel
-- **React Three Fiber 9.1.0**: React renderer for Three.js to create 3D visualizations
-- **Chart.js 4.4.8**: Charting library used for the audiogram and data visualization
-- **React Router 7.2.0**: For handling navigation and routing within the application
-- **Web Audio API**: Browser API used for generating calibrated audio tones
+### Technical Features
 
-### Key Features Implementation
+- **PWA** — Installable, works offline via service worker
+- **Code Splitting** — Route-based lazy loading, dynamic imports for 3D model/PDF/charting libraries
+- **Responsive** — Mobile-first design with MUI breakpoints (desktop, tablet, mobile layouts)
+- **Accessible** — WCAG 2.1 AA: aria-labels, keyboard navigation, focus indicators, high-contrast mode
+- **Keyboard Shortcuts** — Space (present tone), arrows (intensity/frequency), R/L (ear), M (masking), Enter (store threshold)
 
-#### Audio Generation
-The application uses the Web Audio API through the `AudioService` to generate pure tones at specific frequencies and intensities. The service includes calibration settings to simulate real audiometric equipment.
+## Tech Stack
 
-#### Testing Procedures
-The `TestingService` implements the Hughson-Westlake procedure (5-up, 10-down method) used in standard audiometric testing. It tracks user responses and determines hearing thresholds based on the testing protocol.
-
-#### Virtual Patients
-Virtual patients with different hearing profiles are defined in the `PatientService`. Each patient has specific thresholds at different frequencies, simulating various types of hearing loss (conductive, sensorineural, mixed, etc.).
-
-#### Interactive Visualizations
-The application provides interactive visualizations including:
-- 2D audiograms for plotting hearing thresholds
-- 3D ear anatomy model for educational purposes
-- Real-ear measurement charts
-- Otoscopy visualizations
-
-#### Data Storage
-The application uses browser local storage to save:
-- User settings and preferences
-- Test results and progress
-- Recently used virtual patients
+| Category | Technology |
+|----------|-----------|
+| Framework | React 19, TypeScript 5.4+ |
+| Build | Vite 8, ESM-native |
+| UI | Material UI 6, Emotion |
+| 3D | React Three Fiber 9, Three.js, Drei |
+| Charts | Chart.js 4, Recharts |
+| Audio | Web Audio API (custom AudioEngine) |
+| Testing | Vitest, React Testing Library |
+| Routing | React Router 7 (HashRouter for GitHub Pages) |
+| PWA | vite-plugin-pwa, Workbox |
+| Deploy | GitHub Pages via `gh-pages` |
 
 ## Getting Started
 
 ### Prerequisites
 
-- Node.js (v16.0.0 or higher)
-- npm (v8.0.0 or higher)
+- Node.js >= 18
+- npm >= 9
 
 ### Installation
 
-1. Clone the repository:
-   ```
-   git clone https://github.com/sk408/audiometry_trainer.git
-   cd audiometry_trainer
-   ```
+```bash
+git clone https://github.com/sk408/audiometry_trainer.git
+cd audiometry_trainer
+npm install
+```
 
-2. Install dependencies:
-   ```
-   npm install
-   ```
+### Development
 
-3. Start the development server:
-   ```
-   npm start
-   ```
+```bash
+npm run dev          # Start Vite dev server (http://localhost:5173)
+npm run test         # Run all tests (Vitest)
+npm run test:watch   # Watch mode
+npm run build        # Production build (TypeScript check + Vite)
+npm run preview      # Preview production build locally
+```
 
-4. Open your browser and navigate to:
-   ```
-   http://localhost:3000
-   ```
+### Deployment
 
-## Usage Guide
+```bash
+npm run deploy       # Build and deploy to GitHub Pages
+```
 
-### Tutorial Mode
-Start with the tutorial to learn the basics of pure tone audiometry and the Hughson-Westlake procedure. The tutorial provides step-by-step instructions and interactive examples.
+## Clinical Standards
 
-### Practice Modes
+This application follows published clinical guidelines:
 
-#### Pure Tone Audiometry
-Select a virtual patient from the patients page to begin practicing standard audiometry. Each patient has a unique hearing profile that simulates different types of hearing loss. Follow the Hughson-Westlake procedure to determine the patient's hearing thresholds.
+- **Hughson-Westlake Protocol** — Per ASHA (2005) and BSA (2011): 10 dB down on response, 5 dB up on no response, threshold at lowest level with >=2/3 ascending responses
+- **Masking Rules** — Per ASHA guidelines: AC masking when test ear AC - non-test ear BC >= interaural attenuation (40 dB supra-aural, 55 dB insert, 0 dB bone); initial masking = non-test ear BC + 10 dB safety factor
+- **Audiogram Symbols** — ASHA (1990) standard: O/X for right/left AC, </> for right/left unmasked BC, red=right, blue=left
+- **REM Targets** — NAL-NL2 prescription formula (inputs: audiogram, age, gender, experience, vent type); DSL v5.0 for pediatric
+- **Patient Validity** — Bone conduction thresholds never exceed air conduction; air-bone gaps within clinically realistic ranges
 
-#### Real Ear Measurement
-Practice fitting hearing aids using real ear measurement techniques. The simulation provides various test signals and target gain values to match.
+> **Disclaimer**: This application is an educational training tool and does not replace calibrated clinical audiometric equipment.
 
-#### Otoscopy
-Examine virtual patients' ear canals and tympanic membranes using the simulated otoscope.
+## Project Structure
 
-#### 3D Ear Anatomy
-Explore the detailed 3D model of the ear to learn about its anatomical structures and functions.
-
-#### Contour Test
-Perform speech audiometry using the contour test method to assess patients' speech recognition thresholds.
-
-### Keyboard Shortcuts
-
-- **Space**: Present tone
-- **Up/Down Arrows**: Adjust intensity
-- **Left/Right Arrows**: Change frequency
-- **R**: Switch to right ear
-- **L**: Switch to left ear
-- **M**: Toggle masking
-- **Enter**: Record threshold
-
-## For AI Assistants
-
-This section provides key information to help AI assistants understand and interact with this codebase:
-
-### Key Concepts in Audiology
-- **Pure Tone Audiometry**: Testing hearing using pure tones at various frequencies and intensities
-- **Hughson-Westlake Procedure**: A standardized method for determining hearing thresholds (5-up, 10-down protocol)
-- **Audiogram**: A visual representation of hearing thresholds across different frequencies
-- **Masking**: Technique to prevent crossover hearing during testing
-- **Real Ear Measurement**: A technique for verifying hearing aid performance in the ear canal
-- **Otoscopy**: Examination of the ear canal and tympanic membrane
-- **Contour Test**: Speech audiometry test to determine speech recognition thresholds
-
-### Data Structures
-The application uses TypeScript interfaces to define its data structures:
-- `HearingProfile`: Represents a virtual patient with specific hearing thresholds
-- `ThresholdPoint`: A single point on the audiogram representing a specific hearing threshold
-- `TestSession`: A testing session tracking the user's progress through the procedure
-- `TestResult`: The outcome of a testing session including accuracy metrics
-
-### Application Flow
-1. User selects a virtual patient or procedure from the home screen
-2. The application loads the appropriate testing interface
-3. User performs the testing procedure following the onscreen guidance
-4. The application tracks user actions and provides feedback
-5. Results are displayed and stored after completion
+```
+src/
+├── components/       # Reusable UI components
+│   ├── anatomy/      # Ear anatomy viewer, quiz, glossary
+│   ├── audiogram/    # Audiogram chart rendering
+│   ├── education/    # Lesson stepper, quiz cards
+│   ├── patient/      # Patient cards, grid, detail
+│   ├── rem/          # REM chart and workspace
+│   ├── shared/       # TabPanel, PDF exporter, keyboard shortcuts
+│   └── testing/      # Testing workspace, control panel, results
+├── data/             # Static data (anatomy content, patient data)
+├── hooks/            # Custom React hooks
+├── interfaces/       # TypeScript type definitions
+├── pages/            # Route-level page components
+├── services/         # Business logic (audio, testing, patient, REM, progress)
+└── test/             # Test setup and utilities
+```
 
 ## License
 
-This project is licensed under the Custom Open Source License - see the [LICENSE](./LICENSE) file for details. The license allows for open-source use, modification, and distribution while the original author retains all commercial rights.
+Custom Open Source License — see [LICENSE](./LICENSE). Open for educational use; original author retains commercial rights.
 
 ## Acknowledgments
 
 - American Speech-Language-Hearing Association (ASHA) for audiometry guidelines
-- British Society of Audiology for recommended procedures
+- British Society of Audiology (BSA) for recommended procedures
+- National Acoustic Laboratories for NAL-NL2 prescription formula
 - Audiology educators and students who provided feedback during development

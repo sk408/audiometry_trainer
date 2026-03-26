@@ -19,7 +19,6 @@ import {
 } from '@mui/material';
 import { NavigateNext, KeyboardArrowDown } from '@mui/icons-material';
 import AnatomyQuiz from '../AnatomyQuiz';
-import { middleEarQuizQuestions } from '../../../data/anatomyData';
 
 const middleEarImg = "";
 
@@ -506,10 +505,7 @@ const MiddleEarStep: React.FC = () => {
       </Box>
 
       {/* Knowledge Check */}
-      <AnatomyQuiz
-        questions={middleEarQuizQuestions}
-        footerText="These quick checks help reinforce your understanding of key concepts about the middle ear. Remember these fundamental points as we move on to explore the inner ear."
-      />
+      <AnatomyQuiz />
 
       <Typography paragraph sx={{ fontStyle: 'italic' }}>
         Pro Tip: Remember that middle ear disorders typically affect lower frequencies as much as or more than

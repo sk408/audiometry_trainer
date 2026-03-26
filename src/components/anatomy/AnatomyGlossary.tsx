@@ -3,62 +3,41 @@ import {
   Box,
   Typography,
   Drawer,
-  Fab,
   IconButton,
   InputBase,
   Paper,
   Button,
-  Tooltip
 } from '@mui/material';
-import { MenuBook, Search, Close, ArrowBack } from '@mui/icons-material';
+import { Search, Close, ArrowBack } from '@mui/icons-material';
 import { glossaryTerms } from '../../data/anatomyData';
 
-const AnatomyGlossary: React.FC = () => {
-  const [glossaryOpen, setGlossaryOpen] = useState(false);
-  const [glossarySearchTerm, setGlossarySearchTerm] = useState('');
+interface AnatomyGlossaryProps {
+  open: boolean;
+  onClose: () => void;
+}
 
-  const toggleGlossary = () => {
-    setGlossaryOpen(!glossaryOpen);
-  };
-
-  const handleGlossarySearch = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setGlossarySearchTerm(event.target.value);
-  };
+const AnatomyGlossary: React.FC<AnatomyGlossaryProps> = ({ open, onClose }) => {
+  const [searchTerm, setSearchTerm] = useState('');
 
   const filteredTerms = useMemo(() => {
-    if (!glossarySearchTerm) return glossaryTerms;
-    const search = glossarySearchTerm.toLowerCase();
+    if (!searchTerm) return glossaryTerms;
+    const lower = searchTerm.toLowerCase();
     return glossaryTerms.filter(
-      item =>
-        item.term.toLowerCase().includes(search) ||
-        item.definition.toLowerCase().includes(search)
+      (item) =>
+        item.term.toLowerCase().includes(lower) ||
+        item.definition.toLowerCase().includes(lower)
     );
-  }, [glossarySearchTerm]);
+  }, [searchTerm]);
+
+  const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(event.target.value);
+  };
 
   return (
-    <>
-      {/* Floating Glossary Button */}
-      <Tooltip title="Ear Anatomy Glossary" arrow placement="left">
-        <Fab
-          color="primary"
-          aria-label="glossary"
-          onClick={toggleGlossary}
-          sx={{
-            position: 'fixed',
-            bottom: 20,
-            right: 20,
-            zIndex: 1000
-          }}
-        >
-          <MenuBook />
-        </Fab>
-      </Tooltip>
-
-      {/* Glossary Drawer */}
-      <Drawer
-        anchor="right"
-        open={glossaryOpen}
-        onClose={toggleGlossary}
+    <Drawer
+      anchor="right"
+      open={open}
+      onClose={onClose}
         sx={{
           '& .MuiDrawer-paper': {
             width: { xs: '100%', sm: 350 },
@@ -72,7 +51,7 @@ const AnatomyGlossary: React.FC = () => {
           <Typography variant="h6" color="primary" fontWeight="bold">
             Ear Anatomy Glossary
           </Typography>
-          <IconButton onClick={toggleGlossary} aria-label="close glossary">
+          <IconButton onClick={onClose} aria-label="close glossary">
             <Close />
           </IconButton>
         </Box>
@@ -89,9 +68,8 @@ const AnatomyGlossary: React.FC = () => {
           <InputBase
             sx={{ ml: 1, flex: 1 }}
             placeholder="Search glossary terms..."
-            value={glossarySearchTerm}
-            onChange={handleGlossarySearch}
-            aria-label="Search glossary terms"
+            value={searchTerm}
+            onChange={handleSearch}
           />
           <IconButton type="button" sx={{ p: '10px' }} aria-label="search">
             <Search />
@@ -120,14 +98,13 @@ const AnatomyGlossary: React.FC = () => {
         <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid #eee', display: 'flex', justifyContent: 'center' }}>
           <Button
             startIcon={<ArrowBack />}
-            onClick={toggleGlossary}
+            onClick={onClose}
             size="small"
           >
             Back to Learning
           </Button>
         </Box>
       </Drawer>
-    </>
   );
 };
 
