@@ -1,9 +1,10 @@
 import React, { useState, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Box, Container, Typography, Paper, Card, CardContent, Tabs, Tab,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   Alert, Divider, List, ListItem, ListItemText, ListItemIcon,
-  useTheme, useMediaQuery,
+  Link as MuiLink, useTheme, useMediaQuery,
 } from '@mui/material';
 import {
   ExpandMore, Hearing, Build, Science, ChildCare, ElderlyWoman,
@@ -301,7 +302,8 @@ const EarmoldsPage: React.FC = () => {
         <Typography variant="body2">
           Larger vent = less low-frequency gain = less occlusion BUT more feedback risk.
           The clinician must balance occlusion relief against feedback control and low-frequency
-          amplification needs.
+          amplification needs. For gain requirements by audiogram configuration, see the{' '}
+          <MuiLink component={Link} to="/reference/audiogram-patterns">Audiogram Patterns Guide</MuiLink>.
         </Typography>
       </Alert>
 
@@ -504,6 +506,8 @@ const EarmoldsPage: React.FC = () => {
           and persistent despite an adaptation period, adjust the fitting: enlarge the vent (if
           feedback allows), switch to an open dome (if the loss permits), or consider a deeper canal
           fitting which moves the mold tip past the cartilaginous portion of the canal.
+          For the full adjust/counsel/refer decision framework, see{' '}
+          <MuiLink component={Link} to="/reference/clinical-decisions">Clinical Decision-Making</MuiLink>.
         </Typography>
       </Alert>
 

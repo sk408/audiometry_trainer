@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Box, Container, Typography, Paper, Button, RadioGroup, Radio,
   FormControlLabel, FormControl, FormLabel, TextField, Alert, AlertTitle,
   LinearProgress, Chip, Divider, Accordion, AccordionSummary,
   AccordionDetails, Table, TableBody, TableCell, TableContainer,
-  TableHead, TableRow, Stack, useMediaQuery,
+  TableHead, TableRow, Stack, Link as MuiLink, useMediaQuery,
 } from '@mui/material';
 import { useTheme, alpha } from '@mui/material/styles';
 import {
@@ -284,7 +285,9 @@ const EducationalIntro: React.FC = () => {
       <Typography variant="body1" paragraph>
         Masking ensures thresholds represent the test ear, not the non-test ear responding via
         cross-hearing. It is one of the most critical &mdash; and most commonly tested &mdash; clinical
-        skills in audiology.
+        skills in audiology. See the{' '}
+        <MuiLink component={Link} to="/reference/audiogram-patterns">Audiogram Patterns Guide</MuiLink>{' '}
+        for masking requirements by loss type (e.g., unilateral, asymmetric, conductive).
       </Typography>
 
       {/* ==== Section 1: Why Masking Is Needed ==== */}

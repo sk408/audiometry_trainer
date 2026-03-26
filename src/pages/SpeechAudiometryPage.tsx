@@ -5,7 +5,7 @@ import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   FormControl, InputLabel, Select, MenuItem, Radio, RadioGroup,
   FormControlLabel, Button, Alert, Accordion, AccordionSummary,
-  AccordionDetails, Chip, Divider, useTheme, useMediaQuery, SelectChangeEvent,
+  AccordionDetails, Chip, Divider, Link as MuiLink, useTheme, useMediaQuery, SelectChangeEvent,
 } from '@mui/material';
 import {
   HearingOutlined, RecordVoiceOver, Calculate, Quiz, ExpandMore,
@@ -237,6 +237,8 @@ const SpeechAudiometryPage: React.FC = () => {
             When a patient requires higher levels for speech recognition than pure-tone
             thresholds predict, consider auditory processing difficulties, cognitive
             decline, language barriers, or neural (retrocochlear) pathology.
+            See <MuiLink component={Link} to="/reference/clinical-decisions">Clinical Decision-Making</MuiLink> for
+            guidance on when to refer vs. counsel in these scenarios.
           </Typography>
         </AccordionDetails>
       </Accordion>
@@ -382,6 +384,8 @@ const SpeechAudiometryPage: React.FC = () => {
           (e.g., WRS of 50% with a PTA of 35 dB), consider retrocochlear pathology.
           See the <Link to="/assessment/referrals" style={{ color: 'inherit', fontWeight: 'bold' }}>Medical Referral Guide</Link> for
           detailed referral criteria, rollover testing, and acoustic neuroma education.
+          The <MuiLink component={Link} to="/reference/audiogram-patterns">Audiogram Patterns Guide</MuiLink> covers
+          expected WRS ranges for each audiogram configuration.
         </Typography>
       </Alert>
     </Box>

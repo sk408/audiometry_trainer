@@ -1,10 +1,11 @@
 import React, { useState, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Box, Container, Typography, Paper, Tabs, Tab,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   Alert, Chip, Divider, Accordion, AccordionSummary, AccordionDetails,
   List, ListItem, ListItemIcon, ListItemText, Card, CardContent,
-  useTheme, useMediaQuery,
+  Link as MuiLink, useTheme, useMediaQuery,
 } from '@mui/material';
 import {
   ExpandMore, CheckCircle, Cancel, Warning, LocalHospital,
@@ -83,6 +84,8 @@ const ReferralsPage: React.FC = () => {
           <Alert severity="info" sx={{ mb: 2 }}>
             <strong>Rule:</strong> Refer when there is an interaural asymmetry of &ge; 15 dB at 3 or more
             frequencies, OR &ge; 20 dB at 2 or more frequencies, in the absence of a known cause.
+            See <MuiLink component={Link} to="/reference/audiogram-patterns">Audiogram Patterns</MuiLink> for
+            identifying asymmetric configurations on the audiogram.
           </Alert>
         </AccordionDetails>
       </Accordion>
@@ -449,6 +452,8 @@ const ReferralsPage: React.FC = () => {
       <Typography paragraph color="text.secondary">
         How you communicate a referral is as important as making one. Patients may feel anxious.
         Your language should be reassuring, honest, and action-oriented.
+        For additional referral communication scripts and clinical scenarios, see{' '}
+        <MuiLink component={Link} to="/reference/clinical-decisions">Clinical Decision-Making</MuiLink>.
       </Typography>
 
       {/* Principles */}

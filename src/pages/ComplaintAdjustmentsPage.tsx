@@ -1,8 +1,9 @@
 import React, { useState, useMemo, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Box, Container, Typography, Paper, Tabs, Tab, Accordion, AccordionSummary,
   AccordionDetails, Chip, Card, CardContent, TextField, InputAdornment,
-  Divider, Alert, useTheme, useMediaQuery,
+  Divider, Alert, Link as MuiLink, useTheme, useMediaQuery,
 } from '@mui/material';
 import {
   ExpandMore, Search, VolumeUp, GraphicEq, Tune, Pattern,
@@ -232,7 +233,9 @@ const ComplaintAdjustmentsPage: React.FC = () => {
       <Typography variant="h5" gutterBottom>By Frequency</Typography>
       <Typography paragraph color="text.secondary">
         Quick reference for frequency-based gain adjustments. Use this when you know
-        which frequency region is causing the issue.
+        which frequency region is causing the issue. See the{' '}
+        <MuiLink component={Link} to="/reference/audiogram-patterns">Audiogram Patterns Guide</MuiLink>{' '}
+        for typical loss configurations and their fitting approaches.
       </Typography>
 
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
@@ -372,7 +375,8 @@ const ComplaintAdjustmentsPage: React.FC = () => {
       <Typography paragraph color="text.secondary">
         These patterns represent the most frequent clinical scenarios. Each includes
         a typical symptom cluster, recommended adjustments, verification steps,
-        and an expected timeline.
+        and an expected timeline. For guidance on when to adjust vs. counsel vs. refer, see{' '}
+        <MuiLink component={Link} to="/reference/clinical-decisions">Clinical Decision-Making</MuiLink>.
       </Typography>
 
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>

@@ -28,6 +28,10 @@ import {
   ViewInAr,
   CheckCircle,
   PlayArrow,
+  MenuBook,
+  Assessment,
+  MedicalServices,
+  Build,
 } from '@mui/icons-material';
 
 interface PathwayModule {
@@ -278,6 +282,43 @@ const HomePage: React.FC = () => {
         </Box>
       </Container>
 
+      {/* Clinical Reference Hub */}
+      <Box sx={{ bgcolor: theme.palette.mode === 'dark' ? alpha(theme.palette.primary.main, 0.08) : alpha(theme.palette.primary.main, 0.04), py: { xs: 4, md: 6 } }}>
+        <Container maxWidth="lg">
+          <Typography variant="h4" component="h2" gutterBottom align="center" sx={{ mb: 1 }}>
+            Clinical Reference
+          </Typography>
+          <Typography variant="body1" color="text.secondary" align="center" sx={{ mb: 4, maxWidth: 600, mx: 'auto' }}>
+            Core clinical guides for audiometric interpretation and hearing aid management
+          </Typography>
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(4, 1fr)' }, gap: 3 }}>
+            {[
+              { title: 'Audiogram Patterns', description: '12 audiogram configurations with clinical characteristics, masking needs, and management strategies', path: '/reference/audiogram-patterns', icon: <Assessment />, color: 'primary' as const },
+              { title: 'Clinical Decisions', description: 'Adjust, counsel, or refer framework with real-world scenarios and communication scripts', path: '/reference/clinical-decisions', icon: <MedicalServices />, color: 'secondary' as const },
+              { title: 'Earmolds Guide', description: 'Types, materials, acoustic modifications, venting tradeoffs, and impression procedures', path: '/hearing-aids/earmolds', icon: <Build />, color: 'warning' as const },
+              { title: 'Medical Referrals', description: 'Red flags, referral criteria, acoustic neuroma education, and patient communication', path: '/assessment/referrals', icon: <MenuBook />, color: 'error' as const },
+            ].map((ref) => (
+              <Card key={ref.title} elevation={2} sx={{ display: 'flex', flexDirection: 'column', height: '100%', borderTop: 4, borderColor: `${ref.color}.main` }}>
+                <CardContent sx={{ flexGrow: 1 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
+                    <Box sx={{ bgcolor: `${ref.color}.main`, color: `${ref.color}.contrastText`, borderRadius: '50%', width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', mr: 1.5 }}>
+                      {ref.icon}
+                    </Box>
+                    <Typography variant="h6" fontWeight="bold">{ref.title}</Typography>
+                  </Box>
+                  <Typography variant="body2" color="text.secondary">{ref.description}</Typography>
+                </CardContent>
+                <CardActions sx={{ p: 2, pt: 0 }}>
+                  <Button component={RouterLink} to={ref.path} variant="outlined" color={ref.color} fullWidth endIcon={<ArrowForward />}>
+                    Open Guide
+                  </Button>
+                </CardActions>
+              </Card>
+            ))}
+          </Box>
+        </Container>
+      </Box>
+
       {/* What's New */}
       <Box
         sx={{
@@ -293,6 +334,24 @@ const HomePage: React.FC = () => {
           </Typography>
           <Paper variant="outlined" sx={{ p: 3 }}>
             <List dense>
+              <ListItem>
+                <ListItemIcon><Chip label="NEW" color="error" size="small" /></ListItemIcon>
+                <ListItemText
+                  primary="Audiogram Patterns Guide"
+                  secondary="12 audiogram configurations with clinical characteristics, masking needs, and management strategies"
+                />
+                <Button component={RouterLink} to="/reference/audiogram-patterns" size="small">View</Button>
+              </ListItem>
+              <Divider component="li" />
+              <ListItem>
+                <ListItemIcon><Chip label="NEW" color="error" size="small" /></ListItemIcon>
+                <ListItemText
+                  primary="Clinical Decision-Making"
+                  secondary="Adjust, counsel, or refer framework with 6 real-world scenarios and communication scripts"
+                />
+                <Button component={RouterLink} to="/reference/clinical-decisions" size="small">View</Button>
+              </ListItem>
+              <Divider component="li" />
               <ListItem>
                 <ListItemIcon><Chip label="NEW" color="error" size="small" /></ListItemIcon>
                 <ListItemText
