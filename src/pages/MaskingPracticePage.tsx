@@ -21,7 +21,7 @@ import patientService from '../services/PatientService';
 /** Minimum interaural attenuation by transducer (dB). Conservative clinical values. */
 const INTERAURAL_ATTENUATION: Record<string, number> = {
   supraaural: 40,   // TDH-39/49 supra-aural headphones (range 40-65, use 40)
-  insert: 55,       // ER-3A insert earphones (range 55-70, use 55)
+  insert: 70,       // ER-3A insert earphones (standard clinical: 70; conservative floor: 55)
   boneConduction: 0, // BC signal reaches both cochleae with ~0 dB loss
 };
 
@@ -161,7 +161,7 @@ function generateScenarios(patients: HearingProfile[]): MaskingScenario[] {
               explanation = parts.join(' ');
 
               if (transducer === 'supraaural' && diff < INTERAURAL_ATTENUATION.insert) {
-                clinicalNote = `Insert earphones (IA = 55 dB) would eliminate the need for masking here (${diff} dB < 55 dB).`;
+                clinicalNote = `Insert earphones (IA = ${INTERAURAL_ATTENUATION.insert} dB) would eliminate the need for masking here (${diff} dB < ${INTERAURAL_ATTENUATION.insert} dB).`;
               }
               if (startEML !== null && maxMask !== null && startEML > maxMask) {
                 clinicalNote = 'Masking dilemma: minimum EML exceeds maximum safe masking. Consider insert earphones or report unmasked thresholds with notation.';
@@ -272,6 +272,8 @@ const EducationalIntro: React.FC = () => {
   const [expanded, setExpanded] = useState<string | false>(false);
   const toggle = (p: string) => (_: React.SyntheticEvent, open: boolean) => setExpanded(open ? p : false);
   const sectionSx = { bgcolor: alpha(theme.palette.primary.main, 0.04) };
+  const pearlSx = { p: 2, bgcolor: alpha(theme.palette.info.main, 0.06), borderLeft: `4px solid ${theme.palette.info.main}` };
+  const mistakeSx = { p: 2, bgcolor: alpha(theme.palette.error.main, 0.04), borderLeft: `4px solid ${theme.palette.error.main}` };
 
   return (
     <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
@@ -285,10 +287,10 @@ const EducationalIntro: React.FC = () => {
         skills in audiology.
       </Typography>
 
-      {/* ---- Section 1: Why Masking Is Needed ---- */}
+      {/* ==== Section 1: Why Masking Is Needed ==== */}
       <Accordion expanded={expanded === 'why'} onChange={toggle('why')} sx={sectionSx}>
         <AccordionSummary expandIcon={<ExpandMore />}>
-          <Typography variant="subtitle1" fontWeight={600}>Why Masking Is Needed</Typography>
+          <Typography variant="subtitle1" fontWeight={600}>1. Why Masking Is Needed</Typography>
         </AccordionSummary>
         <AccordionDetails>
           <Typography variant="body2" paragraph>
@@ -297,76 +299,107 @@ const EducationalIntro: React.FC = () => {
             <strong> interaural attenuation (IA)</strong>. Without masking, you may unknowingly record the
             better ear&apos;s threshold instead of the test ear&apos;s, producing a <strong>shadow curve</strong>.
           </Typography>
-          <TableContainer component={Paper} variant="outlined" sx={{ mb: 1 }}>
+          <TableContainer component={Paper} variant="outlined" sx={{ mb: 2 }}>
             <Table size="small">
               <TableHead>
                 <TableRow>
                   <TableCell><strong>Transducer</strong></TableCell>
-                  <TableCell align="center"><strong>Min IA (dB)</strong></TableCell>
+                  <TableCell align="center"><strong>Clinical IA (dB)</strong></TableCell>
+                  <TableCell><strong>Measured Range</strong></TableCell>
                   <TableCell><strong>Clinical Significance</strong></TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 <TableRow>
-                  <TableCell>Supra-aural headphones (TDH-39/49)</TableCell>
-                  <TableCell align="center">40</TableCell>
+                  <TableCell>Supra-aural (TDH-39/49)</TableCell>
+                  <TableCell align="center"><strong>40</strong></TableCell>
+                  <TableCell>40&ndash;65 dB</TableCell>
                   <TableCell>Masking needed more often; narrower plateau</TableCell>
                 </TableRow>
                 <TableRow>
                   <TableCell>Insert earphones (ER-3A)</TableCell>
-                  <TableCell align="center">55</TableCell>
-                  <TableCell>Masking needed less often; wider plateau; less OE</TableCell>
+                  <TableCell align="center"><strong>70</strong></TableCell>
+                  <TableCell>55&ndash;79 dB</TableCell>
+                  <TableCell>Masking needed far less often; wider plateau; no OE</TableCell>
                 </TableRow>
                 <TableRow>
                   <TableCell>Bone oscillator</TableCell>
-                  <TableCell align="center">0</TableCell>
-                  <TableCell>Sound reaches both cochleae equally</TableCell>
+                  <TableCell align="center"><strong>0</strong></TableCell>
+                  <TableCell>0 dB</TableCell>
+                  <TableCell>Sound reaches both cochleae equally &mdash; always mask</TableCell>
                 </TableRow>
               </TableBody>
             </Table>
           </TableContainer>
-          <Alert severity="info" variant="outlined" sx={{ mt: 1 }}>
-            Insert earphones provide 15 dB more IA than supra-aural headphones. This significantly reduces
-            masking needs, widens the masking plateau, and reduces the risk of a masking dilemma.
-            <strong> Many audiometry trainers incorrectly use 40 dB for both</strong> &mdash; always check
-            which transducer is specified.
+
+          <Alert severity="info" variant="outlined" sx={{ mb: 2 }}>
+            <AlertTitle>Insert Earphone IA: The Evidence</AlertTitle>
+            <Typography variant="body2" component="div">
+              <strong>Standard clinical value: 70 dB</strong> &mdash; used for board exams and clinical decision-making
+              (Katz, <em>Handbook of Clinical Audiology</em>, 7th ed.; Martin &amp; Clark, <em>Introduction to Audiology</em>, 13th ed.).<br /><br />
+              <strong>Measured range: 55&ndash;79 dB</strong> (Sklare &amp; Denenberg, 1987, <em>Ear and Hearing</em>). The range
+              varies with frequency and insertion depth.<br /><br />
+              <strong>Conservative floor: 55 dB</strong> &mdash; some clinicians use this to be maximally
+              safe, since the lowest measured IA in the literature was 55 dB. This approach increases masking
+              frequency but eliminates any risk of under-masking.<br /><br />
+              <strong>For board exams and clinical practice: use 70 dB</strong> unless your program or facility
+              explicitly specifies otherwise.
+            </Typography>
+          </Alert>
+
+          <Alert severity="warning" variant="outlined">
+            Insert earphones provide <strong>30 dB</strong> more IA than supra-aural headphones (70 vs 40 dB).
+            This dramatically reduces masking needs, widens the masking plateau, and often eliminates the
+            masking dilemma entirely. <strong>Many audiometry trainers incorrectly use 40 or 55 dB for inserts</strong> &mdash;
+            always verify the transducer-specific IA value.
           </Alert>
         </AccordionDetails>
       </Accordion>
 
-      {/* ---- Section 2: When to Mask — AC ---- */}
+      {/* ==== Section 2: When to Mask — AC ==== */}
       <Accordion expanded={expanded === 'ac'} onChange={toggle('ac')} sx={sectionSx}>
         <AccordionSummary expandIcon={<ExpandMore />}>
-          <Typography variant="subtitle1" fontWeight={600}>When to Mask: Air Conduction</Typography>
+          <Typography variant="subtitle1" fontWeight={600}>2. When to Mask: Air Conduction</Typography>
         </AccordionSummary>
         <AccordionDetails>
           <Alert severity="info" sx={{ mb: 2 }}>
             <AlertTitle>AC Masking Rule (ASHA)</AlertTitle>
             <strong>Mask when: Test ear AC &minus; Non-test ear BC &ge; IA</strong><br />
-            Supra-aural: &ge; 40 dB &nbsp;|&nbsp; Insert: &ge; 55 dB
+            Supra-aural: &ge; 40 dB &nbsp;|&nbsp; Insert: &ge; 70 dB
           </Alert>
           <Typography variant="body2" paragraph>
             <strong>Critical distinction:</strong> Compare AC of the <em>test ear</em> to BC of the
-            <em> non-test ear</em>. A common student error is comparing the two AC thresholds &mdash;
-            this is incorrect because cross-hearing occurs via bone conduction, not air conduction.
+            <em> non-test ear</em>. The reason for using non-test ear BC (not AC) is explained in detail
+            in Section 4 below, but the key point is: <strong>cross-hearing occurs via bone conduction</strong>,
+            so what matters is how sensitive the opposite cochlea is &mdash; and BC measures cochlear sensitivity.
           </Typography>
-          <Paper variant="outlined" sx={{ p: 2, mb: 1, bgcolor: alpha(theme.palette.success.main, 0.05) }}>
+
+          <Paper variant="outlined" sx={{ p: 2, mb: 2, bgcolor: alpha(theme.palette.success.main, 0.05) }}>
             <Typography variant="subtitle2" gutterBottom>Worked Example</Typography>
             <Typography variant="body2">
               Patient: Right ear AC = 60 dB, Left ear BC = 15 dB<br />
               Difference = 60 &minus; 15 = 45 dB<br />
               &bull; Supra-aural (IA = 40): 45 &ge; 40 &rarr; <strong>Masking REQUIRED</strong><br />
-              &bull; Insert (IA = 55): 45 &lt; 55 &rarr; <strong>Masking NOT required</strong><br />
-              <em>Using insert earphones eliminates the need for masking in this case.</em>
+              &bull; Insert (IA = 70): 45 &lt; 70 &rarr; <strong>Masking NOT required</strong><br />
+              <em>Using insert earphones eliminates the need for masking in this case &mdash; a 30 dB advantage.</em>
+            </Typography>
+          </Paper>
+
+          <Paper variant="outlined" sx={mistakeSx}>
+            <Typography variant="subtitle2" color="error.main" gutterBottom>Common Student Mistake</Typography>
+            <Typography variant="body2">
+              <strong>Wrong:</strong> &quot;Right AC = 60, Left AC = 50. Difference = 10 dB. No masking needed.&quot;<br />
+              <strong>Right:</strong> Compare TE <em>AC</em> to NTE <em>BC</em>, not AC to AC. If Left BC = 5 dB,
+              then difference = 60 &minus; 5 = 55 dB &ge; 40 &rarr; masking IS required with supra-aural headphones.
             </Typography>
           </Paper>
         </AccordionDetails>
       </Accordion>
 
-      {/* ---- Section 3: When to Mask — BC ---- */}
+      {/* ==== Section 3: When to Mask — BC ==== */}
       <Accordion expanded={expanded === 'bc'} onChange={toggle('bc')} sx={sectionSx}>
         <AccordionSummary expandIcon={<ExpandMore />}>
-          <Typography variant="subtitle1" fontWeight={600}>When to Mask: Bone Conduction</Typography>
+          <Typography variant="subtitle1" fontWeight={600}>3. When to Mask: Bone Conduction</Typography>
         </AccordionSummary>
         <AccordionDetails>
           <Alert severity="warning" sx={{ mb: 2 }}>
@@ -380,18 +413,115 @@ const EducationalIntro: React.FC = () => {
             &ge; 10 dB indicates possible conductive involvement and requires masking to determine
             the true BC threshold of each ear individually.
           </Typography>
-          <Typography variant="body2">
+          <Typography variant="body2" paragraph>
             <strong>Rule of thumb:</strong> Almost always mask for bone conduction. The only exception
             is symmetric sensorineural hearing loss with no air-bone gap in either ear &mdash; an uncommon
             clinical scenario.
           </Typography>
+          <Paper variant="outlined" sx={pearlSx}>
+            <Typography variant="subtitle2" color="info.main" gutterBottom>Clinical Pearl</Typography>
+            <Typography variant="body2">
+              Test the <strong>better ear first</strong> for bone conduction. Since unmasked BC always
+              reflects the better cochlea, testing the better ear first establishes a known reference point
+              before masking is applied.
+            </Typography>
+          </Paper>
         </AccordionDetails>
       </Accordion>
 
-      {/* ---- Section 4: Effective Masking Level ---- */}
+      {/* ==== Section 4: Why NTE BC in EML Formula ==== */}
+      <Accordion expanded={expanded === 'whybc'} onChange={toggle('whybc')} sx={sectionSx}>
+        <AccordionSummary expandIcon={<ExpandMore />}>
+          <Typography variant="subtitle1" fontWeight={600}>4. Why We Use Non-Test Ear BC (Not AC) in Masking Formulas</Typography>
+        </AccordionSummary>
+        <AccordionDetails>
+          <Typography variant="body2" paragraph>
+            This is one of the most important &mdash; and most misunderstood &mdash; concepts in clinical masking.
+            Every masking formula uses <strong>non-test ear BC threshold</strong>, never AC. Here is why:
+          </Typography>
+
+          <Box component="ol" sx={{ pl: 2, mb: 2, '& li': { mb: 1.5 } }}>
+            <li>
+              <Typography variant="body2">
+                <strong>Cross-hearing goes to the cochlea.</strong> When a loud tone in the test ear crosses the
+                skull, it arrives at the non-test ear <em>cochlea</em> via bone conduction. The outer and middle
+                ear of the non-test ear are bypassed entirely.
+              </Typography>
+            </li>
+            <li>
+              <Typography variant="body2">
+                <strong>BC threshold = cochlear sensitivity.</strong> The bone conduction threshold tells you
+                the lowest level at which the cochlea can detect sound. This is exactly the threshold you need
+                to cover (&quot;mask&quot;) with noise.
+              </Typography>
+            </li>
+            <li>
+              <Typography variant="body2">
+                <strong>AC threshold includes middle ear loss.</strong> Air conduction threshold reflects
+                both the middle ear <em>and</em> cochlea. If the non-test ear has a conductive component
+                (middle ear pathology), the AC threshold overstates how much stimulation is needed to reach
+                the cochlea.
+              </Typography>
+            </li>
+            <li>
+              <Typography variant="body2">
+                <strong>The goal is to &quot;occupy&quot; the cochlea.</strong> Masking noise must keep the
+                non-test ear cochlea busy so it cannot detect the crossed-over signal. You need enough noise
+                to exceed the cochlea&apos;s sensitivity &mdash; that sensitivity is the BC threshold.
+              </Typography>
+            </li>
+          </Box>
+
+          <Paper variant="outlined" sx={{
+            p: 2, mb: 2,
+            bgcolor: alpha(theme.palette.error.main, 0.06),
+            border: `2px solid ${theme.palette.error.main}`,
+          }}>
+            <Typography variant="subtitle2" color="error.main" gutterBottom>
+              Why Using AC Would Be Wrong: A Worked Example
+            </Typography>
+            <Typography variant="body2" paragraph>
+              <strong>Patient:</strong> Testing right ear AC at 1000 Hz.<br />
+              Right ear: AC = 70 dB, BC = 65 dB (sensorineural loss)<br />
+              Left ear (non-test): AC = 60 dB, BC = 10 dB (conductive loss &mdash; large 50 dB air-bone gap)
+            </Typography>
+            <Typography variant="body2" paragraph>
+              <strong>Step 1 &mdash; Masking decision (should we mask?):</strong><br />
+              TE AC &minus; NTE BC = 70 &minus; 10 = 60 dB<br />
+              With supra-aural headphones (IA = 40): 60 &ge; 40 &rarr; <strong>masking IS required</strong>
+            </Typography>
+            <Typography variant="body2" paragraph>
+              <strong>If you mistakenly used NTE AC instead:</strong><br />
+              TE AC &minus; NTE AC = 70 &minus; 60 = 10 dB &lt; 40 &rarr; you would conclude &quot;no masking needed&quot;<br />
+              <strong>This is dangerously wrong!</strong> The left cochlea is very sensitive (BC = 10 dB).
+              The 70 dB tone presented to the right ear can cross the skull and stimulate this sensitive
+              cochlea. Without masking, you record the left cochlea&apos;s response &mdash; a shadow curve, not
+              the right ear&apos;s threshold.
+            </Typography>
+            <Alert severity="error" sx={{ mt: 1 }}>
+              <strong>Result of using AC instead of BC:</strong> You skip masking when it is critically
+              needed. The patient&apos;s audiogram shows a shadow curve at ~50 dB in the right ear
+              (the left cochlea responding), not the true right ear threshold of 70 dB. This 20 dB
+              error could change the diagnosis and treatment plan entirely.
+            </Alert>
+          </Paper>
+
+          <Paper variant="outlined" sx={pearlSx}>
+            <Typography variant="subtitle2" color="info.main" gutterBottom>Clinical Pearl &mdash; Exam Tip</Typography>
+            <Typography variant="body2">
+              On board exams, if you see a patient with unilateral conductive hearing loss, <strong>always
+              check if the good ear&apos;s BC threshold is far below the test ear&apos;s AC threshold</strong>. This
+              is the classic setup for a masking question. The conductive component makes the AC-to-AC difference
+              look small, but the AC-to-BC difference reveals the true cross-hearing risk.
+            </Typography>
+          </Paper>
+        </AccordionDetails>
+      </Accordion>
+
+      {/* ==== Section 5: Effective Masking Level ==== */}
       <Accordion expanded={expanded === 'eml'} onChange={toggle('eml')} sx={sectionSx}>
         <AccordionSummary expandIcon={<ExpandMore />}>
-          <Typography variant="subtitle1" fontWeight={600}>Effective Masking Level (EML)</Typography>
+          <Typography variant="subtitle1" fontWeight={600}>5. Effective Masking Level (EML)</Typography>
         </AccordionSummary>
         <AccordionDetails>
           <Alert severity="info" sx={{ mb: 2 }}>
@@ -401,138 +531,365 @@ const EducationalIntro: React.FC = () => {
           </Alert>
           <Typography variant="body2" paragraph>
             The masking noise must be loud enough at the non-test ear cochlea to prevent it from
-            detecting the crossed-over test signal. The 10 dB safety factor ensures adequate masking
-            above the cochlear threshold.
+            detecting the crossed-over test signal. The <strong>10 dB safety factor</strong> is a clinical
+            convention ensuring adequate masking above the cochlear threshold &mdash; it accounts for
+            normal variability in threshold measurement and the central masking effect (~5 dB).
           </Typography>
           <Alert severity="error" variant="outlined" sx={{ mb: 2 }}>
             <AlertTitle>Maximum Masking (Overmasking Limit)</AlertTitle>
             <strong>Maximum safe masking = Test ear BC + IA of masking transducer</strong><br />
-            Supra-aural: BC(TE) + 40 &nbsp;|&nbsp; Insert: BC(TE) + 55<br />
+            Supra-aural: BC(TE) + 40 &nbsp;|&nbsp; Insert: BC(TE) + 70<br />
             Exceeding this risks masking noise crossing to the test ear cochlea.
           </Alert>
-          <Paper variant="outlined" sx={{ p: 2, bgcolor: alpha(theme.palette.success.main, 0.05) }}>
+          <Paper variant="outlined" sx={{ p: 2, mb: 2, bgcolor: alpha(theme.palette.success.main, 0.05) }}>
             <Typography variant="subtitle2" gutterBottom>Worked Example (AC Testing)</Typography>
             <Typography variant="body2">
               Test ear: Right AC = 65 dB, Right BC = 20 dB | Non-test ear: Left BC = 10 dB<br />
               &bull; Starting EML = 10 + 10 = <strong>20 dB</strong><br />
               &bull; Max masking (supra-aural) = 20 + 40 = <strong>60 dB</strong><br />
-              &bull; Max masking (insert) = 20 + 55 = <strong>75 dB</strong><br />
+              &bull; Max masking (insert) = 20 + 70 = <strong>90 dB</strong><br />
               &bull; Plateau range (supra-aural): 20&ndash;60 dB (40 dB range)<br />
-              &bull; Plateau range (insert): 20&ndash;75 dB (55 dB range &mdash; wider, safer)
+              &bull; Plateau range (insert): 20&ndash;90 dB (70 dB range &mdash; far wider and safer)
+            </Typography>
+          </Paper>
+          <Paper variant="outlined" sx={pearlSx}>
+            <Typography variant="subtitle2" color="info.main" gutterBottom>Clinical Pearl</Typography>
+            <Typography variant="body2">
+              <strong>What if NTE BC is unknown?</strong> If you have not yet tested bone conduction for the
+              non-test ear, use the NTE AC threshold as a conservative estimate. Since BC &le; AC by
+              definition, using AC gives a starting EML that is at least as high as the true minimum &mdash;
+              you may over-mask slightly, but you will not under-mask. Once BC is available, recalculate.
             </Typography>
           </Paper>
         </AccordionDetails>
       </Accordion>
 
-      {/* ---- Section 5: Hood Plateau Method ---- */}
-      <Accordion expanded={expanded === 'plateau'} onChange={toggle('plateau')} sx={sectionSx}>
+      {/* ==== Section 6: Step-by-Step Clinical Masking Guide ==== */}
+      <Accordion expanded={expanded === 'stepbystep'} onChange={toggle('stepbystep')} sx={sectionSx}>
         <AccordionSummary expandIcon={<ExpandMore />}>
-          <Typography variant="subtitle1" fontWeight={600}>Hood Plateau Method</Typography>
+          <Typography variant="subtitle1" fontWeight={600}>6. Step-by-Step Clinical Masking Guide</Typography>
         </AccordionSummary>
         <AccordionDetails>
-          <Typography variant="body2" paragraph>
-            The Hood (1960) plateau method is the gold standard for clinical masking. It incrementally
-            increases masking noise until the test ear threshold stabilises across a range of masking levels.
+          {/* --- Step A: Initial Masking Level --- */}
+          <Typography variant="h6" gutterBottom sx={{ mt: 1, color: theme.palette.primary.main }}>
+            Step A: Calculate the Initial Masking Level
           </Typography>
-          <Box component="ol" sx={{ pl: 2, mb: 2 }}>
-            <li><Typography variant="body2" paragraph>
-              <strong>Obtain unmasked thresholds</strong> in both ears. Test the better ear first.
+          <Alert severity="info" sx={{ mb: 2 }}>
+            <AlertTitle>Formula</AlertTitle>
+            <strong>AC testing:</strong> Starting EML = NTE BC + 10 dB<br />
+            <strong>BC testing:</strong> Starting EML = NTE BC + Occlusion Effect + 10 dB
+          </Alert>
+          <Box component="ol" sx={{ pl: 2, mb: 2, '& li': { mb: 1 } }}>
+            <li><Typography variant="body2">
+              <strong>Look up the non-test ear BC threshold</strong> at the frequency you are testing.
+              This value represents the cochlear sensitivity of the ear you need to mask.
             </Typography></li>
-            <li><Typography variant="body2" paragraph>
-              <strong>Set initial masking level</strong> at starting EML (non-test ear BC + 10 dB for AC;
-              add occlusion effect for BC at low frequencies).
+            <li><Typography variant="body2">
+              <strong>Add the 10 dB safety factor.</strong> This ensures the noise exceeds the cochlear
+              threshold with a comfortable margin. The 10 dB convention accounts for test&ndash;retest
+              variability (&plusmn;5 dB) and the central masking effect (~5 dB).
             </Typography></li>
-            <li><Typography variant="body2" paragraph>
-              <strong>Re-establish the test ear threshold</strong> with masking noise present in the non-test ear.
+            <li><Typography variant="body2">
+              <strong>For BC testing only:</strong> add the occlusion effect (OE) for supra-aural
+              headphones at 250, 500, and 1000 Hz. Insert earphones with deep insertion have OE = 0 dB.
             </Typography></li>
-            <li><Typography variant="body2" paragraph>
-              <strong>Increase masking in 10 dB steps.</strong> After each increase, re-measure the test ear threshold.
-            </Typography></li>
-            <li><Typography variant="body2" paragraph>
-              <strong>Identify the plateau:</strong> Threshold remains stable across <strong>3 consecutive
-              10 dB masking increases</strong>. This stable threshold is the true masked threshold.
+            <li><Typography variant="body2">
+              <strong>Set the masking dial</strong> on the audiometer to the calculated starting EML.
+              Use narrowband noise (NBN) centered at the test frequency.
             </Typography></li>
           </Box>
-          <TableContainer component={Paper} variant="outlined" sx={{ mb: 1 }}>
+          <Paper variant="outlined" sx={{ p: 2, mb: 2, bgcolor: alpha(theme.palette.success.main, 0.05) }}>
+            <Typography variant="subtitle2" gutterBottom>Example: AC at 1000 Hz</Typography>
+            <Typography variant="body2">
+              NTE BC at 1000 Hz = 15 dB HL<br />
+              Starting EML = 15 + 10 = <strong>25 dB EML</strong><br />
+              &rarr; Set the masking dial to 25 dB of narrowband noise at 1000 Hz.
+            </Typography>
+          </Paper>
+          <Paper variant="outlined" sx={{ p: 2, mb: 3, bgcolor: alpha(theme.palette.success.main, 0.05) }}>
+            <Typography variant="subtitle2" gutterBottom>Example: BC at 500 Hz with Supra-aural Masking</Typography>
+            <Typography variant="body2">
+              NTE BC at 500 Hz = 10 dB HL, OE at 500 Hz (supra-aural) = 15 dB<br />
+              Starting EML = 10 + 15 + 10 = <strong>35 dB EML</strong>
+            </Typography>
+          </Paper>
+          <Paper variant="outlined" sx={pearlSx}>
+            <Typography variant="subtitle2" color="info.main" gutterBottom>What If NTE BC Is Not Yet Known?</Typography>
+            <Typography variant="body2">
+              If you have not tested NTE bone conduction yet, use the NTE AC threshold as a starting estimate.
+              Since AC &ge; BC always, this gives a starting EML that is equal to or higher than the true minimum.
+              Once you obtain NTE BC, recalculate. Alternatively, test NTE BC first before masking.
+            </Typography>
+          </Paper>
+
+          <Divider sx={{ my: 3 }} />
+
+          {/* --- Step B: Presenting Masking --- */}
+          <Typography variant="h6" gutterBottom sx={{ color: theme.palette.primary.main }}>
+            Step B: Present Masking and Re-Test
+          </Typography>
+          <Box component="ol" sx={{ pl: 2, mb: 2, '& li': { mb: 1 } }}>
+            <li><Typography variant="body2">
+              <strong>Turn on the masking noise</strong> to the non-test ear at the calculated starting EML.
+              Always use <strong>narrowband noise (NBN)</strong> for pure tone audiometry &mdash; not white
+              noise or speech noise.
+            </Typography></li>
+            <li><Typography variant="body2">
+              <strong>Re-test the test ear threshold</strong> using the standard bracketing method
+              (down 10, up 5) with the masking noise continuously present in the non-test ear.
+            </Typography></li>
+            <li><Typography variant="body2">
+              <strong>Record this threshold</strong> as the masked threshold at this masking level.
+              This is your first data point for the plateau search.
+            </Typography></li>
+          </Box>
+
+          <Divider sx={{ my: 3 }} />
+
+          {/* --- Step C: Maximum Masking Level --- */}
+          <Typography variant="h6" gutterBottom sx={{ color: theme.palette.primary.main }}>
+            Step C: Know Your Maximum Masking Level
+          </Typography>
+          <Alert severity="error" sx={{ mb: 2 }}>
+            <AlertTitle>Why Max Masking Exists</AlertTitle>
+            <strong>Over-masking</strong> occurs when the masking noise is so loud that it crosses the skull
+            via bone conduction and reaches the <em>test ear</em> cochlea. When this happens, the masking
+            noise itself becomes a signal in the test ear, artificially elevating the threshold. You then
+            record a threshold that is <strong>worse than the patient&apos;s actual hearing</strong>.
+          </Alert>
+          <Alert severity="info" variant="outlined" sx={{ mb: 2 }}>
+            <AlertTitle>Max Masking Formula</AlertTitle>
+            <strong>Maximum masking = Test ear BC + IA of masking transducer</strong><br />
+            &bull; Supra-aural: TE BC + 40 dB<br />
+            &bull; Insert: TE BC + 70 dB
+          </Alert>
+          <Paper variant="outlined" sx={{ p: 2, mb: 2, bgcolor: alpha(theme.palette.success.main, 0.05) }}>
+            <Typography variant="subtitle2" gutterBottom>Worked Example</Typography>
+            <Typography variant="body2">
+              Test ear BC = 25 dB | Non-test ear BC = 10 dB<br />
+              &bull; Starting EML = 10 + 10 = 20 dB<br />
+              &bull; Max masking (supra-aural) = 25 + 40 = <strong>65 dB</strong><br />
+              &bull; Max masking (insert) = 25 + 70 = <strong>95 dB</strong><br /><br />
+              If you dial above 65 dB of masking with supra-aural headphones, the noise
+              (65 &minus; 40 = 25 dB at the test ear cochlea) starts to mask the test ear itself.
+              With inserts, you can safely go up to 95 dB.
+            </Typography>
+          </Paper>
+          <Paper variant="outlined" sx={mistakeSx}>
+            <Typography variant="subtitle2" color="error.main" gutterBottom>Real Consequence of Over-Masking</Typography>
+            <Typography variant="body2">
+              If a patient&apos;s true test ear threshold is 30 dB but you over-mask and record 50 dB,
+              you have artificially worsened the result by 20 dB. This could lead to an incorrect diagnosis
+              of sensorineural hearing loss, unnecessary hearing aid recommendation, or inappropriate treatment.
+            </Typography>
+          </Paper>
+
+          <Divider sx={{ my: 3 }} />
+
+          {/* --- Step D: Hood Plateau Method --- */}
+          <Typography variant="h6" gutterBottom sx={{ color: theme.palette.primary.main }}>
+            Step D: Find the Plateau (Hood Method)
+          </Typography>
+          <Typography variant="body2" paragraph>
+            The Hood (1960) plateau method is the gold standard for determining true masked thresholds.
+            You systematically increase masking and watch for a stable threshold.
+          </Typography>
+          <Box component="ol" sx={{ pl: 2, mb: 2, '& li': { mb: 1 } }}>
+            <li><Typography variant="body2">
+              Start at the <strong>initial EML</strong> calculated in Step A.
+            </Typography></li>
+            <li><Typography variant="body2">
+              <strong>Increase masking by 10 dB.</strong> Re-test the threshold each time.
+            </Typography></li>
+            <li><Typography variant="body2">
+              <strong>Look for the plateau:</strong> the threshold stays stable across at least
+              <strong> 2 consecutive 10 dB increases</strong> (a plateau spanning &ge; 20 dB of masking).
+            </Typography></li>
+            <li><Typography variant="body2">
+              The <strong>stable threshold</strong> on the plateau is the true masked threshold. Record this.
+            </Typography></li>
+            <li><Typography variant="body2">
+              <strong>Stop increasing</strong> once you find the plateau or approach the maximum masking level.
+            </Typography></li>
+          </Box>
+
+          <Typography variant="subtitle2" gutterBottom>Plateau Demonstration: Numerical Example</Typography>
+          <Typography variant="body2" sx={{ mb: 1 }}>
+            Patient: Right AC = 65 dB (test ear), Left BC = 5 dB (non-test ear). Supra-aural headphones.
+          </Typography>
+          <TableContainer component={Paper} variant="outlined" sx={{ mb: 2 }}>
             <Table size="small">
               <TableHead>
                 <TableRow>
-                  <TableCell><strong>Phase</strong></TableCell>
-                  <TableCell><strong>What Happens</strong></TableCell>
-                  <TableCell><strong>Meaning</strong></TableCell>
+                  <TableCell><strong>Masking Level</strong></TableCell>
+                  <TableCell align="center"><strong>Threshold Obtained</strong></TableCell>
+                  <TableCell><strong>Interpretation</strong></TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 <TableRow>
-                  <TableCell>Undermasking</TableCell>
-                  <TableCell>Threshold shifts with each masking increase</TableCell>
-                  <TableCell>Non-test ear still contributing</TableCell>
+                  <TableCell>Unmasked</TableCell>
+                  <TableCell align="center">25 dB</TableCell>
+                  <TableCell><em>Possibly a shadow curve</em></TableCell>
                 </TableRow>
-                <TableRow sx={{ bgcolor: alpha(theme.palette.success.main, 0.08) }}>
-                  <TableCell><strong>Plateau</strong></TableCell>
-                  <TableCell>Threshold stable across &ge; 3 increases (&ge; 20 dB range)</TableCell>
-                  <TableCell><strong>True threshold found</strong></TableCell>
+                <TableRow sx={{ bgcolor: alpha(theme.palette.warning.main, 0.08) }}>
+                  <TableCell>15 dB (starting EML)</TableCell>
+                  <TableCell align="center">30 dB</TableCell>
+                  <TableCell>Undermasking &mdash; threshold shifted 5 dB</TableCell>
                 </TableRow>
-                <TableRow>
-                  <TableCell>Overmasking</TableCell>
-                  <TableCell>1:1 threshold shift with masking increase</TableCell>
-                  <TableCell>Masking noise reaching test ear cochlea</TableCell>
+                <TableRow sx={{ bgcolor: alpha(theme.palette.warning.main, 0.08) }}>
+                  <TableCell>25 dB</TableCell>
+                  <TableCell align="center">40 dB</TableCell>
+                  <TableCell>Undermasking &mdash; still shifting</TableCell>
+                </TableRow>
+                <TableRow sx={{ bgcolor: alpha(theme.palette.warning.main, 0.08) }}>
+                  <TableCell>35 dB</TableCell>
+                  <TableCell align="center">45 dB</TableCell>
+                  <TableCell>Undermasking &mdash; still shifting</TableCell>
+                </TableRow>
+                <TableRow sx={{ bgcolor: alpha(theme.palette.success.main, 0.12) }}>
+                  <TableCell><strong>45 dB</strong></TableCell>
+                  <TableCell align="center"><strong>50 dB</strong></TableCell>
+                  <TableCell><strong>Plateau begins</strong></TableCell>
+                </TableRow>
+                <TableRow sx={{ bgcolor: alpha(theme.palette.success.main, 0.12) }}>
+                  <TableCell><strong>55 dB</strong></TableCell>
+                  <TableCell align="center"><strong>50 dB</strong></TableCell>
+                  <TableCell><strong>Plateau holds (+10 masking, 0 shift)</strong></TableCell>
+                </TableRow>
+                <TableRow sx={{ bgcolor: alpha(theme.palette.success.main, 0.12) }}>
+                  <TableCell><strong>65 dB</strong></TableCell>
+                  <TableCell align="center"><strong>50 dB</strong></TableCell>
+                  <TableCell><strong>Plateau confirmed! TRUE threshold = 50 dB</strong></TableCell>
+                </TableRow>
+                <TableRow sx={{ bgcolor: alpha(theme.palette.error.main, 0.08) }}>
+                  <TableCell>75 dB</TableCell>
+                  <TableCell align="center">60 dB</TableCell>
+                  <TableCell>Over-masking begins &mdash; 1:1 shift (stop here!)</TableCell>
                 </TableRow>
               </TableBody>
             </Table>
           </TableContainer>
-          <Alert severity="info" variant="outlined">
-            A valid plateau should span at least <strong>20&ndash;30 dB</strong>. A very narrow plateau
-            (&lt; 15 dB) or no plateau at all may indicate a masking dilemma.
+
+          <Alert severity="success" sx={{ mb: 2 }}>
+            <AlertTitle>Reading the Plateau Table</AlertTitle>
+            <Typography variant="body2">
+              &bull; <strong>Undermasking (rows 2&ndash;4):</strong> Each 10 dB masking increase shifts the
+              threshold &mdash; the NTE cochlea is still participating.<br />
+              &bull; <strong>Plateau (rows 5&ndash;7):</strong> Threshold stays at 50 dB across 20 dB of
+              masking increases (45 &rarr; 55 &rarr; 65). The NTE is now fully masked; only the test ear
+              responds. <strong>50 dB is the true threshold.</strong><br />
+              &bull; <strong>Over-masking (row 8):</strong> The 1:1 shift (masking +10, threshold +10) signals
+              that noise is crossing to the test ear cochlea. Stop immediately.
+            </Typography>
           </Alert>
+
+          <Paper variant="outlined" sx={pearlSx}>
+            <Typography variant="subtitle2" color="info.main" gutterBottom>Clinical Pearl &mdash; Exam Tip</Typography>
+            <Typography variant="body2">
+              If the threshold <strong>keeps rising</strong> at every masking step with no plateau, two
+              possibilities: (1) you are already over-masking from the start (check your calculations), or
+              (2) the initial unmasked threshold was entirely a shadow curve and the true threshold is beyond
+              the audiometer&apos;s output limits.
+            </Typography>
+          </Paper>
+
+          <Divider sx={{ my: 3 }} />
+
+          {/* --- Step E: The Masking Dilemma --- */}
+          <Typography variant="h6" gutterBottom sx={{ color: theme.palette.primary.main }}>
+            Step E: Recognizing and Resolving the Masking Dilemma
+          </Typography>
+          <Typography variant="body2" paragraph>
+            The <strong>masking dilemma</strong> occurs when the minimum effective masking level exceeds the
+            maximum safe masking level. You cannot mask without over-masking &mdash; there is no usable
+            plateau.
+          </Typography>
+          <Paper variant="outlined" sx={{ p: 2, mb: 2, bgcolor: alpha(theme.palette.warning.main, 0.06) }}>
+            <Typography variant="subtitle2" gutterBottom>Masking Dilemma Example: Bilateral Conductive Loss, BC Testing at 500 Hz</Typography>
+            <Typography variant="body2" paragraph>
+              Right ear: AC = 70 dB, BC = 10 dB (test ear) | Left ear: AC = 75 dB, BC = 15 dB (non-test ear)<br />
+              Both ears have large air-bone gaps (~60 dB) &mdash; masking is required for BC.
+            </Typography>
+            <Typography variant="body2" paragraph>
+              <strong>With supra-aural headphones:</strong><br />
+              &bull; Starting EML = NTE BC + OE + 10 = 15 + 15 + 10 = <strong>40 dB</strong><br />
+              &bull; Max masking = TE BC + IA = 10 + 40 = <strong>50 dB</strong><br />
+              &bull; Plateau range: 40&ndash;50 dB = only 10 dB &mdash; <strong>practically impossible</strong> to
+              find a reliable plateau in 10 dB.
+            </Typography>
+            <Typography variant="body2" paragraph>
+              <strong>With insert earphones (problem solved!):</strong><br />
+              &bull; Starting EML = NTE BC + OE + 10 = 15 + 0 + 10 = <strong>25 dB</strong> (no OE with inserts)<br />
+              &bull; Max masking = TE BC + IA = 10 + 70 = <strong>80 dB</strong><br />
+              &bull; Plateau range: 25&ndash;80 dB = <strong>55 dB range</strong> &mdash; comfortable plateau search!
+            </Typography>
+            <Alert severity="success" variant="outlined">
+              Insert earphones resolved this dilemma by: (1) eliminating the occlusion effect (saving 15 dB), and
+              (2) providing 30 dB more IA (raising the max from 50 to 80 dB). Combined: the plateau grew from
+              10 dB to 55 dB.
+            </Alert>
+          </Paper>
+          <Typography variant="body2" paragraph>
+            <strong>When insert earphones cannot resolve the dilemma:</strong>
+          </Typography>
+          <Box component="ul" sx={{ pl: 2, mb: 2, '& li': { mb: 0.5 } }}>
+            <li><Typography variant="body2">Report the unmasked threshold with the notation &quot;NM&quot; (not masked) or &quot;CNT&quot; (could not test).</Typography></li>
+            <li><Typography variant="body2">Document that a masking dilemma was present.</Typography></li>
+            <li><Typography variant="body2">Consider bone-anchored hearing device assessment or ABR for frequency-specific threshold estimation.</Typography></li>
+          </Box>
         </AccordionDetails>
       </Accordion>
 
-      {/* ---- Section 6: Over-Masking, Under-Masking, Masking Dilemma ---- */}
+      {/* ==== Section 7: Over-Masking, Under-Masking Summary ==== */}
       <Accordion expanded={expanded === 'errors'} onChange={toggle('errors')} sx={sectionSx}>
         <AccordionSummary expandIcon={<ExpandMore />}>
-          <Typography variant="subtitle1" fontWeight={600}>Over-Masking, Under-Masking &amp; the Masking Dilemma</Typography>
+          <Typography variant="subtitle1" fontWeight={600}>7. Over-Masking, Under-Masking &amp; Central Masking</Typography>
         </AccordionSummary>
         <AccordionDetails>
           <Stack spacing={2}>
             <Paper variant="outlined" sx={{ p: 2, borderLeft: `4px solid ${theme.palette.warning.main}` }}>
               <Typography variant="subtitle2" color="warning.main">Under-Masking</Typography>
+              <Typography variant="body2" paragraph>
+                Masking noise is insufficient &mdash; the non-test ear cochlea still responds to the test
+                signal. The recorded &quot;threshold&quot; is a shadow curve, not the test ear&apos;s true threshold.
+              </Typography>
               <Typography variant="body2">
-                Masking noise is insufficient &mdash; the non-test ear still responds to the test signal.
-                The recorded &quot;threshold&quot; is a shadow curve, not the test ear&apos;s true threshold.
-                Occurs when masking level &lt; non-test ear BC + 10 dB.
+                <strong>How to detect:</strong> On the plateau search, the threshold shifts with each masking
+                increase. <strong>Fix:</strong> Continue increasing masking (you have not reached the plateau yet).
               </Typography>
             </Paper>
             <Paper variant="outlined" sx={{ p: 2, borderLeft: `4px solid ${theme.palette.error.main}` }}>
               <Typography variant="subtitle2" color="error.main">Over-Masking</Typography>
+              <Typography variant="body2" paragraph>
+                Masking noise crosses the skull via bone conduction and reaches the test ear cochlea,
+                artificially elevating the test ear threshold. Occurs when masking level exceeds
+                test ear BC + IA.
+              </Typography>
               <Typography variant="body2">
-                Masking noise is so loud it crosses the skull and reaches the test ear cochlea, artificially
-                elevating the test ear threshold. Occurs when masking level &minus; IA &ge; test ear BC.
-                Hallmark: 1:1 relationship between masking increase and threshold shift.
+                <strong>Hallmark:</strong> 1:1 relationship &mdash; every 10 dB masking increase raises the
+                threshold by 10 dB. <strong>Fix:</strong> Stop immediately. The last plateau value (before the
+                1:1 shift) is the true threshold.
               </Typography>
             </Paper>
             <Paper variant="outlined" sx={{ p: 2, borderLeft: `4px solid ${theme.palette.grey[500]}` }}>
-              <Typography variant="subtitle2">Masking Dilemma</Typography>
+              <Typography variant="subtitle2">Central Masking Effect</Typography>
               <Typography variant="body2">
-                When minimum effective masking exceeds maximum safe masking, true thresholds cannot be
-                determined. Typically occurs in bilateral conductive hearing loss. Insert earphones help
-                by providing higher IA, widening the plateau. If the dilemma persists, report unmasked
-                thresholds with appropriate notation.
+                Presenting masking noise near the cochlear threshold can cause a <strong>5 dB threshold
+                elevation</strong> even without acoustic crossover. This is a normal neural phenomenon
+                at the level of the brainstem, not over-masking. It is why the true masked threshold may
+                be 5 dB higher than the unmasked threshold even when no cross-hearing existed. The 10 dB
+                safety factor already accounts for this.
               </Typography>
             </Paper>
-            <Alert severity="info" variant="outlined">
-              <strong>Central masking effect:</strong> Presenting masking noise near threshold can cause a
-              5 dB threshold elevation even without acoustic crossover &mdash; this is a normal neural
-              phenomenon, not overmasking.
-            </Alert>
           </Stack>
         </AccordionDetails>
       </Accordion>
 
-      {/* ---- Section 7: Occlusion Effect ---- */}
+      {/* ==== Section 8: Occlusion Effect ==== */}
       <Accordion expanded={expanded === 'oe'} onChange={toggle('oe')} sx={sectionSx}>
         <AccordionSummary expandIcon={<ExpandMore />}>
-          <Typography variant="subtitle1" fontWeight={600}>Occlusion Effect</Typography>
+          <Typography variant="subtitle1" fontWeight={600}>8. Occlusion Effect</Typography>
         </AccordionSummary>
         <AccordionDetails>
           <Typography variant="body2" paragraph>
@@ -540,7 +897,7 @@ const EducationalIntro: React.FC = () => {
             ear canal enhances low-frequency bone-conducted sound at that cochlea. This means the non-test
             ear receives a louder BC signal, requiring additional masking noise to compensate.
           </Typography>
-          <TableContainer component={Paper} variant="outlined" sx={{ mb: 1 }}>
+          <TableContainer component={Paper} variant="outlined" sx={{ mb: 2 }}>
             <Table size="small">
               <TableHead>
                 <TableRow>
@@ -559,51 +916,146 @@ const EducationalIntro: React.FC = () => {
           </TableContainer>
           <Alert severity="success" variant="outlined">
             Deep insertion of insert earphones effectively eliminates the occlusion effect &mdash; another
-            advantage of insert earphones for masking during BC testing.
+            major advantage of insert earphones for masking during BC testing.
           </Alert>
         </AccordionDetails>
       </Accordion>
 
-      {/* ---- Section 8: Clinical Pearls ---- */}
+      {/* ==== Section 9: Clinical Pearls & Common Student Mistakes ==== */}
       <Accordion expanded={expanded === 'pearls'} onChange={toggle('pearls')} sx={sectionSx}>
         <AccordionSummary expandIcon={<ExpandMore />}>
-          <Typography variant="subtitle1" fontWeight={600}>Clinical Pearls &amp; Common Student Mistakes</Typography>
+          <Typography variant="subtitle1" fontWeight={600}>9. Clinical Pearls &amp; Common Student Mistakes</Typography>
         </AccordionSummary>
         <AccordionDetails>
-          <Stack spacing={1}>
-            <Alert severity="error" variant="outlined">
-              <strong>Mistake:</strong> Comparing two AC thresholds to decide if masking is needed.<br />
-              <strong>Correct:</strong> Compare test ear AC to non-test ear <em>BC</em>.
-            </Alert>
-            <Alert severity="error" variant="outlined">
-              <strong>Mistake:</strong> Using white noise for masking during pure tone audiometry.<br />
-              <strong>Correct:</strong> Use narrow-band noise (NBN) centred at the test frequency.
-              White noise spreads energy across all frequencies, requiring more total intensity and
-              increasing the risk of overmasking.
-            </Alert>
-            <Alert severity="error" variant="outlined">
-              <strong>Mistake:</strong> Assuming the same IA for supra-aural and insert earphones.<br />
-              <strong>Correct:</strong> Insert earphones have IA of 55 dB (vs 40 dB for supra-aural).
-              This 15 dB difference is clinically significant and changes masking decisions.
-            </Alert>
-            <Alert severity="error" variant="outlined">
-              <strong>Mistake:</strong> Forgetting to add occlusion effect for BC masking at low frequencies.<br />
-              <strong>Correct:</strong> Add OE to starting EML at 250, 500, and 1000 Hz with supra-aural.
-              Insert earphones (deep) eliminate this requirement.
-            </Alert>
-            <Alert severity="info" variant="outlined">
-              <strong>Tip:</strong> Always mask for bone conduction unless both ears have symmetric
-              thresholds with no air-bone gap &mdash; this situation is uncommon in clinical practice.
-            </Alert>
-            <Alert severity="info" variant="outlined">
-              <strong>Tip:</strong> Masking is always delivered to the <strong>non-test ear</strong>. Never
-              mask the test ear.
-            </Alert>
-            <Alert severity="info" variant="outlined">
-              <strong>Tip:</strong> When in doubt, mask. Under-masking (not masking when needed) is a more
-              serious clinical error than masking unnecessarily.
-            </Alert>
+          <Typography variant="subtitle2" gutterBottom sx={{ color: theme.palette.error.main }}>
+            Common Mistakes
+          </Typography>
+          <Stack spacing={1} sx={{ mb: 3 }}>
+            <Paper variant="outlined" sx={mistakeSx}>
+              <Typography variant="body2">
+                <strong>Mistake:</strong> Comparing two AC thresholds to decide if masking is needed.<br />
+                <strong>Correct:</strong> Compare test ear AC to non-test ear <em>BC</em>. Cross-hearing is
+                a bone conduction phenomenon (see Section 4).
+              </Typography>
+            </Paper>
+            <Paper variant="outlined" sx={mistakeSx}>
+              <Typography variant="body2">
+                <strong>Mistake:</strong> Using white noise for masking during pure tone audiometry.<br />
+                <strong>Correct:</strong> Use narrow-band noise (NBN) centered at the test frequency.
+                White noise spreads energy across all frequencies, requiring more total intensity and
+                increasing the risk of over-masking.
+              </Typography>
+            </Paper>
+            <Paper variant="outlined" sx={mistakeSx}>
+              <Typography variant="body2">
+                <strong>Mistake:</strong> Assuming the same IA for supra-aural and insert earphones.<br />
+                <strong>Correct:</strong> Insert earphones have IA of 70 dB (vs 40 dB for supra-aural).
+                This 30 dB difference is clinically significant and changes masking decisions.
+              </Typography>
+            </Paper>
+            <Paper variant="outlined" sx={mistakeSx}>
+              <Typography variant="body2">
+                <strong>Mistake:</strong> Forgetting the occlusion effect for BC masking at low frequencies.<br />
+                <strong>Correct:</strong> Add OE to starting EML at 250, 500, and 1000 Hz with supra-aural.
+                Insert earphones (deep insertion) eliminate this requirement.
+              </Typography>
+            </Paper>
+            <Paper variant="outlined" sx={mistakeSx}>
+              <Typography variant="body2">
+                <strong>Mistake:</strong> Stopping the plateau search after one stable measurement.<br />
+                <strong>Correct:</strong> You need at least 2 consecutive 10 dB masking increases with no
+                threshold change (a 20+ dB plateau) to confirm the true threshold.
+              </Typography>
+            </Paper>
           </Stack>
+
+          <Typography variant="subtitle2" gutterBottom sx={{ color: theme.palette.info.main }}>
+            Clinical Pearls for Exams
+          </Typography>
+          <Stack spacing={1}>
+            <Paper variant="outlined" sx={pearlSx}>
+              <Typography variant="body2">
+                <strong>Pearl:</strong> Always mask for bone conduction unless both ears have symmetric
+                thresholds with no air-bone gap. This situation is uncommon in clinical practice.
+              </Typography>
+            </Paper>
+            <Paper variant="outlined" sx={pearlSx}>
+              <Typography variant="body2">
+                <strong>Pearl:</strong> Masking is always delivered to the <strong>non-test ear</strong>.
+                If you are testing the right ear, masking goes in the left ear. Never mask the test ear.
+              </Typography>
+            </Paper>
+            <Paper variant="outlined" sx={pearlSx}>
+              <Typography variant="body2">
+                <strong>Pearl:</strong> When in doubt, mask. Under-masking (failing to mask when needed) is a
+                more serious clinical error than masking unnecessarily, because it produces incorrect
+                thresholds on the audiogram.
+              </Typography>
+            </Paper>
+            <Paper variant="outlined" sx={pearlSx}>
+              <Typography variant="body2">
+                <strong>Pearl:</strong> If a patient has bilateral conductive hearing loss, expect masking
+                challenges. Switch to insert earphones preemptively to gain the most plateau room.
+              </Typography>
+            </Paper>
+            <Paper variant="outlined" sx={pearlSx}>
+              <Typography variant="body2">
+                <strong>Pearl:</strong> The insert earphone IA of 70 dB is used on board exams (Praxis,
+                ABA). Some programs teach 55 dB as a conservative floor. Know which value your program
+                expects and be able to justify either.
+              </Typography>
+            </Paper>
+          </Stack>
+        </AccordionDetails>
+      </Accordion>
+
+      {/* ==== Section 10: References ==== */}
+      <Accordion expanded={expanded === 'references'} onChange={toggle('references')} sx={sectionSx}>
+        <AccordionSummary expandIcon={<ExpandMore />}>
+          <Typography variant="subtitle1" fontWeight={600}>10. Evidence-Based References</Typography>
+        </AccordionSummary>
+        <AccordionDetails>
+          <Typography variant="body2" paragraph>
+            The masking procedures, IA values, and formulas in this module are based on the following
+            peer-reviewed and textbook sources:
+          </Typography>
+          <Box component="ol" sx={{ pl: 2, '& li': { mb: 1.5 } }}>
+            <li>
+              <Typography variant="body2">
+                <strong>Hood JD</strong> (1960). The principles and practice of bone conduction audiometry: A review
+                of the present position. <em>The Laryngoscope</em>, 70, 1211&ndash;1228.
+                &mdash; Established the plateau method as the clinical standard for masked threshold determination.
+              </Typography>
+            </li>
+            <li>
+              <Typography variant="body2">
+                <strong>Sklare DA, Denenberg LJ</strong> (1987). Interaural attenuation for Tubephone insert
+                earphones. <em>Ear and Hearing</em>, 8(5), 298&ndash;300.
+                &mdash; Measured insert earphone IA range of 55&ndash;79 dB, establishing the evidence base for
+                the 70 dB clinical standard.
+              </Typography>
+            </li>
+            <li>
+              <Typography variant="body2">
+                <strong>Katz J</strong> (Ed.). <em>Handbook of Clinical Audiology</em>, 7th ed. Philadelphia:
+                Lippincott Williams &amp; Wilkins.
+                &mdash; Standard audiology textbook; uses 70 dB IA for insert earphones and 40 dB for supra-aural.
+              </Typography>
+            </li>
+            <li>
+              <Typography variant="body2">
+                <strong>Martin FN, Clark JG</strong>. <em>Introduction to Audiology</em>, 13th ed. Boston: Pearson.
+                &mdash; Widely used in AuD programs; comprehensive masking chapter using 70 dB insert IA.
+              </Typography>
+            </li>
+            <li>
+              <Typography variant="body2">
+                <strong>American Speech-Language-Hearing Association (ASHA)</strong>. Guidelines for Manual
+                Pure-Tone Threshold Audiometry.
+                &mdash; Professional practice guidelines defining when and how to apply clinical masking.
+              </Typography>
+            </li>
+          </Box>
         </AccordionDetails>
       </Accordion>
     </Paper>
