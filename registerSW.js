@@ -1,0 +1,1 @@
+if('serviceWorker' in navigator) {window.addEventListener('load', () => {navigator.serviceWorker.register('/audiometry_trainer/sw.js', { scope: '/audiometry_trainer/' })})}
