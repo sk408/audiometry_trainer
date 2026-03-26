@@ -15,6 +15,7 @@ class AudioService {
   private boneFilter: BiquadFilterNode | null = null;
   private maskingNoiseSource: AudioBufferSourceNode | null = null;
   private maskingGainNode: GainNode | null = null;
+  private maskingFilter: BiquadFilterNode | null = null;
   private currentFrequency: number = 0;
   private debugMode: boolean = false; // Enable debug logs
   private pulseInterval: number | null = null; // For pulsing tone
@@ -311,6 +312,15 @@ class AudioService {
       this.maskingNoiseSource = null;
     }
 
+    if (this.maskingFilter) {
+      try {
+        this.maskingFilter.disconnect();
+      } catch (e) {
+        // Ignore errors
+      }
+      this.maskingFilter = null;
+    }
+
     if (this.maskingGainNode) {
       try {
         this.maskingGainNode.disconnect();
@@ -354,11 +364,24 @@ class AudioService {
   }
 
   /**
-   * Play a masking noise
+   * Play masking noise.
+   *
+   * When `centerFrequency` is provided, generates **narrow-band noise (NBN)**
+   * filtered to a ~1/3-octave band around that frequency.  This is the
+   * clinically correct masking noise for pure-tone audiometry (ASHA, BSA).
+   *
+   * When `centerFrequency` is omitted, generates broadband (white) noise,
+   * which is appropriate for speech audiometry.
+   *
    * @param intensity - Intensity in dB HL
    * @param ear - Which ear to present to
+   * @param centerFrequency - Optional centre frequency for narrow-band noise
    */
-  public async playMaskingNoise(intensity: number, ear: string = EAR.BOTH): Promise<void> {
+  public async playMaskingNoise(
+    intensity: number,
+    ear: string = EAR.BOTH,
+    centerFrequency?: number,
+  ): Promise<void> {
     if (!this.audioContext) {
       this.initializeAudioContext();
     }
@@ -406,15 +429,30 @@ class AudioService {
         break;
     }
 
-    // Connect: source -> gain -> panner -> destination
-    this.maskingNoiseSource.connect(this.maskingGainNode);
+    // For pure-tone audiometry: narrow-band noise (bandpass-filtered)
+    // Q ≈ 4.32 gives ~1/3-octave bandwidth, matching clinical NBN maskers
+    if (centerFrequency) {
+      this.maskingFilter = this.audioContext.createBiquadFilter();
+      this.maskingFilter.type = 'bandpass';
+      this.maskingFilter.frequency.value = centerFrequency;
+      this.maskingFilter.Q.value = 4.32;
+
+      // source -> bandpass -> gain -> panner -> destination
+      this.maskingNoiseSource.connect(this.maskingFilter);
+      this.maskingFilter.connect(this.maskingGainNode);
+    } else {
+      // Broadband (white) noise for speech audiometry
+      this.maskingNoiseSource.connect(this.maskingGainNode);
+    }
+
     this.maskingGainNode.connect(maskingPanNode);
     maskingPanNode.connect(this.audioContext.destination);
 
     this.maskingNoiseSource.start();
 
     if (this.debugMode) {
-      console.log(`Playing masking noise at ${intensity} dB HL to ${ear} ear`);
+      const noiseType = centerFrequency ? `narrow-band (${centerFrequency} Hz)` : 'broadband';
+      console.log(`Playing ${noiseType} masking noise at ${intensity} dB HL to ${ear} ear`);
     }
   }
 
@@ -434,6 +472,15 @@ class AudioService {
         // Ignore errors
       }
       this.maskingNoiseSource = null;
+    }
+
+    if (this.maskingFilter) {
+      try {
+        this.maskingFilter.disconnect();
+      } catch (e) {
+        // Ignore errors
+      }
+      this.maskingFilter = null;
     }
 
     if (this.maskingGainNode) {

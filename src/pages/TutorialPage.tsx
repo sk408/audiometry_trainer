@@ -858,7 +858,7 @@ const TutorialPage: React.FC = () => {
                 <ListItemIcon>
                   <CheckCircleOutline sx={{ color: theme.palette.error.contrastText }} />
                 </ListItemIcon>
-                <ListItemText primary="Difference between ears ≥ 40 dB (for air conduction)" />
+                <ListItemText primary="Test ear AC − non-test ear BC ≥ IA: 40 dB supra-aural / 55 dB insert (for air conduction)" />
               </ListItem>
               <ListItem>
                 <ListItemIcon>
@@ -912,9 +912,9 @@ const TutorialPage: React.FC = () => {
                 <ListItemIcon>
                   <NavigateNext color="primary" />
                 </ListItemIcon>
-                <ListItemText 
-                  primary="Increase masking by 5-10 dB and retest" 
-                  secondary="Continue until the threshold remains stable with increasing masking (plateau method)"
+                <ListItemText
+                  primary="Increase masking in 10 dB steps and re-measure threshold"
+                  secondary="Plateau is reached when threshold remains stable across 3 consecutive masking increases (Hood method)"
                 />
               </ListItem>
             </List>

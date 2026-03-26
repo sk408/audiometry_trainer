@@ -15,41 +15,61 @@ import { Frequency, Ear, HearingProfile, ThresholdPoint } from '../interfaces/Au
 import patientService from '../services/PatientService';
 
 // ---------------------------------------------------------------------------
-// Clinical constants
+// Clinical constants — values from ASHA (2005), BSA (2018), Martin & Clark
 // ---------------------------------------------------------------------------
 
-const INTERAURAL_ATTENUATION = {
-  supraaural: 40,
-  insert: 55,
-  boneConduction: 0,
+/** Minimum interaural attenuation by transducer (dB). Conservative clinical values. */
+const INTERAURAL_ATTENUATION: Record<string, number> = {
+  supraaural: 40,   // TDH-39/49 supra-aural headphones (range 40-65, use 40)
+  insert: 55,       // ER-3A insert earphones (range 55-70, use 55)
+  boneConduction: 0, // BC signal reaches both cochleae with ~0 dB loss
 };
 
-const SCENARIO_FREQUENCIES: Frequency[] = [500, 1000, 2000, 4000];
+/** Occlusion effect (dB) by masking-delivery transducer and frequency.
+ *  Added to starting EML for BC testing at low frequencies.
+ *  Deep-insertion insert earphones effectively eliminate the OE. */
+const OCCLUSION_EFFECT: Record<string, Record<number, number>> = {
+  supraaural: { 250: 15, 500: 15, 1000: 10, 2000: 0, 3000: 0, 4000: 0 },
+  insert:     { 250: 0,  500: 0,  1000: 0,  2000: 0, 3000: 0, 4000: 0 },
+};
+
+const TRANSDUCER_LABELS: Record<string, string> = {
+  supraaural: 'Supra-aural headphones',
+  insert: 'Insert earphones',
+};
+
+const SCENARIO_FREQUENCIES: Frequency[] = [250, 500, 1000, 2000, 4000];
 const SAFETY_FACTOR = 10;
+const SCENARIOS_PER_SESSION = 20;
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
+
+type TransducerType = 'supraaural' | 'insert';
 
 interface MaskingScenario {
   patientName: string;
   frequency: Frequency;
   testEar: Ear;
   testType: 'air' | 'bone';
+  transducer: TransducerType;
   rightAC: number | null;
   rightBC: number | null;
   leftAC: number | null;
   leftBC: number | null;
   correctMaskingRequired: boolean;
   correctMaskingEar: 'non-test' | null;
-  correctMinimumMasking: number | null;
+  correctStartingEML: number | null;
+  correctMaxMasking: number | null;
   explanation: string;
+  clinicalNote: string;
 }
 
 interface ScenarioAnswer {
   maskingRequired: boolean | null;
   maskingEar: string | null;
-  minimumMasking: string;
+  startingEML: string;
   submitted: boolean;
   correct: boolean;
 }
@@ -64,6 +84,7 @@ interface PracticeResults {
     frequency: number;
     testEar: string;
     testType: string;
+    transducer: string;
     correct: boolean;
   }>;
 }
@@ -91,6 +112,10 @@ function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 
+function getOE(transducer: TransducerType, freq: number): number {
+  return OCCLUSION_EFFECT[transducer]?.[freq] ?? 0;
+}
+
 function generateScenarios(patients: HearingProfile[]): MaskingScenario[] {
   const scenarios: MaskingScenario[] = [];
 
@@ -102,47 +127,103 @@ function generateScenarios(patients: HearingProfile[]): MaskingScenario[] {
         const teBC = getThreshold(patient.thresholds, testEar, 'bone', freq);
         const nteAC = getThreshold(patient.thresholds, nonTestEar, 'air', freq);
         const nteBC = getThreshold(patient.thresholds, nonTestEar, 'bone', freq);
+
         const row = {
-          patientName: patient.name, frequency: freq, testEar,
+          patientName: patient.name,
+          frequency: freq,
+          testEar,
           rightAC: getThreshold(patient.thresholds, 'right', 'air', freq),
           rightBC: getThreshold(patient.thresholds, 'right', 'bone', freq),
           leftAC: getThreshold(patient.thresholds, 'left', 'air', freq),
           leftBC: getThreshold(patient.thresholds, 'left', 'bone', freq),
         };
 
-        // AC scenario
+        // ----- AC scenarios for both transducer types -----
         if (teAC !== null && nteBC !== null) {
-          const ia = INTERAURAL_ATTENUATION.supraaural;
-          const diff = teAC - nteBC;
-          const required = diff >= ia;
-          scenarios.push({
-            ...row, testType: 'air',
-            correctMaskingRequired: required,
-            correctMaskingEar: required ? 'non-test' : null,
-            correctMinimumMasking: required ? nteBC + SAFETY_FACTOR : null,
-            explanation: required
-              ? `Masking IS required. Test ear AC (${teAC} dB) - non-test ear BC (${nteBC} dB) = ${diff} dB, which meets or exceeds IA of ${ia} dB for supra-aural headphones.`
-              : `Masking is NOT required. Test ear AC (${teAC} dB) - non-test ear BC (${nteBC} dB) = ${diff} dB, below the ${ia} dB IA threshold.`,
-          });
+          for (const transducer of ['supraaural', 'insert'] as TransducerType[]) {
+            const ia = INTERAURAL_ATTENUATION[transducer];
+            const diff = teAC - nteBC;
+            const required = diff >= ia;
+            const startEML = required ? nteBC + SAFETY_FACTOR : null;
+            const maxMask = required && teBC !== null ? teBC + ia : null;
+
+            let explanation: string;
+            let clinicalNote = '';
+
+            if (required) {
+              const parts = [`Masking IS required. Test ear AC (${teAC} dB) \u2212 non-test ear BC (${nteBC} dB) = ${diff} dB \u2265 IA of ${ia} dB for ${TRANSDUCER_LABELS[transducer]}.`];
+              if (startEML !== null) {
+                parts.push(`Starting EML = ${nteBC} + ${SAFETY_FACTOR} = ${startEML} dB.`);
+              }
+              if (maxMask !== null && teBC !== null && startEML !== null) {
+                parts.push(`Max masking = ${teBC} + ${ia} = ${maxMask} dB. Plateau range: ${startEML}\u2013${maxMask} dB (${maxMask - startEML} dB).`);
+              }
+              explanation = parts.join(' ');
+
+              if (transducer === 'supraaural' && diff < INTERAURAL_ATTENUATION.insert) {
+                clinicalNote = `Insert earphones (IA = 55 dB) would eliminate the need for masking here (${diff} dB < 55 dB).`;
+              }
+              if (startEML !== null && maxMask !== null && startEML > maxMask) {
+                clinicalNote = 'Masking dilemma: minimum EML exceeds maximum safe masking. Consider insert earphones or report unmasked thresholds with notation.';
+              }
+            } else {
+              explanation = `Masking is NOT required. Test ear AC (${teAC} dB) \u2212 non-test ear BC (${nteBC} dB) = ${diff} dB, below IA of ${ia} dB for ${TRANSDUCER_LABELS[transducer]}.`;
+            }
+
+            scenarios.push({
+              ...row, testType: 'air', transducer,
+              correctMaskingRequired: required, correctMaskingEar: required ? 'non-test' : null,
+              correctStartingEML: startEML, correctMaxMasking: maxMask,
+              explanation, clinicalNote,
+            });
+          }
         }
 
-        // BC scenario
+        // ----- BC scenarios for both masking-delivery transducers -----
         if (teBC !== null && teAC !== null) {
-          const teABG = teAC - teBC;
-          const nteABG = nteAC !== null && nteBC !== null ? nteAC - nteBC : 0;
-          const required = teABG >= 10 || nteABG >= 10;
-          const gaps: string[] = [];
-          if (teABG >= 10) gaps.push(`test ear ABG = ${teABG} dB`);
-          if (nteABG >= 10) gaps.push(`non-test ear ABG = ${nteABG} dB`);
-          scenarios.push({
-            ...row, testType: 'bone',
-            correctMaskingRequired: required,
-            correctMaskingEar: required ? 'non-test' : null,
-            correctMinimumMasking: required && nteBC !== null ? nteBC + SAFETY_FACTOR : null,
-            explanation: required
-              ? `Masking IS required for BC. IA for bone conduction is 0 dB. Air-bone gap >= 10 dB detected (${gaps.join('; ')}). Cannot determine which cochlea is responding without masking.`
-              : `Masking is NOT required for BC. Air-bone gaps are < 10 dB in both ears (test ear: ${teABG} dB${nteAC !== null && nteBC !== null ? `, non-test ear: ${nteABG} dB` : ''}). Unmasked BC likely represents the test ear.`,
-          });
+          for (const transducer of ['supraaural', 'insert'] as TransducerType[]) {
+            const teABG = teAC - teBC;
+            const nteABG = nteAC !== null && nteBC !== null ? nteAC - nteBC : 0;
+            const required = teABG >= 10 || nteABG >= 10;
+            const oe = getOE(transducer, freq);
+            const startEML = required && nteBC !== null ? nteBC + oe + SAFETY_FACTOR : null;
+            const maxMask = required ? teBC + INTERAURAL_ATTENUATION[transducer] : null;
+
+            const gaps: string[] = [];
+            if (teABG >= 10) gaps.push(`test ear ABG = ${teABG} dB`);
+            if (nteABG >= 10) gaps.push(`non-test ear ABG = ${nteABG} dB`);
+
+            let explanation: string;
+            let clinicalNote = '';
+
+            if (required) {
+              const parts = [`Masking IS required for BC. IA for bone conduction = 0 dB. Air-bone gap \u2265 10 dB detected (${gaps.join('; ')}).`];
+              if (startEML !== null && nteBC !== null) {
+                if (oe > 0) {
+                  parts.push(`Starting EML = ${nteBC} + ${oe} (OE) + ${SAFETY_FACTOR} = ${startEML} dB.`);
+                  clinicalNote = `Occlusion effect of ${oe} dB at ${freq} Hz with ${TRANSDUCER_LABELS[transducer]} added to starting EML.`;
+                } else {
+                  parts.push(`Starting EML = ${nteBC} + ${SAFETY_FACTOR} = ${startEML} dB.`);
+                  if (transducer === 'insert') {
+                    clinicalNote = 'Deep-insertion insert earphones eliminate the occlusion effect.';
+                  }
+                }
+              }
+              if (maxMask !== null) {
+                parts.push(`Max masking = ${teBC} + ${INTERAURAL_ATTENUATION[transducer]} = ${maxMask} dB.`);
+              }
+              explanation = parts.join(' ');
+            } else {
+              explanation = `Masking is NOT required for BC. Air-bone gaps < 10 dB in both ears (test ear: ${teABG} dB${nteAC !== null && nteBC !== null ? `, non-test ear: ${nteABG} dB` : ''}). Both ears have similar cochlear sensitivity with no significant conductive component.`;
+            }
+
+            scenarios.push({
+              ...row, testType: 'bone', transducer,
+              correctMaskingRequired: required, correctMaskingEar: required ? 'non-test' : null,
+              correctStartingEML: startEML, correctMaxMasking: maxMask,
+              explanation, clinicalNote,
+            });
+          }
         }
       }
     }
@@ -151,26 +232,45 @@ function generateScenarios(patients: HearingProfile[]): MaskingScenario[] {
 }
 
 function selectBalancedScenarios(all: MaskingScenario[], count: number): MaskingScenario[] {
-  const needed = all.filter((s) => s.correctMaskingRequired);
-  const notNeeded = all.filter((s) => !s.correctMaskingRequired);
-  const nMask = Math.min(Math.ceil(count * 0.6), needed.length);
-  const nNoMask = Math.min(count - nMask, notNeeded.length);
-  return shuffle([...shuffle(needed).slice(0, nMask), ...shuffle(notNeeded).slice(0, nNoMask)]);
+  const byCategory: Record<string, MaskingScenario[]> = {};
+  for (const s of all) {
+    const key = `${s.testType}_${s.transducer}_${s.correctMaskingRequired ? 'y' : 'n'}`;
+    (byCategory[key] ??= []).push(s);
+  }
+
+  // Target distribution ensures students see every combination
+  const targets: [string, number][] = [
+    ['air_supraaural_y', 3], ['air_supraaural_n', 2],
+    ['air_insert_y', 2],     ['air_insert_n', 2],
+    ['bone_supraaural_y', 3], ['bone_supraaural_n', 2],
+    ['bone_insert_y', 2],     ['bone_insert_n', 2],
+  ];
+
+  const result: MaskingScenario[] = [];
+  for (const [cat, n] of targets) {
+    result.push(...shuffle(byCategory[cat] || []).slice(0, n));
+  }
+
+  if (result.length < count) {
+    const used = new Set(result);
+    result.push(...shuffle(all.filter((s) => !used.has(s))).slice(0, count - result.length));
+  }
+
+  return shuffle(result).slice(0, count);
 }
 
 function emptyAnswer(): ScenarioAnswer {
-  return { maskingRequired: null, maskingEar: null, minimumMasking: '', submitted: false, correct: false };
+  return { maskingRequired: null, maskingEar: null, startingEML: '', submitted: false, correct: false };
 }
 
 // ---------------------------------------------------------------------------
-// Sub-components
+// Educational content
 // ---------------------------------------------------------------------------
 
 const EducationalIntro: React.FC = () => {
   const theme = useTheme();
   const [expanded, setExpanded] = useState<string | false>(false);
   const toggle = (p: string) => (_: React.SyntheticEvent, open: boolean) => setExpanded(open ? p : false);
-
   const sectionSx = { bgcolor: alpha(theme.palette.primary.main, 0.04) };
 
   return (
@@ -180,104 +280,351 @@ const EducationalIntro: React.FC = () => {
         <Typography variant="h5" component="h2">Clinical Masking in Audiometry</Typography>
       </Box>
       <Typography variant="body1" paragraph>
-        Masking ensures thresholds truly represent the test ear rather than the non-test ear responding
-        via cross-hearing. It is one of the most critical clinical skills in audiometry.
+        Masking ensures thresholds represent the test ear, not the non-test ear responding via
+        cross-hearing. It is one of the most critical &mdash; and most commonly tested &mdash; clinical
+        skills in audiology.
       </Typography>
 
+      {/* ---- Section 1: Why Masking Is Needed ---- */}
       <Accordion expanded={expanded === 'why'} onChange={toggle('why')} sx={sectionSx}>
         <AccordionSummary expandIcon={<ExpandMore />}>
-          <Typography variant="subtitle1" fontWeight={600}>Why Is Masking Needed?</Typography>
+          <Typography variant="subtitle1" fontWeight={600}>Why Masking Is Needed</Typography>
         </AccordionSummary>
         <AccordionDetails>
           <Typography variant="body2" paragraph>
-            Sound can travel across the skull and stimulate the opposite cochlea (cross-hearing).
-            The minimum intensity for this is the interaural attenuation (IA):
+            Sound can travel across the skull and stimulate the opposite (non-test) cochlea &mdash; this is
+            called <strong>cross-hearing</strong>. The minimum intensity at which this occurs is the
+            <strong> interaural attenuation (IA)</strong>. Without masking, you may unknowingly record the
+            better ear&apos;s threshold instead of the test ear&apos;s, producing a <strong>shadow curve</strong>.
           </Typography>
           <TableContainer component={Paper} variant="outlined" sx={{ mb: 1 }}>
             <Table size="small">
               <TableHead>
                 <TableRow>
                   <TableCell><strong>Transducer</strong></TableCell>
-                  <TableCell align="center"><strong>IA (dB)</strong></TableCell>
+                  <TableCell align="center"><strong>Min IA (dB)</strong></TableCell>
+                  <TableCell><strong>Clinical Significance</strong></TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                <TableRow><TableCell>Supra-aural headphones</TableCell><TableCell align="center">{INTERAURAL_ATTENUATION.supraaural}</TableCell></TableRow>
-                <TableRow><TableCell>Insert earphones</TableCell><TableCell align="center">{INTERAURAL_ATTENUATION.insert}</TableCell></TableRow>
-                <TableRow><TableCell>Bone oscillator</TableCell><TableCell align="center">{INTERAURAL_ATTENUATION.boneConduction}</TableCell></TableRow>
+                <TableRow>
+                  <TableCell>Supra-aural headphones (TDH-39/49)</TableCell>
+                  <TableCell align="center">40</TableCell>
+                  <TableCell>Masking needed more often; narrower plateau</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell>Insert earphones (ER-3A)</TableCell>
+                  <TableCell align="center">55</TableCell>
+                  <TableCell>Masking needed less often; wider plateau; less OE</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell>Bone oscillator</TableCell>
+                  <TableCell align="center">0</TableCell>
+                  <TableCell>Sound reaches both cochleae equally</TableCell>
+                </TableRow>
               </TableBody>
             </Table>
           </TableContainer>
+          <Alert severity="info" variant="outlined" sx={{ mt: 1 }}>
+            Insert earphones provide 15 dB more IA than supra-aural headphones. This significantly reduces
+            masking needs, widens the masking plateau, and reduces the risk of a masking dilemma.
+            <strong> Many audiometry trainers incorrectly use 40 dB for both</strong> &mdash; always check
+            which transducer is specified.
+          </Alert>
         </AccordionDetails>
       </Accordion>
 
+      {/* ---- Section 2: When to Mask — AC ---- */}
       <Accordion expanded={expanded === 'ac'} onChange={toggle('ac')} sx={sectionSx}>
         <AccordionSummary expandIcon={<ExpandMore />}>
           <Typography variant="subtitle1" fontWeight={600}>When to Mask: Air Conduction</Typography>
         </AccordionSummary>
         <AccordionDetails>
-          <Alert severity="info" sx={{ mb: 1 }}>
-            <AlertTitle>AC Masking Rule</AlertTitle>
-            Test ear AC - Non-test ear BC &ge; IA ({INTERAURAL_ATTENUATION.supraaural} dB supra-aural / {INTERAURAL_ATTENUATION.insert} dB insert)
+          <Alert severity="info" sx={{ mb: 2 }}>
+            <AlertTitle>AC Masking Rule (ASHA)</AlertTitle>
+            <strong>Mask when: Test ear AC &minus; Non-test ear BC &ge; IA</strong><br />
+            Supra-aural: &ge; 40 dB &nbsp;|&nbsp; Insert: &ge; 55 dB
           </Alert>
-          <Typography variant="body2">
-            Example: Right AC = 60 dB, Left BC = 15 dB. Difference = 45 dB &ge; 40 dB, so masking is required.
+          <Typography variant="body2" paragraph>
+            <strong>Critical distinction:</strong> Compare AC of the <em>test ear</em> to BC of the
+            <em> non-test ear</em>. A common student error is comparing the two AC thresholds &mdash;
+            this is incorrect because cross-hearing occurs via bone conduction, not air conduction.
           </Typography>
+          <Paper variant="outlined" sx={{ p: 2, mb: 1, bgcolor: alpha(theme.palette.success.main, 0.05) }}>
+            <Typography variant="subtitle2" gutterBottom>Worked Example</Typography>
+            <Typography variant="body2">
+              Patient: Right ear AC = 60 dB, Left ear BC = 15 dB<br />
+              Difference = 60 &minus; 15 = 45 dB<br />
+              &bull; Supra-aural (IA = 40): 45 &ge; 40 &rarr; <strong>Masking REQUIRED</strong><br />
+              &bull; Insert (IA = 55): 45 &lt; 55 &rarr; <strong>Masking NOT required</strong><br />
+              <em>Using insert earphones eliminates the need for masking in this case.</em>
+            </Typography>
+          </Paper>
         </AccordionDetails>
       </Accordion>
 
+      {/* ---- Section 3: When to Mask — BC ---- */}
       <Accordion expanded={expanded === 'bc'} onChange={toggle('bc')} sx={sectionSx}>
         <AccordionSummary expandIcon={<ExpandMore />}>
           <Typography variant="subtitle1" fontWeight={600}>When to Mask: Bone Conduction</Typography>
         </AccordionSummary>
         <AccordionDetails>
-          <Alert severity="warning" sx={{ mb: 1 }}>
+          <Alert severity="warning" sx={{ mb: 2 }}>
             <AlertTitle>BC Masking Rule</AlertTitle>
-            Mask whenever air-bone gap &ge; 10 dB in <strong>either</strong> ear (BC IA = 0 dB).
+            <strong>Mask whenever an air-bone gap (ABG) &ge; 10 dB exists in EITHER ear.</strong><br />
+            BC IA = 0 dB &mdash; you can never assume which cochlea is responding.
           </Alert>
+          <Typography variant="body2" paragraph>
+            Since bone-conducted sound reaches both cochleae with essentially zero attenuation,
+            the unmasked BC threshold always represents the <em>better</em> cochlea. Any air-bone gap
+            &ge; 10 dB indicates possible conductive involvement and requires masking to determine
+            the true BC threshold of each ear individually.
+          </Typography>
           <Typography variant="body2">
-            With 0 dB IA, you can never be sure which cochlea responds. Any air-bone gap suggests
-            conductive involvement requiring masking to determine the true BC threshold.
+            <strong>Rule of thumb:</strong> Almost always mask for bone conduction. The only exception
+            is symmetric sensorineural hearing loss with no air-bone gap in either ear &mdash; an uncommon
+            clinical scenario.
           </Typography>
         </AccordionDetails>
       </Accordion>
 
-      <Accordion expanded={expanded === 'formula'} onChange={toggle('formula')} sx={sectionSx}>
+      {/* ---- Section 4: Effective Masking Level ---- */}
+      <Accordion expanded={expanded === 'eml'} onChange={toggle('eml')} sx={sectionSx}>
         <AccordionSummary expandIcon={<ExpandMore />}>
-          <Typography variant="subtitle1" fontWeight={600}>Minimum Effective Masking Level</Typography>
+          <Typography variant="subtitle1" fontWeight={600}>Effective Masking Level (EML)</Typography>
         </AccordionSummary>
         <AccordionDetails>
-          <Alert severity="info" sx={{ mb: 1 }}>
-            <AlertTitle>Formula</AlertTitle>
-            Minimum Effective Masking = Non-test ear BC threshold + {SAFETY_FACTOR} dB (safety factor)
+          <Alert severity="info" sx={{ mb: 2 }}>
+            <AlertTitle>Starting EML Formulas</AlertTitle>
+            <strong>AC testing:</strong> Starting EML = Non-test ear BC + 10 dB (safety factor)<br />
+            <strong>BC testing:</strong> Starting EML = Non-test ear BC + Occlusion Effect + 10 dB
           </Alert>
-          <Typography variant="body2">
-            Masking noise is always delivered to the non-test ear. The safety factor ensures
-            the noise is sufficient to prevent the non-test cochlea from participating.
+          <Typography variant="body2" paragraph>
+            The masking noise must be loud enough at the non-test ear cochlea to prevent it from
+            detecting the crossed-over test signal. The 10 dB safety factor ensures adequate masking
+            above the cochlear threshold.
           </Typography>
+          <Alert severity="error" variant="outlined" sx={{ mb: 2 }}>
+            <AlertTitle>Maximum Masking (Overmasking Limit)</AlertTitle>
+            <strong>Maximum safe masking = Test ear BC + IA of masking transducer</strong><br />
+            Supra-aural: BC(TE) + 40 &nbsp;|&nbsp; Insert: BC(TE) + 55<br />
+            Exceeding this risks masking noise crossing to the test ear cochlea.
+          </Alert>
+          <Paper variant="outlined" sx={{ p: 2, bgcolor: alpha(theme.palette.success.main, 0.05) }}>
+            <Typography variant="subtitle2" gutterBottom>Worked Example (AC Testing)</Typography>
+            <Typography variant="body2">
+              Test ear: Right AC = 65 dB, Right BC = 20 dB | Non-test ear: Left BC = 10 dB<br />
+              &bull; Starting EML = 10 + 10 = <strong>20 dB</strong><br />
+              &bull; Max masking (supra-aural) = 20 + 40 = <strong>60 dB</strong><br />
+              &bull; Max masking (insert) = 20 + 55 = <strong>75 dB</strong><br />
+              &bull; Plateau range (supra-aural): 20&ndash;60 dB (40 dB range)<br />
+              &bull; Plateau range (insert): 20&ndash;75 dB (55 dB range &mdash; wider, safer)
+            </Typography>
+          </Paper>
+        </AccordionDetails>
+      </Accordion>
+
+      {/* ---- Section 5: Hood Plateau Method ---- */}
+      <Accordion expanded={expanded === 'plateau'} onChange={toggle('plateau')} sx={sectionSx}>
+        <AccordionSummary expandIcon={<ExpandMore />}>
+          <Typography variant="subtitle1" fontWeight={600}>Hood Plateau Method</Typography>
+        </AccordionSummary>
+        <AccordionDetails>
+          <Typography variant="body2" paragraph>
+            The Hood (1960) plateau method is the gold standard for clinical masking. It incrementally
+            increases masking noise until the test ear threshold stabilises across a range of masking levels.
+          </Typography>
+          <Box component="ol" sx={{ pl: 2, mb: 2 }}>
+            <li><Typography variant="body2" paragraph>
+              <strong>Obtain unmasked thresholds</strong> in both ears. Test the better ear first.
+            </Typography></li>
+            <li><Typography variant="body2" paragraph>
+              <strong>Set initial masking level</strong> at starting EML (non-test ear BC + 10 dB for AC;
+              add occlusion effect for BC at low frequencies).
+            </Typography></li>
+            <li><Typography variant="body2" paragraph>
+              <strong>Re-establish the test ear threshold</strong> with masking noise present in the non-test ear.
+            </Typography></li>
+            <li><Typography variant="body2" paragraph>
+              <strong>Increase masking in 10 dB steps.</strong> After each increase, re-measure the test ear threshold.
+            </Typography></li>
+            <li><Typography variant="body2" paragraph>
+              <strong>Identify the plateau:</strong> Threshold remains stable across <strong>3 consecutive
+              10 dB masking increases</strong>. This stable threshold is the true masked threshold.
+            </Typography></li>
+          </Box>
+          <TableContainer component={Paper} variant="outlined" sx={{ mb: 1 }}>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell><strong>Phase</strong></TableCell>
+                  <TableCell><strong>What Happens</strong></TableCell>
+                  <TableCell><strong>Meaning</strong></TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                <TableRow>
+                  <TableCell>Undermasking</TableCell>
+                  <TableCell>Threshold shifts with each masking increase</TableCell>
+                  <TableCell>Non-test ear still contributing</TableCell>
+                </TableRow>
+                <TableRow sx={{ bgcolor: alpha(theme.palette.success.main, 0.08) }}>
+                  <TableCell><strong>Plateau</strong></TableCell>
+                  <TableCell>Threshold stable across &ge; 3 increases (&ge; 20 dB range)</TableCell>
+                  <TableCell><strong>True threshold found</strong></TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell>Overmasking</TableCell>
+                  <TableCell>1:1 threshold shift with masking increase</TableCell>
+                  <TableCell>Masking noise reaching test ear cochlea</TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </TableContainer>
+          <Alert severity="info" variant="outlined">
+            A valid plateau should span at least <strong>20&ndash;30 dB</strong>. A very narrow plateau
+            (&lt; 15 dB) or no plateau at all may indicate a masking dilemma.
+          </Alert>
+        </AccordionDetails>
+      </Accordion>
+
+      {/* ---- Section 6: Over-Masking, Under-Masking, Masking Dilemma ---- */}
+      <Accordion expanded={expanded === 'errors'} onChange={toggle('errors')} sx={sectionSx}>
+        <AccordionSummary expandIcon={<ExpandMore />}>
+          <Typography variant="subtitle1" fontWeight={600}>Over-Masking, Under-Masking &amp; the Masking Dilemma</Typography>
+        </AccordionSummary>
+        <AccordionDetails>
+          <Stack spacing={2}>
+            <Paper variant="outlined" sx={{ p: 2, borderLeft: `4px solid ${theme.palette.warning.main}` }}>
+              <Typography variant="subtitle2" color="warning.main">Under-Masking</Typography>
+              <Typography variant="body2">
+                Masking noise is insufficient &mdash; the non-test ear still responds to the test signal.
+                The recorded &quot;threshold&quot; is a shadow curve, not the test ear&apos;s true threshold.
+                Occurs when masking level &lt; non-test ear BC + 10 dB.
+              </Typography>
+            </Paper>
+            <Paper variant="outlined" sx={{ p: 2, borderLeft: `4px solid ${theme.palette.error.main}` }}>
+              <Typography variant="subtitle2" color="error.main">Over-Masking</Typography>
+              <Typography variant="body2">
+                Masking noise is so loud it crosses the skull and reaches the test ear cochlea, artificially
+                elevating the test ear threshold. Occurs when masking level &minus; IA &ge; test ear BC.
+                Hallmark: 1:1 relationship between masking increase and threshold shift.
+              </Typography>
+            </Paper>
+            <Paper variant="outlined" sx={{ p: 2, borderLeft: `4px solid ${theme.palette.grey[500]}` }}>
+              <Typography variant="subtitle2">Masking Dilemma</Typography>
+              <Typography variant="body2">
+                When minimum effective masking exceeds maximum safe masking, true thresholds cannot be
+                determined. Typically occurs in bilateral conductive hearing loss. Insert earphones help
+                by providing higher IA, widening the plateau. If the dilemma persists, report unmasked
+                thresholds with appropriate notation.
+              </Typography>
+            </Paper>
+            <Alert severity="info" variant="outlined">
+              <strong>Central masking effect:</strong> Presenting masking noise near threshold can cause a
+              5 dB threshold elevation even without acoustic crossover &mdash; this is a normal neural
+              phenomenon, not overmasking.
+            </Alert>
+          </Stack>
+        </AccordionDetails>
+      </Accordion>
+
+      {/* ---- Section 7: Occlusion Effect ---- */}
+      <Accordion expanded={expanded === 'oe'} onChange={toggle('oe')} sx={sectionSx}>
+        <AccordionSummary expandIcon={<ExpandMore />}>
+          <Typography variant="subtitle1" fontWeight={600}>Occlusion Effect</Typography>
+        </AccordionSummary>
+        <AccordionDetails>
+          <Typography variant="body2" paragraph>
+            When earphones are placed over the ear for masking delivery during BC testing, occluding the
+            ear canal enhances low-frequency bone-conducted sound at that cochlea. This means the non-test
+            ear receives a louder BC signal, requiring additional masking noise to compensate.
+          </Typography>
+          <TableContainer component={Paper} variant="outlined" sx={{ mb: 1 }}>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell><strong>Frequency</strong></TableCell>
+                  <TableCell align="center"><strong>Supra-aural OE (dB)</strong></TableCell>
+                  <TableCell align="center"><strong>Insert OE (dB)</strong></TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                <TableRow><TableCell>250 Hz</TableCell><TableCell align="center">15</TableCell><TableCell align="center">0</TableCell></TableRow>
+                <TableRow><TableCell>500 Hz</TableCell><TableCell align="center">15</TableCell><TableCell align="center">0</TableCell></TableRow>
+                <TableRow><TableCell>1000 Hz</TableCell><TableCell align="center">10</TableCell><TableCell align="center">0</TableCell></TableRow>
+                <TableRow><TableCell>&ge; 2000 Hz</TableCell><TableCell align="center">0</TableCell><TableCell align="center">0</TableCell></TableRow>
+              </TableBody>
+            </Table>
+          </TableContainer>
+          <Alert severity="success" variant="outlined">
+            Deep insertion of insert earphones effectively eliminates the occlusion effect &mdash; another
+            advantage of insert earphones for masking during BC testing.
+          </Alert>
+        </AccordionDetails>
+      </Accordion>
+
+      {/* ---- Section 8: Clinical Pearls ---- */}
+      <Accordion expanded={expanded === 'pearls'} onChange={toggle('pearls')} sx={sectionSx}>
+        <AccordionSummary expandIcon={<ExpandMore />}>
+          <Typography variant="subtitle1" fontWeight={600}>Clinical Pearls &amp; Common Student Mistakes</Typography>
+        </AccordionSummary>
+        <AccordionDetails>
+          <Stack spacing={1}>
+            <Alert severity="error" variant="outlined">
+              <strong>Mistake:</strong> Comparing two AC thresholds to decide if masking is needed.<br />
+              <strong>Correct:</strong> Compare test ear AC to non-test ear <em>BC</em>.
+            </Alert>
+            <Alert severity="error" variant="outlined">
+              <strong>Mistake:</strong> Using white noise for masking during pure tone audiometry.<br />
+              <strong>Correct:</strong> Use narrow-band noise (NBN) centred at the test frequency.
+              White noise spreads energy across all frequencies, requiring more total intensity and
+              increasing the risk of overmasking.
+            </Alert>
+            <Alert severity="error" variant="outlined">
+              <strong>Mistake:</strong> Assuming the same IA for supra-aural and insert earphones.<br />
+              <strong>Correct:</strong> Insert earphones have IA of 55 dB (vs 40 dB for supra-aural).
+              This 15 dB difference is clinically significant and changes masking decisions.
+            </Alert>
+            <Alert severity="error" variant="outlined">
+              <strong>Mistake:</strong> Forgetting to add occlusion effect for BC masking at low frequencies.<br />
+              <strong>Correct:</strong> Add OE to starting EML at 250, 500, and 1000 Hz with supra-aural.
+              Insert earphones (deep) eliminate this requirement.
+            </Alert>
+            <Alert severity="info" variant="outlined">
+              <strong>Tip:</strong> Always mask for bone conduction unless both ears have symmetric
+              thresholds with no air-bone gap &mdash; this situation is uncommon in clinical practice.
+            </Alert>
+            <Alert severity="info" variant="outlined">
+              <strong>Tip:</strong> Masking is always delivered to the <strong>non-test ear</strong>. Never
+              mask the test ear.
+            </Alert>
+            <Alert severity="info" variant="outlined">
+              <strong>Tip:</strong> When in doubt, mask. Under-masking (not masking when needed) is a more
+              serious clinical error than masking unnecessarily.
+            </Alert>
+          </Stack>
         </AccordionDetails>
       </Accordion>
     </Paper>
   );
 };
 
+// ---------------------------------------------------------------------------
+// Audiogram table component
+// ---------------------------------------------------------------------------
+
 const AudiogramTable: React.FC<{ scenario: MaskingScenario }> = ({ scenario }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const fmt = (v: number | null) => (v !== null ? `${v}` : '--');
 
-  const vals: Record<string, (number | null)[]> = {
-    'Right AC': [scenario.rightAC, null, null, null],
-    'Right BC': [scenario.rightBC, null, null, null],
-    'Left AC':  [scenario.leftAC, null, null, null],
-    'Left BC':  [scenario.leftBC, null, null, null],
-  };
-  // We only have data at the scenario frequency; place each value in its column
-  const freqIdx = SCENARIO_FREQUENCIES.indexOf(scenario.frequency);
-  vals['Right AC'][freqIdx] = scenario.rightAC;
-  vals['Right BC'][freqIdx] = scenario.rightBC;
-  vals['Left AC'][freqIdx] = scenario.leftAC;
-  vals['Left BC'][freqIdx] = scenario.leftBC;
+  const rows = [
+    { label: 'Right AC', values: scenario.rightAC, ear: 'right' as Ear, isAC: true },
+    { label: 'Right BC', values: scenario.rightBC, ear: 'right' as Ear, isAC: false },
+    { label: 'Left AC',  values: scenario.leftAC,  ear: 'left' as Ear, isAC: true },
+    { label: 'Left BC',  values: scenario.leftBC,  ear: 'left' as Ear, isAC: false },
+  ];
 
   return (
     <TableContainer component={Paper} variant="outlined" sx={{ mb: 2 }}>
@@ -296,13 +643,9 @@ const AudiogramTable: React.FC<{ scenario: MaskingScenario }> = ({ scenario }) =
           </TableRow>
         </TableHead>
         <TableBody>
-          {Object.entries(vals).map(([label, data]) => {
-            const isRight = label.startsWith('Right');
-            const isAC = label.endsWith('AC');
-            const ear: Ear = isRight ? 'right' : 'left';
+          {rows.map(({ label, values, ear, isAC }) => {
             const isTestEarRow = ear === scenario.testEar;
             const isTargetRow = isTestEarRow && ((scenario.testType === 'air') === isAC);
-
             return (
               <TableRow key={label} sx={{
                 bgcolor: isTestEarRow ? alpha(theme.palette.primary.main, 0.05) : undefined,
@@ -311,19 +654,19 @@ const AudiogramTable: React.FC<{ scenario: MaskingScenario }> = ({ scenario }) =
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                     <Box sx={{
                       width: 10, height: 10, borderRadius: '50%',
-                      bgcolor: isAC ? (isRight ? theme.palette.error.main : theme.palette.info.main) : 'transparent',
-                      border: !isAC ? `2px solid ${isRight ? theme.palette.error.main : theme.palette.info.main}` : undefined,
+                      bgcolor: isAC ? (ear === 'right' ? theme.palette.error.main : theme.palette.info.main) : 'transparent',
+                      border: !isAC ? `2px solid ${ear === 'right' ? theme.palette.error.main : theme.palette.info.main}` : undefined,
                     }} />
                     <Typography variant="body2" fontWeight={isTargetRow ? 700 : 400}>{label}</Typography>
                   </Box>
                 </TableCell>
-                {data.map((v, i) => (
-                  <TableCell key={i} align="center" sx={{
-                    fontWeight: SCENARIO_FREQUENCIES[i] === scenario.frequency && isTargetRow ? 700 : 400,
-                    bgcolor: SCENARIO_FREQUENCIES[i] === scenario.frequency && isTargetRow
+                {SCENARIO_FREQUENCIES.map((f) => (
+                  <TableCell key={f} align="center" sx={{
+                    fontWeight: f === scenario.frequency && isTargetRow ? 700 : 400,
+                    bgcolor: f === scenario.frequency && isTargetRow
                       ? alpha(theme.palette.warning.main, 0.15) : undefined,
                   }}>
-                    {SCENARIO_FREQUENCIES[i] === scenario.frequency ? fmt(v) : '--'}
+                    {f === scenario.frequency ? fmt(values) : '--'}
                   </TableCell>
                 ))}
               </TableRow>
@@ -354,7 +697,7 @@ const MaskingPracticePage: React.FC = () => {
   const loadScenarios = useCallback(() => {
     setLoading(true);
     const patients = patientService.getAllPatients();
-    const selected = selectBalancedScenarios(generateScenarios(patients), 15);
+    const selected = selectBalancedScenarios(generateScenarios(patients), SCENARIOS_PER_SESSION);
     setScenarios(selected);
     setAnswers(selected.map(() => emptyAnswer()));
     setCurrentIndex(0);
@@ -381,7 +724,7 @@ const MaskingPracticePage: React.FC = () => {
 
   const canSubmit = useMemo(() => {
     if (!answer || answer.submitted || answer.maskingRequired === null) return false;
-    if (answer.maskingRequired && (!answer.maskingEar || !answer.minimumMasking.trim())) return false;
+    if (answer.maskingRequired && (!answer.maskingEar || !answer.startingEML.trim())) return false;
     return true;
   }, [answer]);
 
@@ -390,9 +733,9 @@ const MaskingPracticePage: React.FC = () => {
     let correct = answer.maskingRequired === scenario.correctMaskingRequired;
     if (scenario.correctMaskingRequired && answer.maskingRequired) {
       if (answer.maskingEar !== 'non-test') correct = false;
-      if (scenario.correctMinimumMasking !== null) {
-        const v = parseFloat(answer.minimumMasking);
-        if (isNaN(v) || Math.abs(v - scenario.correctMinimumMasking) > 5) correct = false;
+      if (scenario.correctStartingEML !== null) {
+        const v = parseFloat(answer.startingEML);
+        if (isNaN(v) || Math.abs(v - scenario.correctStartingEML) > 5) correct = false;
       }
     }
     updateAnswer({ submitted: true, correct });
@@ -404,6 +747,7 @@ const MaskingPracticePage: React.FC = () => {
       frequency: scenarios[i]?.frequency ?? 0,
       testEar: scenarios[i]?.testEar ?? '',
       testType: scenarios[i]?.testType ?? '',
+      transducer: scenarios[i]?.transducer ?? '',
       correct: a.correct,
     }));
     const correctCount = details.filter((d) => d.correct).length;
@@ -449,6 +793,15 @@ const MaskingPracticePage: React.FC = () => {
     const grade = accuracy >= 90 ? 'Excellent' : accuracy >= 70 ? 'Good' : accuracy >= 50 ? 'Needs Improvement' : 'Review Material';
     const gradeColor = accuracy >= 90 ? 'success' : accuracy >= 70 ? 'primary' : accuracy >= 50 ? 'warning' : 'error';
 
+    // Category breakdown
+    const byCategory: Record<string, { total: number; correct: number }> = {};
+    scenarios.forEach((s, i) => {
+      const key = `${s.testType === 'air' ? 'AC' : 'BC'} / ${TRANSDUCER_LABELS[s.transducer]}`;
+      if (!byCategory[key]) byCategory[key] = { total: 0, correct: 0 };
+      byCategory[key].total++;
+      if (answers[i]?.correct) byCategory[key].correct++;
+    });
+
     return (
       <Container maxWidth="md" sx={{ py: 4 }}>
         <Paper elevation={3} sx={{ p: isMobile ? 2 : 4 }}>
@@ -459,7 +812,32 @@ const MaskingPracticePage: React.FC = () => {
             <Typography variant="h6" color="text.secondary">{correctCount} / {scenarios.length} correct</Typography>
             <Chip label={grade} color={gradeColor} sx={{ mt: 1, fontWeight: 600 }} />
           </Box>
+
+          {/* Category breakdown */}
           <Divider sx={{ my: 2 }} />
+          <Typography variant="h6" gutterBottom>Performance by Category</Typography>
+          <TableContainer component={Paper} variant="outlined" sx={{ mb: 3 }}>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>Category</TableCell>
+                  <TableCell align="center">Score</TableCell>
+                  <TableCell align="center">Accuracy</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {Object.entries(byCategory).map(([key, v]) => (
+                  <TableRow key={key}>
+                    <TableCell>{key}</TableCell>
+                    <TableCell align="center">{v.correct}/{v.total}</TableCell>
+                    <TableCell align="center">{v.total > 0 ? Math.round((v.correct / v.total) * 100) : 0}%</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+
+          {/* Scenario list */}
           <Typography variant="h6" gutterBottom>Scenario Breakdown</Typography>
           <TableContainer component={Paper} variant="outlined" sx={{ mb: 3 }}>
             <Table size="small">
@@ -468,6 +846,7 @@ const MaskingPracticePage: React.FC = () => {
                   <TableCell>#</TableCell>
                   <TableCell>Patient</TableCell>
                   <TableCell>Test</TableCell>
+                  <TableCell>Transducer</TableCell>
                   <TableCell align="center">Result</TableCell>
                 </TableRow>
               </TableHead>
@@ -477,6 +856,7 @@ const MaskingPracticePage: React.FC = () => {
                     <TableCell>{i + 1}</TableCell>
                     <TableCell>{s.patientName}</TableCell>
                     <TableCell>{s.testEar === 'right' ? 'R' : 'L'} {s.testType.toUpperCase()} @ {s.frequency} Hz</TableCell>
+                    <TableCell>{s.transducer === 'supraaural' ? 'Supra-aural' : 'Insert'}</TableCell>
                     <TableCell align="center">
                       {answers[i]?.correct ? <CheckCircle color="success" fontSize="small" /> : <Cancel color="error" fontSize="small" />}
                     </TableCell>
@@ -507,6 +887,7 @@ const MaskingPracticePage: React.FC = () => {
         </Box>
         <Typography variant="body1" color="text.secondary">
           Learn when and how to apply clinical masking during audiometric testing.
+          Scenarios include both supra-aural and insert earphone transducers.
         </Typography>
       </Box>
 
@@ -550,10 +931,21 @@ const MaskingPracticePage: React.FC = () => {
                   color={scenario.testEar === 'right' ? 'error' : 'info'} size="small" />
                 <Chip label={scenario.testType === 'air' ? 'Air Conduction' : 'Bone Conduction'} size="small" variant="outlined" />
                 <Chip label={`${scenario.frequency} Hz`} size="small" variant="outlined" />
+                <Chip
+                  label={scenario.testType === 'air'
+                    ? TRANSDUCER_LABELS[scenario.transducer]
+                    : `Masking via ${TRANSDUCER_LABELS[scenario.transducer].toLowerCase()}`
+                  }
+                  size="small" variant="outlined"
+                  color={scenario.transducer === 'insert' ? 'success' : 'default'}
+                />
               </Stack>
             </Box>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              Review the thresholds at {scenario.frequency} Hz below. The highlighted cell is under evaluation. Values in dB HL.
+              Review the thresholds at {scenario.frequency} Hz below. The highlighted cell is under evaluation.
+              {scenario.testType === 'air'
+                ? ` IA for ${TRANSDUCER_LABELS[scenario.transducer].toLowerCase()} = ${INTERAURAL_ATTENUATION[scenario.transducer]} dB.`
+                : ' IA for bone conduction = 0 dB.'}
             </Typography>
 
             <AudiogramTable scenario={scenario} />
@@ -563,13 +955,14 @@ const MaskingPracticePage: React.FC = () => {
             <FormControl component="fieldset" sx={{ mb: 2, width: '100%' }}>
               <FormLabel component="legend" sx={{ mb: 1, fontWeight: 600 }}>
                 1. Is masking required for {scenario.testEar === 'right' ? 'right' : 'left'} ear{' '}
-                {scenario.testType === 'air' ? 'air conduction' : 'bone conduction'} at {scenario.frequency} Hz?
+                {scenario.testType === 'air' ? 'air conduction' : 'bone conduction'} at {scenario.frequency} Hz
+                {scenario.testType === 'air' ? ` with ${TRANSDUCER_LABELS[scenario.transducer].toLowerCase()}` : ''}?
               </FormLabel>
               <RadioGroup row
                 value={answer.maskingRequired === null ? '' : answer.maskingRequired ? 'yes' : 'no'}
                 onChange={(e) => {
                   const yes = e.target.value === 'yes';
-                  updateAnswer({ maskingRequired: yes, ...(yes ? {} : { maskingEar: null, minimumMasking: '' }) });
+                  updateAnswer({ maskingRequired: yes, ...(yes ? {} : { maskingEar: null, startingEML: '' }) });
                 }}>
                 <FormControlLabel value="yes" control={<Radio />} label="Yes" disabled={answer.submitted} />
                 <FormControlLabel value="no" control={<Radio />} label="No" disabled={answer.submitted} />
@@ -592,13 +985,18 @@ const MaskingPracticePage: React.FC = () => {
 
                 <Box sx={{ mb: 2 }}>
                   <Typography variant="body1" fontWeight={600} sx={{ mb: 1 }}>
-                    3. What is the minimum effective masking level? (dB)
+                    3. What is the starting effective masking level? (dB)
                   </Typography>
-                  <TextField type="number" value={answer.minimumMasking}
-                    onChange={(e) => updateAnswer({ minimumMasking: e.target.value })}
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                    {scenario.testType === 'air'
+                      ? 'Formula: Non-test ear BC + 10 dB'
+                      : `Formula: Non-test ear BC + OE (${getOE(scenario.transducer, scenario.frequency)} dB) + 10 dB`}
+                  </Typography>
+                  <TextField type="number" value={answer.startingEML}
+                    onChange={(e) => updateAnswer({ startingEML: e.target.value })}
                     disabled={answer.submitted} size="small" placeholder="Enter dB value"
-                    label="Minimum masking level (dB)"
-                    slotProps={{ htmlInput: { min: -10, max: 120, step: 5, 'aria-label': 'Minimum effective masking level in decibels' } }}
+                    label="Starting EML (dB)"
+                    slotProps={{ htmlInput: { min: -10, max: 120, step: 5, 'aria-label': 'Starting effective masking level in decibels' } }}
                     sx={{ width: 200 }} />
                 </Box>
               </>
@@ -622,16 +1020,41 @@ const MaskingPracticePage: React.FC = () => {
                       {scenario.correctMaskingRequired && answer.maskingRequired && answer.maskingEar !== 'non-test' && (
                         <li>Masking noise should always be delivered to the <strong>non-test ear</strong>.</li>
                       )}
-                      {scenario.correctMaskingRequired && answer.maskingRequired && scenario.correctMinimumMasking !== null && (() => {
-                        const v = parseFloat(answer.minimumMasking);
-                        return (isNaN(v) || Math.abs(v - scenario.correctMinimumMasking) > 5)
-                          ? <li>Minimum effective masking = <strong>{scenario.correctMinimumMasking} dB</strong> (non-test ear BC {scenario.correctMinimumMasking - SAFETY_FACTOR} dB + {SAFETY_FACTOR} dB safety).</li>
+                      {scenario.correctMaskingRequired && answer.maskingRequired && scenario.correctStartingEML !== null && (() => {
+                        const v = parseFloat(answer.startingEML);
+                        return (isNaN(v) || Math.abs(v - scenario.correctStartingEML) > 5)
+                          ? <li>Starting EML = <strong>{scenario.correctStartingEML} dB</strong>.</li>
                           : null;
                       })()}
                     </Box>
                   )}
                   <Typography variant="body2">{scenario.explanation}</Typography>
                 </Alert>
+
+                {/* Clinical note */}
+                {scenario.clinicalNote && (
+                  <Alert severity="info" variant="outlined" sx={{ mb: 2 }}>
+                    <AlertTitle>Clinical Note</AlertTitle>
+                    {scenario.clinicalNote}
+                  </Alert>
+                )}
+
+                {/* Max masking info (shown for all masking-required scenarios) */}
+                {scenario.correctMaskingRequired && scenario.correctMaxMasking !== null && scenario.correctStartingEML !== null && (
+                  <Alert severity="info" variant="outlined" sx={{ mb: 2 }}>
+                    <AlertTitle>Masking Plateau Range</AlertTitle>
+                    Minimum (starting EML): <strong>{scenario.correctStartingEML} dB</strong> &nbsp;|&nbsp;
+                    Maximum (overmasking limit): <strong>{scenario.correctMaxMasking} dB</strong><br />
+                    Plateau width: <strong>{scenario.correctMaxMasking - scenario.correctStartingEML} dB</strong>
+                    {scenario.correctMaxMasking - scenario.correctStartingEML < 15 && (
+                      <> &mdash; <strong>Very narrow plateau!</strong> Risk of masking dilemma.</>
+                    )}
+                    {scenario.correctStartingEML > scenario.correctMaxMasking && (
+                      <> &mdash; <strong>Masking dilemma:</strong> minimum exceeds maximum.</>
+                    )}
+                  </Alert>
+                )}
+
                 <Button variant="contained" endIcon={currentIndex < scenarios.length - 1 ? <NavigateNext /> : undefined}
                   onClick={handleNext}>
                   {currentIndex < scenarios.length - 1 ? 'Next Scenario' : 'Review Results'}

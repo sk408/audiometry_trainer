@@ -728,7 +728,7 @@ const Tutorial: React.FC<TutorialProps> = ({ onComplete }) => {
                 <Box component="ul" sx={{ pl: 2, mt: 0 }}>
                   <li>
                     <Typography variant="body2" paragraph>
-                      <strong>Air Conduction:</strong> When the difference between air conduction thresholds in two ears exceeds 40 dB
+                      <strong>Air Conduction:</strong> When test ear AC − non-test ear BC ≥ interaural attenuation (40 dB supra-aural / 55 dB insert)
                     </Typography>
                   </li>
                   <li>
@@ -738,7 +738,7 @@ const Tutorial: React.FC<TutorialProps> = ({ onComplete }) => {
                   </li>
                   <li>
                     <Typography variant="body2">
-                      <strong>Air-Bone Gap:</strong> When an air-bone gap ≥ 10 dB exists in the test ear
+                      <strong>Air-Bone Gap:</strong> When an air-bone gap ≥ 10 dB exists in either ear
                     </Typography>
                   </li>
                 </Box>
@@ -762,12 +762,12 @@ const Tutorial: React.FC<TutorialProps> = ({ onComplete }) => {
                   </li>
                   <li>
                     <Typography variant="body2" paragraph>
-                      If response changes, <strong>increase masking level</strong> in 10 dB steps
+                      If response changes, <strong>increase masking level</strong> in 10 dB steps and re-measure threshold
                     </Typography>
                   </li>
                   <li>
                     <Typography variant="body2">
-                      <strong>Plateau is reached</strong> when threshold remains stable despite increasing masking by 10 dB twice
+                      <strong>Plateau is reached</strong> when threshold remains stable across 3 consecutive 10 dB masking increases (≥ 20 dB plateau width)
                     </Typography>
                   </li>
                 </Box>
