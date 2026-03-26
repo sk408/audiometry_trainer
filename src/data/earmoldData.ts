@@ -56,6 +56,19 @@ export interface RemakeCriterion {
   reason: string;
 }
 
+export interface VentFeedbackLimit {
+  diameter: string;
+  lowFreqEffect: string;
+  feedbackRisk: string;
+  suitableFor: string;
+}
+
+export interface VentTradeoff {
+  want: string;
+  cost: string;
+  whenWorthIt: string;
+}
+
 // ---------------------------------------------------------------------------
 // Data
 // ---------------------------------------------------------------------------
@@ -345,6 +358,57 @@ export const IMPRESSION_COMPLICATIONS: ImpressionComplication[] = [
     problem: 'Distorted impression',
     cause: 'Premature removal; jaw movement at wrong time',
     prevention: 'Full cure time; controlled jaw exercises',
+  },
+];
+
+export const VENT_FEEDBACK_LIMITS: VentFeedbackLimit[] = [
+  {
+    diameter: '0.5-0.8 mm (pressure vent)',
+    lowFreqEffect: 'Minimal — equalizes pressure only',
+    feedbackRisk: 'Very low',
+    suitableFor: 'Severe-profound loss; high-gain fittings',
+  },
+  {
+    diameter: '1.0-1.5 mm (small vent)',
+    lowFreqEffect: 'Moderate reduction (~5-10 dB at 250 Hz)',
+    feedbackRisk: 'Low',
+    suitableFor: 'Moderate-severe loss; moderate gain',
+  },
+  {
+    diameter: '2.0-2.5 mm (medium vent)',
+    lowFreqEffect: 'Significant reduction (~10-15 dB at 250 Hz)',
+    feedbackRisk: 'Moderate — feedback likely at high gain',
+    suitableFor: 'Mild-moderate loss; moderate gain or less',
+  },
+  {
+    diameter: '3.0+ mm (large / IROS)',
+    lowFreqEffect: 'Substantial reduction (~15-25 dB below 500 Hz)',
+    feedbackRisk: 'High — usually only works with mild loss',
+    suitableFor: 'Mild loss only; minimal gain needed',
+  },
+  {
+    diameter: 'Open fit (fully open)',
+    lowFreqEffect: 'Near-total LF venting; natural low-freq hearing',
+    feedbackRisk: 'Highest — no seal at all',
+    suitableFor: 'Mild high-frequency loss; normal low-frequency thresholds',
+  },
+];
+
+export const VENT_TRADEOFFS: VentTradeoff[] = [
+  {
+    want: 'Less occlusion (larger vent)',
+    cost: 'More feedback risk; less low-frequency gain retained',
+    whenWorthIt: 'Patient has normal low-frequency thresholds and does not need LF amplification',
+  },
+  {
+    want: 'More low-frequency gain (smaller vent)',
+    cost: 'More occlusion; own voice complaints (hollow/boomy quality)',
+    whenWorthIt: 'Patient needs low-frequency amplification (e.g., flat or rising audiogram with LF loss)',
+  },
+  {
+    want: 'Less feedback (tighter seal)',
+    cost: 'Smaller vent required; more occlusion; own voice issues',
+    whenWorthIt: 'High-gain patients; severe+ loss; feedback cannot be managed with algorithms alone',
   },
 ];
 

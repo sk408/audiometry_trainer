@@ -12,6 +12,7 @@ import {
 import {
   EARMOLD_STYLES, MATERIALS, VENT_TYPES, HORN_TYPES, DAMPER_TYPES,
   IMPRESSION_STEPS, IMPRESSION_COMPLICATIONS, REMAKE_CRITERIA,
+  VENT_FEEDBACK_LIMITS, VENT_TRADEOFFS,
 } from '../data/earmoldData';
 
 // ---------------------------------------------------------------------------
@@ -385,6 +386,239 @@ const EarmoldsPage: React.FC = () => {
         <Typography variant="body2">
           Patient reports &quot;harshness&quot; or &quot;ringing quality&quot; that frequency adjustment
           alone does not resolve; the response curve shows sharp resonance peaks.
+        </Typography>
+      </Alert>
+
+      <Divider sx={{ my: 3 }} />
+
+      {/* ---- Feedback Management & Vent Size Limits ---- */}
+      <SectionHeading>Feedback Management &amp; Vent Size Limits</SectionHeading>
+      <Typography paragraph color="text.secondary">
+        As vent diameter increases, low-frequency gain decreases (beneficial for reducing occlusion),
+        but feedback risk increases proportionally. Feedback occurs when amplified sound leaks back
+        through the vent, reaches the microphone, and is re-amplified — creating a loop that produces
+        whistling or squealing.
+      </Typography>
+
+      <Typography paragraph color="text.secondary">
+        The feedback threshold depends on four interacting factors: vent size, gain required at the
+        leaking frequencies, ear canal residual volume, and the microphone-to-receiver distance.
+        Larger canals tolerate larger vents because the greater volume absorbs more leaked energy
+        before it reaches the microphone.
+      </Typography>
+
+      <TableContainer component={Paper} variant="outlined" sx={{ mb: 3 }}>
+        <Table size={isMobile ? 'small' : 'medium'}>
+          <TableHead>
+            <TableRow>
+              <TableCell><strong>Vent Diameter</strong></TableCell>
+              <TableCell><strong>Low-Freq Effect</strong></TableCell>
+              <TableCell><strong>Feedback Risk</strong></TableCell>
+              <TableCell><strong>Suitable For</strong></TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {VENT_FEEDBACK_LIMITS.map((v) => (
+              <TableRow key={v.diameter}>
+                <TableCell sx={{ fontWeight: 'bold', whiteSpace: 'nowrap' }}>{v.diameter}</TableCell>
+                <TableCell>{v.lowFreqEffect}</TableCell>
+                <TableCell>{v.feedbackRisk}</TableCell>
+                <TableCell>{v.suitableFor}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+
+      <Alert severity="warning" sx={{ mb: 2 }}>
+        <Typography variant="subtitle2" fontWeight="bold">Practical Limits</Typography>
+        <Typography variant="body2">
+          Vents larger than 2 mm commonly cause feedback at moderate-to-high gain levels. Vents larger
+          than 3 mm (including IROS) generally only work with mild losses where minimal gain is needed.
+          When feedback occurs with a clinically needed vent size, the options are: (1) reduce vent
+          diameter, (2) enable the hearing aid&apos;s feedback management algorithm, or (3) counsel
+          the patient on the tradeoff between occlusion relief and feedback control.
+        </Typography>
+      </Alert>
+
+      <Paper variant="outlined" sx={{ p: 2, mb: 4 }}>
+        <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+          IROS Vent (Individually Realistic Open Sound)
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          A large-diameter vent (3 mm+) designed to vent away low-frequency energy while retaining
+          high-frequency amplification. Only viable when gain requirements are minimal — typically
+          patients with normal or near-normal low-frequency thresholds and high-frequency loss only.
+          If the patient needs meaningful low-frequency gain, an IROS vent will vent away the very
+          amplification they require.
+        </Typography>
+      </Paper>
+
+      <Divider sx={{ my: 3 }} />
+
+      {/* ---- Own Voice Perception & Occlusion Tradeoff ---- */}
+      <SectionHeading>Own Voice Perception &amp; Occlusion Tradeoff</SectionHeading>
+      <Typography paragraph color="text.secondary">
+        The occlusion effect occurs when bone-conducted sound from the patient&apos;s own voice is
+        trapped in a sealed ear canal, producing a hollow, boomy, or &quot;barrel-like&quot; quality.
+        The more occluded the fitting (smaller or no vent, full shell, shallow canal depth), the
+        worse the own-voice perception — but the better the feedback control and low-frequency
+        gain retention.
+      </Typography>
+
+      <Paper variant="outlined" sx={{ p: 3, mb: 3 }}>
+        <Typography variant="h6" gutterBottom>Does the Patient Need Low-Frequency Gain?</Typography>
+        <List disablePadding>
+          <ListItem>
+            <ListItemIcon><ArrowRight color="success" /></ListItemIcon>
+            <ListItemText
+              primary="Good low-frequency thresholds (normal at 250-1000 Hz)"
+              secondary="Use open coupling or large vent — dramatically reduces occlusion with minimal cost, because the patient does not need low-frequency amplification"
+              primaryTypographyProps={{ fontWeight: 'bold' }}
+            />
+          </ListItem>
+          <ListItem>
+            <ListItemIcon><ArrowRight color="warning" /></ListItemIcon>
+            <ListItemText
+              primary="Poor low-frequency thresholds (loss at 250-1000 Hz)"
+              secondary="Needs gain at those frequencies — must accept more occlusion to retain amplification. Counsel patient on the reason for the sealed fitting and set expectations"
+              primaryTypographyProps={{ fontWeight: 'bold' }}
+            />
+          </ListItem>
+          <ListItem>
+            <ListItemIcon><ArrowRight color="info" /></ListItemIcon>
+            <ListItemText
+              primary="Sloping loss (good lows, poor highs)"
+              secondary="Good candidate for open or vented fitting. The low frequencies are heard naturally while high frequencies are amplified — best of both worlds for own voice perception"
+              primaryTypographyProps={{ fontWeight: 'bold' }}
+            />
+          </ListItem>
+        </List>
+      </Paper>
+
+      <Alert severity="info" sx={{ mb: 4 }}>
+        <Typography variant="subtitle2" fontWeight="bold">Counseling vs. Adjustment</Typography>
+        <Typography variant="body2">
+          If occlusion is mild and the patient is new to hearing aids, counsel first — the brain
+          typically adapts over 2-6 weeks and own-voice perception improves. If occlusion is severe
+          and persistent despite an adaptation period, adjust the fitting: enlarge the vent (if
+          feedback allows), switch to an open dome (if the loss permits), or consider a deeper canal
+          fitting which moves the mold tip past the cartilaginous portion of the canal.
+        </Typography>
+      </Alert>
+
+      <Divider sx={{ my: 3 }} />
+
+      {/* ---- Clinical Tradeoffs ---- */}
+      <SectionHeading>Clinical Tradeoffs</SectionHeading>
+      <Typography paragraph color="text.secondary">
+        Earmold acoustics involve fundamental tradeoffs — improving one parameter often worsens
+        another. Understanding these tradeoffs is essential for making informed clinical decisions
+        and setting realistic patient expectations.
+      </Typography>
+
+      {/* Vent Size Tradeoffs Table */}
+      <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>Vent Size Tradeoffs</Typography>
+      <TableContainer component={Paper} variant="outlined" sx={{ mb: 3 }}>
+        <Table size={isMobile ? 'small' : 'medium'}>
+          <TableHead>
+            <TableRow>
+              <TableCell><strong>Want</strong></TableCell>
+              <TableCell><strong>Cost</strong></TableCell>
+              <TableCell><strong>When Worth It</strong></TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {VENT_TRADEOFFS.map((t) => (
+              <TableRow key={t.want}>
+                <TableCell sx={{ fontWeight: 'bold' }}>{t.want}</TableCell>
+                <TableCell>{t.cost}</TableCell>
+                <TableCell>{t.whenWorthIt}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+
+      {/* Counseling vs Adjustment Framework */}
+      <Typography variant="h6" gutterBottom>Counseling vs. Adjustment Framework</Typography>
+
+      <Paper variant="outlined" sx={{ p: 3, mb: 2 }}>
+        <Typography variant="subtitle1" fontWeight="bold" color="error.main" gutterBottom>
+          When to ADJUST
+        </Typography>
+        <List disablePadding dense>
+          <ListItem>
+            <ListItemIcon><Build color="error" sx={{ fontSize: 18 }} /></ListItemIcon>
+            <ListItemText primary="Feedback is occurring — modify vent, remake earmold, or enable feedback management algorithm" />
+          </ListItem>
+          <ListItem>
+            <ListItemIcon><Build color="error" sx={{ fontSize: 18 }} /></ListItemIcon>
+            <ListItemText primary="Patient cannot hear adequately — gain adjustment or coupling change needed" />
+          </ListItem>
+          <ListItem>
+            <ListItemIcon><Build color="error" sx={{ fontSize: 18 }} /></ListItemIcon>
+            <ListItemText primary="Own voice is objectively too resonant for the loss configuration — venting change is clinically appropriate" />
+          </ListItem>
+        </List>
+      </Paper>
+
+      <Paper variant="outlined" sx={{ p: 3, mb: 2 }}>
+        <Typography variant="subtitle1" fontWeight="bold" color="success.main" gutterBottom>
+          When to COUNSEL
+        </Typography>
+        <List disablePadding dense>
+          <ListItem>
+            <ListItemIcon><Hearing color="success" sx={{ fontSize: 18 }} /></ListItemIcon>
+            <ListItemText primary="New user experiencing mild occlusion — adaptation period (2-6 weeks); most patients improve significantly" />
+          </ListItem>
+          <ListItem>
+            <ListItemIcon><Hearing color="success" sx={{ fontSize: 18 }} /></ListItemIcon>
+            <ListItemText primary="Patient wants zero occlusion but needs low-frequency gain — explain the physics and set realistic expectations" />
+          </ListItem>
+          <ListItem>
+            <ListItemIcon><Hearing color="success" sx={{ fontSize: 18 }} /></ListItemIcon>
+            <ListItemText primary="Mild own-voice awareness without significant distress — normalize the experience and explain it will fade" />
+          </ListItem>
+        </List>
+      </Paper>
+
+      <Paper variant="outlined" sx={{ p: 3, mb: 3 }}>
+        <Typography variant="subtitle1" fontWeight="bold" color="info.main" gutterBottom>
+          When BOTH (Adjust + Counsel)
+        </Typography>
+        <List disablePadding dense>
+          <ListItem>
+            <ListItemIcon><ArrowRight color="info" /></ListItemIcon>
+            <ListItemText primary="Patient frustrated with own voice AND needs some low-frequency gain — partial adjustment (moderate vent) plus counseling on remaining adaptation needed" />
+          </ListItem>
+          <ListItem>
+            <ListItemIcon><ArrowRight color="info" /></ListItemIcon>
+            <ListItemText primary="Feedback risk limits venting — explain why the vent cannot be larger, and offer feedback management algorithm as a bridge solution" />
+          </ListItem>
+        </List>
+      </Paper>
+
+      {/* Good Low-Frequency Thresholds Special Case */}
+      <Alert severity="success" sx={{ mb: 2 }}>
+        <Typography variant="subtitle2" fontWeight="bold">
+          Special Case: Good Low-Frequency Thresholds (Normal at 250-1000 Hz)
+        </Typography>
+        <Typography variant="body2" sx={{ mt: 1 }}>
+          <strong>Patient profile:</strong> Normal or near-normal thresholds at 250-1000 Hz with
+          hearing loss only at 2000 Hz and above.
+        </Typography>
+        <Typography variant="body2" sx={{ mt: 0.5 }}>
+          <strong>Recommendation:</strong> Excellent candidate for open fitting or large vent.
+          Dramatically reduces occlusion, preserves natural sound quality, and own voice sounds
+          normal — because the patient does not need low-frequency gain, venting it away costs
+          nothing clinically.
+        </Typography>
+        <Typography variant="body2" sx={{ mt: 0.5 }}>
+          <strong>Contrast:</strong> A patient with 40 dB HL at 500 Hz needs amplification at that
+          frequency. An open fitting or large vent would vent away the very gain they require,
+          causing audibility problems in the low frequencies despite adequate high-frequency
+          amplification.
         </Typography>
       </Alert>
     </Box>
