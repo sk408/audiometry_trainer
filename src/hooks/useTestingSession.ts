@@ -914,7 +914,7 @@ export function useTestingSession({ patient, onComplete, onCancel }: UseTestingS
       handleSkipStep, validateThreshold, session, preserveThresholds]);
 
   // Start playing tone with pulsing pattern
-  const startTone = useCallback(() => {
+  const startTone = useCallback(async () => {
     if (!currentStep) return;
 
     try {
@@ -930,7 +930,8 @@ export function useTestingSession({ patient, onComplete, onCancel }: UseTestingS
       setShowResponseIndicator(false);
       setToneActive(true);
       toneActiveRef.current = true;
-      testingService.playCurrentTone();
+      await audioService.resumeAudioContext();
+      await testingService.playCurrentTone();
       const didRespond = simulatePatientResponse();
       if (didRespond) {
         setPatientResponse(didRespond);

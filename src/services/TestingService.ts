@@ -168,13 +168,13 @@ class TestingService {
   /**
    * Play the current tone based on the current step
    */
-  public playCurrentTone(durationMs?: number, isPulsed: boolean = true): void {
+  public async playCurrentTone(durationMs?: number, isPulsed: boolean = true): Promise<void> {
     const currentStep = this.getCurrentStep();
     if (!currentStep) return;
 
     const { frequency, ear, currentLevel, testType } = currentStep;
 
-    audioService.playTone(
+    await audioService.playTone(
       frequency,
       currentLevel,
       ear,

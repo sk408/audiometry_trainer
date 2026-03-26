@@ -98,16 +98,16 @@ class AudioService {
    * @param testType - Type of test (air or bone conduction)
    * @param isPulsed - Whether to play as a pulsed tone
    */
-  public playTone(
-    frequency: Frequency, 
-    dBHL: HearingLevel, 
-    ear: Ear, 
+  public async playTone(
+    frequency: Frequency,
+    dBHL: HearingLevel,
+    ear: Ear,
     durationMs: number = 1000,
     testType: 'air' | 'bone' | 'masked_air' | 'masked_bone' = 'air',
     isPulsed: boolean = false
-  ): void {
+  ): Promise<void> {
     if (isPulsed) {
-      this.playPulsedTone(frequency, dBHL, ear, testType);
+      await this.playPulsedTone(frequency, dBHL, ear, testType);
       return;
     }
 
@@ -120,8 +120,8 @@ class AudioService {
       return;
     }
 
-    // Ensure the audio context is running
-    this.resumeAudioContext();
+    // Ensure the audio context is running before creating nodes
+    await this.resumeAudioContext();
 
     // Destroy any existing audio nodes
     this.destroyAllAudioNodes();
@@ -354,7 +354,7 @@ class AudioService {
    * @param intensity - Intensity in dB HL
    * @param ear - Which ear to present to
    */
-  public playMaskingNoise(intensity: number, ear: string = EAR.BOTH): void {
+  public async playMaskingNoise(intensity: number, ear: string = EAR.BOTH): Promise<void> {
     if (!this.audioContext) {
       this.initializeAudioContext();
     }
@@ -364,7 +364,7 @@ class AudioService {
       return;
     }
 
-    this.resumeAudioContext();
+    await this.resumeAudioContext();
 
     // Stop any existing masking noise
     this.stopMaskingNoise();
@@ -453,21 +453,21 @@ class AudioService {
    * @param ear - Ear to present to
    * @param testType - Type of test (air or bone conduction)
    */
-  public playPulsedTone(
+  public async playPulsedTone(
     frequency: Frequency,
     dBHL: HearingLevel,
     ear: Ear,
     testType: 'air' | 'bone' | 'masked_air' | 'masked_bone' = 'air'
-  ): void {
+  ): Promise<void> {
     // Stop any existing pulsed tone
     this.stopTone();
-    
+
     // Store current frequency
     this.currentFrequency = frequency;
-    
+
     // Play the first tone immediately
-    this.playTone(frequency, dBHL, ear, this.pulseDuration, testType);
-    
+    await this.playTone(frequency, dBHL, ear, this.pulseDuration, testType);
+
     // Set up interval for pulsing
     this.pulseInterval = window.setInterval(() => {
       this.playTone(frequency, dBHL, ear, this.pulseDuration, testType);
