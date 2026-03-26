@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Box, Container, Typography, Paper, Card, CardContent, Tabs, Tab,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
@@ -41,10 +42,10 @@ const QUIZ_QUESTIONS: QuizQuestion[] = [
       'Mixed loss with retrocochlear involvement', 'Central auditory processing disorder'],
     correctIndex: 1,
     explanation: 'Conductive hearing loss typically preserves word recognition because the cochlea and auditory nerve are intact. High WRS despite elevated PTA is characteristic of conductive pathology.' },
-  { id: 4, question: 'At what level is WRS typically administered relative to PTA?',
-    options: ['At the PTA level', '10-20 dB above PTA', '30-40 dB above PTA', '50-60 dB above PTA'],
+  { id: 4, question: 'Using current clinical practice, how is the WRS presentation level determined?',
+    options: ['At the PTA level', '30-40 dB above PTA', 'Based on the 2 kHz threshold + 30 dB', 'Always at 70 dB HL'],
     correctIndex: 2,
-    explanation: 'WRS is measured at a suprathreshold level, typically PTA + 30-40 dB, to ensure stimuli are comfortably loud. This allows assessment of clarity rather than audibility.' },
+    explanation: 'Current practice sets WRS presentation level at the 2 kHz threshold + 30 dB. This ensures adequate audibility across the speech spectrum (particularly for sloping losses where PTA may underestimate high-frequency difficulty) and induces more appropriate masking to better separate the ears. The older PTA + 30-40 dB method may under-present for sloping high-frequency losses.' },
   { id: 5, question: "A patient's SRT is 60 dB but PTA is 40 dB. What might this indicate?",
     options: ['Non-organic hearing loss', 'Conductive hearing loss', 'Normal variation',
       'Possible auditory processing disorder or cognitive factors'],
@@ -83,7 +84,7 @@ const SpeechAudiometryPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState(0);
   const [patients, setPatients] = useState<HearingProfile[]>([]);
   const [selectedPatientId, setSelectedPatientId] = useState('');
-  const [ptaInput, setPtaInput] = useState('');
+  const [twoKHzInput, setTwoKHzInput] = useState('');
   const [quizAnswers, setQuizAnswers] = useState<Record<number, number>>({});
   const [quizSubmitted, setQuizSubmitted] = useState(false);
 
@@ -115,10 +116,13 @@ const SpeechAudiometryPage: React.FC = () => {
   }, [quizAnswers, quizSubmitted]);
 
   const estimatedWRSLevel = useMemo(() => {
-    const pta = parseFloat(ptaInput);
-    if (isNaN(pta)) return null;
-    return { low: pta + 30, high: Math.min(pta + 40, 100) };
-  }, [ptaInput]);
+    const twoKHz = parseFloat(twoKHzInput);
+    if (isNaN(twoKHz)) return null;
+    const level = Math.min(twoKHz + 30, 100);
+    const oldMethodLow = Math.round(twoKHz * 0.85 + 30);
+    const oldMethodHigh = Math.min(Math.round(twoKHz * 0.85 + 40), 100);
+    return { level, twoKHz, cap: level >= 100, oldMethodLow, oldMethodHigh };
+  }, [twoKHzInput]);
 
   // -- Section 1: Overview --
   const renderOverview = () => (
@@ -153,8 +157,9 @@ const SpeechAudiometryPage: React.FC = () => {
             <Typography variant="subtitle2" color="secondary" gutterBottom>Word Recognition Score</Typography>
             <Typography variant="body2" color="text.secondary">
               The percentage of monosyllabic words correctly repeated at a
-              comfortable suprathreshold level, typically PTA + 30-40 dB.
-              Assesses speech clarity, not just audibility.
+              suprathreshold level. Current practice sets presentation level
+              at the 2 kHz threshold + 30 dB, ensuring audibility across the
+              speech spectrum and enabling proper ear separation through masking.
             </Typography>
           </CardContent>
         </Card>
@@ -339,28 +344,46 @@ const SpeechAudiometryPage: React.FC = () => {
       <Paper variant="outlined" sx={{ p: 2 }}>
         <Typography variant="h6" gutterBottom>WRS Presentation Level Estimator</Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          Enter a PTA value to estimate the appropriate WRS presentation level (PTA + 30-40 dB,
-          capped at a comfortable maximum of 100 dB HL).
+          Enter the 2 kHz threshold to estimate the appropriate WRS presentation level
+          (2 kHz threshold + 30 dB, capped at 100 dB HL).
         </Typography>
         <FormControl sx={{ minWidth: 200, mb: 2 }}>
-          <InputLabel id="pta-input-label">PTA (dB HL)</InputLabel>
-          <Select labelId="pta-input-label" value={ptaInput} label="PTA (dB HL)"
-            onChange={(e) => setPtaInput(e.target.value)}>
+          <InputLabel id="two-khz-input-label">2 kHz Threshold (dB HL)</InputLabel>
+          <Select labelId="two-khz-input-label" value={twoKHzInput} label="2 kHz Threshold (dB HL)"
+            onChange={(e) => setTwoKHzInput(e.target.value)}>
             {[0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80].map((v) => (
               <MenuItem key={v} value={String(v)}>{v} dB HL</MenuItem>
             ))}
           </Select>
         </FormControl>
         {estimatedWRSLevel && (
-          <Alert severity="info">
-            <Typography variant="body2">
-              For a PTA of <strong>{ptaInput} dB HL</strong>, present WRS stimuli at approximately{' '}
-              <strong>{estimatedWRSLevel.low}-{estimatedWRSLevel.high} dB HL</strong>.
-              {estimatedWRSLevel.high >= 100 && <> (Capped at 100 dB HL to avoid discomfort.)</>}
-            </Typography>
-          </Alert>
+          <Box>
+            <Alert severity="info" sx={{ mb: 1 }}>
+              <Typography variant="body2">
+                For a 2 kHz threshold of <strong>{twoKHzInput} dB HL</strong>, present WRS at approximately{' '}
+                <strong>{estimatedWRSLevel.level} dB HL</strong>.
+                {estimatedWRSLevel.cap && <> (Capped at 100 dB HL to avoid discomfort.)</>}
+              </Typography>
+            </Alert>
+            <Alert severity="info" variant="outlined" sx={{ mb: 1 }}>
+              <Typography variant="body2">
+                <strong>Comparison:</strong> Using the older PTA+30-40 method, presentation would be
+                approximately {estimatedWRSLevel.oldMethodLow}-{estimatedWRSLevel.oldMethodHigh} dB HL
+                (assumes PTA ≈ 85% of 2 kHz threshold for a typical sloping loss).
+              </Typography>
+            </Alert>
+          </Box>
         )}
       </Paper>
+      <Alert severity="warning" sx={{ mt: 2 }}>
+        <Typography variant="subtitle2" fontWeight="bold">Clinical Red Flag</Typography>
+        <Typography variant="body2">
+          When WRS is disproportionately poor relative to the degree of hearing loss
+          (e.g., WRS of 50% with a PTA of 35 dB), consider retrocochlear pathology.
+          See the <Link to="/assessment/referrals" style={{ color: 'inherit', fontWeight: 'bold' }}>Medical Referral Guide</Link> for
+          detailed referral criteria, rollover testing, and acoustic neuroma education.
+        </Typography>
+      </Alert>
     </Box>
   );
 

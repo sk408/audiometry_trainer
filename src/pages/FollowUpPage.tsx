@@ -1,25 +1,13 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React from 'react';
+import { Link } from 'react-router-dom';
 import {
   Box,
   Container,
   Typography,
   Paper,
-  Grid,
   Card,
   CardContent,
   CardHeader,
-  Button,
-  Stepper,
-  Step,
-  StepLabel,
-  StepContent,
-  TextField,
-  FormControl,
-  FormLabel,
-  RadioGroup,
-  Radio,
-  FormControlLabel,
-  Divider,
   List,
   ListItem,
   ListItemText,
@@ -27,924 +15,30 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
-  Slider,
-  IconButton,
-  Rating,
   Alert,
-  Chip,
+  Divider,
+  Button,
   useTheme,
   useMediaQuery,
-  Checkbox
 } from '@mui/material';
 import {
   HearingOutlined,
   VolumeUp,
-  Settings,
   Check,
-  Help,
   ExpandMore,
-  ArrowForward,
   Assignment,
   EmojiPeople,
   RecordVoiceOver,
   SelfImprovement,
-  QuestionAnswer,
   Build,
-  EventAvailable
+  EventAvailable,
+  Tune,
+  Help,
 } from '@mui/icons-material';
 
 const FollowUpPage: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const [activeStep, setActiveStep] = useState(0);
-  const [satisfactionRating, setSatisfactionRating] = useState<number | null>(null);
-  const [selectedProgram, setSelectedProgram] = useState('everyday');
-  const [followUpTimeframe, setFollowUpTimeframe] = useState('3months');
-  const [features, setFeatures] = useState({
-    noiseReduction: true,
-    directionalMics: true,
-    windNoise: false,
-    feedbackCancellation: false,
-  });
-
-  // Demo data for the follow-up form
-  const [followUpData, setFollowUpData] = useState({
-    wearTime: '',
-    environments: '',
-    hearingDifficulties: '',
-    physicalComfort: '',
-    soundQuality: '',
-    batteryLife: '',
-    feedback: '',
-  });
-
-  // Gain adjustment sliders — wired to state so values are tracked
-  const [gainAdjustments, setGainAdjustments] = useState({
-    lowFreq: 0,
-    midFreq: 0,
-    highFreq: 0,
-  });
-
-  const handleInputChange = useCallback((field: string, value: string) => {
-    setFollowUpData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  }, []);
-
-  const handleNext = () => {
-    setActiveStep((prevActiveStep) => prevActiveStep + 1);
-  };
-
-  const handleBack = () => {
-    setActiveStep((prevActiveStep) => prevActiveStep - 1);
-  };
-
-  const handleReset = () => {
-    setActiveStep(0);
-  };
-
-  // Steps for follow-up appointment
-  const steps = useMemo(() => [
-    {
-      label: 'Interview',
-      description: 'Assess satisfaction and identify any concerns',
-      content: (
-        <Box sx={{ mt: 2 }}>
-          <Typography variant="h6" gutterBottom>Patient Interview</Typography>
-          
-          <TextField
-            fullWidth
-            multiline
-            rows={2}
-            label="Daily wear time (hours)"
-            placeholder="Ask: How many hours per day do you wear your hearing aids?"
-            value={followUpData.wearTime}
-            onChange={(e) => handleInputChange('wearTime', e.target.value)}
-            sx={{ mb: 3 }}
-          />
-          
-          <TextField
-            fullWidth
-            multiline
-            rows={2}
-            label="Listening environments"
-            placeholder="Ask: In what environments do you use your hearing aids? (home, work, restaurants, etc.)"
-            value={followUpData.environments}
-            onChange={(e) => handleInputChange('environments', e.target.value)}
-            sx={{ mb: 3 }}
-          />
-          
-          <TextField
-            fullWidth
-            multiline
-            rows={2}
-            label="Hearing difficulties"
-            placeholder="Ask: Are there any situations where you still experience hearing difficulties?"
-            value={followUpData.hearingDifficulties}
-            onChange={(e) => handleInputChange('hearingDifficulties', e.target.value)}
-            sx={{ mb: 3 }}
-          />
-          
-          <Box sx={{ mb: 3 }}>
-            <Typography variant="subtitle1" gutterBottom>Overall satisfaction</Typography>
-            <Rating
-              name="satisfaction"
-              value={satisfactionRating}
-              onChange={(event, newValue) => {
-                setSatisfactionRating(newValue);
-              }}
-              icon={<HearingOutlined fontSize="large" />}
-              emptyIcon={<HearingOutlined fontSize="large" />}
-              max={5}
-            />
-            {satisfactionRating && (
-              <Typography variant="body2" color="text.secondary">
-                {satisfactionRating < 3 ? 'Not satisfied' : satisfactionRating < 5 ? 'Moderately satisfied' : 'Very satisfied'}
-              </Typography>
-            )}
-          </Box>
-          
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handleNext}
-          >
-            Continue to Physical Check
-          </Button>
-        </Box>
-      )
-    },
-    {
-      label: 'Physical Check',
-      description: 'Inspect hearing aids for damage and proper function',
-      content: (
-        <Box sx={{ mt: 2 }}>
-          <Typography variant="h6" gutterBottom>Physical Inspection</Typography>
-          
-          <Paper variant="outlined" sx={{ p: 2, mb: 3 }}>
-            <Typography variant="subtitle1" gutterBottom>Physical Inspection Checklist</Typography>
-            <List dense>
-              <ListItem>
-                <ListItemIcon><Check color="primary" /></ListItemIcon>
-                <ListItemText primary="Check for cracks or damage to the case" />
-              </ListItem>
-              <ListItem>
-                <ListItemIcon><Check color="primary" /></ListItemIcon>
-                <ListItemText primary="Check battery door for proper function" />
-              </ListItem>
-              <ListItem>
-                <ListItemIcon><Check color="primary" /></ListItemIcon>
-                <ListItemText primary="Examine tubing/wires for damage or stiffening" />
-              </ListItem>
-              <ListItem>
-                <ListItemIcon><Check color="primary" /></ListItemIcon>
-                <ListItemText primary="Check earmold/dome for wax buildup or damage" />
-              </ListItem>
-              <ListItem>
-                <ListItemIcon><Check color="primary" /></ListItemIcon>
-                <ListItemText primary="Clean microphone ports and receiver openings" />
-              </ListItem>
-            </List>
-          </Paper>
-
-          <TextField
-            fullWidth
-            multiline
-            rows={2}
-            label="Physical comfort notes"
-            placeholder="Document any issues with physical comfort, fit, or irritation"
-            value={followUpData.physicalComfort}
-            onChange={(e) => handleInputChange('physicalComfort', e.target.value)}
-            sx={{ mb: 3 }}
-          />
-          
-          <Box sx={{ display: 'flex', flexDirection: 'row', pt: 2 }}>
-            <Button
-              color="inherit"
-              onClick={handleBack}
-              sx={{ mr: 1 }}
-            >
-              Back
-            </Button>
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={handleNext}
-            >
-              Continue to Listening Check
-            </Button>
-          </Box>
-        </Box>
-      )
-    },
-    {
-      label: 'Listening Check',
-      description: 'Verify hearing aid function and sound quality',
-      content: (
-        <Box sx={{ mt: 2 }}>
-          <Typography variant="h6" gutterBottom>Listening Check</Typography>
-          
-          <Alert severity="info" sx={{ mb: 3 }}>
-            Use a listening stethoscope to verify the hearing aid is functioning properly. 
-            Check for distortion, intermittency, or feedback.
-          </Alert>
-          
-          <Paper variant="outlined" sx={{ p: 2, mb: 3 }}>
-            <Typography variant="subtitle1" gutterBottom>Listening Check Procedure</Typography>
-            <List dense>
-              <ListItem>
-                <ListItemIcon><VolumeUp color="primary" /></ListItemIcon>
-                <ListItemText 
-                  primary="Test multiple input levels" 
-                  secondary="Soft, moderate, and loud speech" 
-                />
-              </ListItem>
-              <ListItem>
-                <ListItemIcon><VolumeUp color="primary" /></ListItemIcon>
-                <ListItemText 
-                  primary="Check for clear sound quality" 
-                  secondary="No distortion or intermittency" 
-                />
-              </ListItem>
-              <ListItem>
-                <ListItemIcon><VolumeUp color="primary" /></ListItemIcon>
-                <ListItemText 
-                  primary="Test all programs/memories" 
-                  secondary="Program switching, volume control, other features" 
-                />
-              </ListItem>
-            </List>
-          </Paper>
-
-          <TextField
-            fullWidth
-            multiline
-            rows={2}
-            label="Sound quality notes"
-            placeholder="Document any issues with sound quality, distortion, or feedback"
-            value={followUpData.soundQuality}
-            onChange={(e) => handleInputChange('soundQuality', e.target.value)}
-            sx={{ mb: 3 }}
-          />
-          
-          <Box sx={{ display: 'flex', flexDirection: 'row', pt: 2 }}>
-            <Button
-              color="inherit"
-              onClick={handleBack}
-              sx={{ mr: 1 }}
-            >
-              Back
-            </Button>
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={handleNext}
-            >
-              Continue to Adjustments
-            </Button>
-          </Box>
-        </Box>
-      )
-    },
-    {
-      label: 'Adjustments',
-      description: 'Make programming changes as needed',
-      content: (
-        <Box sx={{ mt: 2 }}>
-          <Typography variant="h6" gutterBottom>Hearing Aid Adjustments</Typography>
-          
-          <Alert severity="warning" sx={{ mb: 3 }}>
-            Connect to manufacturer's fitting software to make adjustments. 
-            Always verify changes with real-ear measurements when possible.
-          </Alert>
-          
-          <Accordion>
-            <AccordionSummary
-              expandIcon={<ExpandMore />}
-              aria-controls="panel1a-content"
-              id="panel1a-header"
-            >
-              <Typography>Volume Adjustments</Typography>
-            </AccordionSummary>
-            <AccordionDetails>
-              <Typography variant="body2" gutterBottom>
-                Adjust overall gain or specific frequency regions based on patient feedback.
-              </Typography>
-              
-              <Paper variant="outlined" sx={{ p: 2, mb: 3, mt: 2, bgcolor: 'info.light', color: 'info.contrastText' }}>
-                <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 'bold' }}>
-                  Frequency Adjustment Guidelines for New Students
-                </Typography>
-                <Typography variant="body2" component="div">
-                  <ul style={{ paddingLeft: '1.5rem', marginTop: '0.5rem', marginBottom: '0.5rem' }}>
-                    <li><strong>Low Frequencies (250-1000 Hz):</strong> Adjust when patient reports:
-                      <ul>
-                        <li>Own voice sounds "boomy" or "hollow" (reduce)</li>
-                        <li>Difficulty with vowel sounds (increase)</li>
-                        <li>Environmental sounds like traffic too loud (reduce)</li>
-                        <li>Speech lacks "fullness" or warmth (increase)</li>
-                      </ul>
-                    </li>
-                    <li><strong>Mid Frequencies (1000-3000 Hz):</strong> Adjust when patient reports:
-                      <ul>
-                        <li>Speech sounds unclear or muffled (increase)</li>
-                        <li>Consonants like "s", "t", "f" hard to distinguish (increase)</li>
-                        <li>Women's and children's voices difficult to understand (increase)</li>
-                        <li>Speech sounds harsh or mechanical (reduce)</li>
-                      </ul>
-                    </li>
-                    <li><strong>High Frequencies (3000-8000 Hz):</strong> Adjust when patient reports:
-                      <ul>
-                        <li>Environmental sounds (paper rustling, water running) too sharp (reduce)</li>
-                        <li>Difficulty hearing in background noise (carefully increase)</li>
-                        <li>Consonants like "s", "sh", "f" sound too harsh (reduce)</li>
-                        <li>Music or singing lacks clarity (increase)</li>
-                      </ul>
-                    </li>
-                  </ul>
-                </Typography>
-                <Typography variant="body2" sx={{ mt: 1, fontStyle: 'italic' }}>
-                  Note: Always make small adjustments (2-3 dB) and verify with the patient before making additional changes. 
-                  Frequency adjustments may have impacts across multiple perceptual domains.
-                </Typography>
-              </Paper>
-              
-              <Paper variant="outlined" sx={{ p: 2, mb: 3, mt: 3, bgcolor: 'warning.light', color: 'warning.contrastText' }}>
-                <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 'bold' }}>
-                  Input-Level Gain Adjustment Guidelines
-                </Typography>
-                <Typography variant="body2" paragraph>
-                  Most modern hearing aids allow adjustment of gain separately for different input levels:
-                </Typography>
-                <Typography variant="body2" component="div">
-                  <ul style={{ paddingLeft: '1.5rem', marginTop: '0.5rem', marginBottom: '0.5rem' }}>
-                    <li><strong>Soft Gain (50dB input):</strong> Adjust when patient reports:
-                      <ul>
-                        <li>Cannot hear soft speech or whispers (increase)</li>
-                        <li>Background noises like refrigerator hum too noticeable (reduce)</li>
-                        <li>Difficulty hearing conversation partners at a distance (increase)</li>
-                        <li>Own breathing or swallowing sounds too loud (reduce)</li>
-                      </ul>
-                    </li>
-                    <li><strong>Medium Gain (65dB input):</strong> Adjust when patient reports:
-                      <ul>
-                        <li>Normal conversational speech too soft (increase) or too loud (reduce)</li>
-                        <li>TV volume needs to be set higher than others prefer (increase)</li>
-                        <li>Voices sound unnatural or mechanical (adjust frequency response, not just overall gain)
-                          <ul style={{ fontSize: '0.95em', marginTop: '0.5rem' }}>
-                            <li><em>Robotic/tinny voice</em>: Reduce gain in 2-4kHz range; increase in 500-1000Hz</li>
-                            <li><em>Hollow/echoey voice</em>: Reduce gain in 250-500Hz; increase in 1-2kHz</li>
-                            <li><em>Nasal voice quality</em>: Reduce gain in 1-2kHz range; slight increase in 500Hz and 3kHz</li>
-                            <li><em>Sharp/harsh voice</em>: Reduce gain in 3-6kHz range; smooth transition slopes between bands</li>
-                            <li><em>Muffled voice</em>: Increase gain in 1-4kHz range; ensure 4-6kHz isn't over-amplified</li>
-                            <li><em>Thin/weak voice</em>: Increase gain in 250-750Hz range for more fullness</li>
-                            <li><em>Note</em>: When adjusting for voice quality, make small changes (2-3dB) and check with live voice or recorded speech samples</li>
-                          </ul>
-                        </li>
-                        <li>Reports fatigue from listening at average volumes (consider reducing)</li>
-                      </ul>
-                    </li>
-                    <li><strong>Loud Gain (80dB input):</strong> Adjust when patient reports:
-                      <ul>
-                        <li>Loud sounds cause discomfort or pain (reduce)</li>
-                        <li>Dynamic sounds like music lack richness or seem compressed (increase)</li>
-                        <li>Can't tell difference between medium and loud sounds (adjust compression ratio)</li>
-                        <li>Sounds distorted at high volumes (check MPO settings and reduce if needed)</li>
-                      </ul>
-                    </li>
-                  </ul>
-                </Typography>
-                <Typography variant="body2" sx={{ fontWeight: 'bold', mt: 1 }}>
-                  Common Adjustment Patterns for Specific Complaints:
-                </Typography>
-                <Typography variant="body2" component="div">
-                  <ul style={{ paddingLeft: '1.5rem', marginTop: '0.5rem' }}>
-                    <li><strong>"Everything sounds too loud"</strong> → Decrease gain across all input levels, starting with loud</li>
-                    <li><strong>"I can hear in quiet but not in noise"</strong> → Increase soft gain, verify noise reduction settings</li>
-                    <li><strong>"I jump at sudden sounds"</strong> → Reduce loud gain, check attack time settings</li>
-                    <li><strong>"People sound like they're mumbling"</strong> → Increase gain in mid-frequencies for medium inputs</li>
-                    <li><strong>"My voice echoes/sounds hollow"</strong> → Reduce low frequency gain, especially for soft/medium inputs</li>
-                  </ul>
-                </Typography>
-                <Typography variant="body2" sx={{ mt: 1, fontStyle: 'italic' }}>
-                  Note: When adjusting gain for specific input levels, consider the impact on the overall compression characteristics. 
-                  For example, reducing gain for loud inputs while maintaining gain for soft inputs effectively increases the compression ratio.
-                </Typography>
-              </Paper>
-              
-              <Box sx={{ width: '100%', mt: 2 }}>
-                <Typography id="low-freq-slider" gutterBottom>
-                  Low Frequencies (250-1000 Hz): {gainAdjustments.lowFreq > 0 ? '+' : ''}{gainAdjustments.lowFreq} dB
-                </Typography>
-                <Slider
-                  aria-labelledby="low-freq-slider"
-                  value={gainAdjustments.lowFreq}
-                  onChange={(_, val) => setGainAdjustments(prev => ({ ...prev, lowFreq: val as number }))}
-                  step={1}
-                  marks
-                  min={-10}
-                  max={10}
-                  valueLabelDisplay="auto"
-                />
-
-                <Typography id="mid-freq-slider" gutterBottom>
-                  Mid Frequencies (1000-3000 Hz): {gainAdjustments.midFreq > 0 ? '+' : ''}{gainAdjustments.midFreq} dB
-                </Typography>
-                <Slider
-                  aria-labelledby="mid-freq-slider"
-                  value={gainAdjustments.midFreq}
-                  onChange={(_, val) => setGainAdjustments(prev => ({ ...prev, midFreq: val as number }))}
-                  step={1}
-                  marks
-                  min={-10}
-                  max={10}
-                  valueLabelDisplay="auto"
-                />
-
-                <Typography id="high-freq-slider" gutterBottom>
-                  High Frequencies (3000-8000 Hz): {gainAdjustments.highFreq > 0 ? '+' : ''}{gainAdjustments.highFreq} dB
-                </Typography>
-                <Slider
-                  aria-labelledby="high-freq-slider"
-                  value={gainAdjustments.highFreq}
-                  onChange={(_, val) => setGainAdjustments(prev => ({ ...prev, highFreq: val as number }))}
-                  step={1}
-                  marks
-                  min={-10}
-                  max={10}
-                  valueLabelDisplay="auto"
-                />
-              </Box>
-            </AccordionDetails>
-          </Accordion>
-          
-          <Accordion>
-            <AccordionSummary
-              expandIcon={<ExpandMore />}
-              aria-controls="panel2a-content"
-              id="panel2a-header"
-            >
-              <Typography>Program Adjustments</Typography>
-            </AccordionSummary>
-            <AccordionDetails>
-              <Typography variant="body2" paragraph>
-                Modify existing programs or add new ones for specific listening environments.
-              </Typography>
-              <Grid container spacing={2}>
-                <Grid item xs={12}>
-                  <FormControl component="fieldset">
-                    <FormLabel component="legend">Select program to adjust</FormLabel>
-                    <RadioGroup
-                      row
-                      aria-label="program"
-                      name="program"
-                      value={selectedProgram}
-                      onChange={(e) => setSelectedProgram(e.target.value)}
-                    >
-                      <FormControlLabel value="everyday" control={<Radio />} label="Everyday" />
-                      <FormControlLabel value="noisy" control={<Radio />} label="Noisy" />
-                      <FormControlLabel value="restaurant" control={<Radio />} label="Restaurant" />
-                      <FormControlLabel value="music" control={<Radio />} label="Music" />
-                    </RadioGroup>
-                  </FormControl>
-                </Grid>
-              </Grid>
-            </AccordionDetails>
-          </Accordion>
-          
-          <Accordion>
-            <AccordionSummary
-              expandIcon={<ExpandMore />}
-              aria-controls="panel3a-content"
-              id="panel3a-header"
-            >
-              <Typography>Additional Features</Typography>
-            </AccordionSummary>
-            <AccordionDetails>
-              <Grid container spacing={2}>
-                <Grid item xs={12} sm={6}>
-                  <FormControlLabel
-                    control={<Checkbox checked={features.noiseReduction} onChange={(e) => setFeatures(f => ({ ...f, noiseReduction: e.target.checked }))} />}
-                    label="Noise Reduction"
-                  />
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <FormControlLabel
-                    control={<Checkbox checked={features.directionalMics} onChange={(e) => setFeatures(f => ({ ...f, directionalMics: e.target.checked }))} />}
-                    label="Directional Microphones"
-                  />
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <FormControlLabel
-                    control={<Checkbox checked={features.windNoise} onChange={(e) => setFeatures(f => ({ ...f, windNoise: e.target.checked }))} />}
-                    label="Wind Noise Reduction"
-                  />
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <FormControlLabel
-                    control={<Checkbox checked={features.feedbackCancellation} onChange={(e) => setFeatures(f => ({ ...f, feedbackCancellation: e.target.checked }))} />}
-                    label="Feedback Cancellation"
-                  />
-                </Grid>
-              </Grid>
-            </AccordionDetails>
-          </Accordion>
-          
-          <Box sx={{ display: 'flex', flexDirection: 'row', pt: 2, mt: 2 }}>
-            <Button
-              color="inherit"
-              onClick={handleBack}
-              sx={{ mr: 1 }}
-            >
-              Back
-            </Button>
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={handleNext}
-            >
-              Continue to Education
-            </Button>
-          </Box>
-        </Box>
-      )
-    },
-    {
-      label: 'Patient Education',
-      description: 'Review care instructions and usage tips',
-      content: (
-        <Box sx={{ mt: 2 }}>
-          <Typography variant="h6" gutterBottom>Patient Education and Care Instructions</Typography>
-          
-          <Grid container spacing={3} sx={{ mb: 4 }}>
-            <Grid item xs={12} md={4}>
-              <Card variant="outlined" sx={{ height: '100%' }}>
-                <CardHeader 
-                  avatar={<Build color="primary" />} 
-                  title="Daily Care" 
-                />
-                <CardContent>
-                  <Typography variant="body2" color="text.secondary">
-                    • Clean hearing aids daily with a soft, dry cloth
-                    <br/>
-                    • Remove batteries at night (if non-rechargeable)
-                    <br/>
-                    • Store in a dry, safe place
-                    <br/>
-                    • Check for and remove earwax from openings
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <Card variant="outlined" sx={{ height: '100%' }}>
-                <CardHeader 
-                  avatar={<SelfImprovement color="primary" />} 
-                  title="Usage Tips" 
-                />
-                <CardContent>
-                  <Typography variant="body2" color="text.secondary">
-                    • Start with shorter wear times and gradually increase
-                    <br/>
-                    • Begin in quieter environments before more challenging ones
-                    <br/>
-                    • Take breaks if experiencing fatigue
-                    <br/>
-                    • Use appropriate programs for different environments
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <Card variant="outlined" sx={{ height: '100%' }}>
-                <CardHeader 
-                  avatar={<RecordVoiceOver color="primary" />} 
-                  title="Communication Strategies" 
-                />
-                <CardContent>
-                  <Typography variant="body2" color="text.secondary">
-                    • Face the speaker when possible
-                    <br/>
-                    • Reduce background noise
-                    <br/>
-                    • Ask for clarification when needed
-                    <br/>
-                    • Inform others of your hearing needs
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-          </Grid>
-          
-          <Typography variant="subtitle1" gutterBottom sx={{ mt: 3 }}>
-            Troubleshooting Common Issues
-          </Typography>
-          
-          <Accordion>
-            <AccordionSummary
-              expandIcon={<ExpandMore />}
-              aria-controls="panel1b-content"
-              id="panel1b-header"
-            >
-              <Typography>Whistling or Feedback</Typography>
-            </AccordionSummary>
-            <AccordionDetails>
-              <Typography variant="body2">
-                • Check for proper insertion of earmold/dome<br/>
-                • Make sure the dome/mold is the correct size<br/>
-                • Check for wax buildup in the ear canal<br/>
-                • Consult your audiologist if problem persists
-              </Typography>
-            </AccordionDetails>
-          </Accordion>
-          
-          <Accordion>
-            <AccordionSummary
-              expandIcon={<ExpandMore />}
-              aria-controls="panel2b-content"
-              id="panel2b-header"
-            >
-              <Typography>No Sound</Typography>
-            </AccordionSummary>
-            <AccordionDetails>
-              <Typography variant="body2">
-                • Check if hearing aid is turned on<br/>
-                • Check/replace battery<br/>
-                • Check if volume is turned up<br/>
-                • Make sure sound outlet is not blocked by wax<br/>
-                • Try a different program
-              </Typography>
-            </AccordionDetails>
-          </Accordion>
-          
-          <Accordion>
-            <AccordionSummary
-              expandIcon={<ExpandMore />}
-              aria-controls="panel3b-content"
-              id="panel3b-header"
-            >
-              <Typography>Sound Quality Issues</Typography>
-            </AccordionSummary>
-            <AccordionDetails>
-              <Typography variant="body2">
-                • Check/clean microphone openings<br/>
-                • Check/replace wax filter<br/>
-                • Check for moisture (use a drying kit if available)<br/>
-                • Consult your audiologist for reprogramming if needed
-              </Typography>
-            </AccordionDetails>
-          </Accordion>
-          
-          <Accordion>
-            <AccordionSummary
-              expandIcon={<ExpandMore />}
-              aria-controls="panel4b-content"
-              id="panel4b-header"
-            >
-              <Typography>Own Voice Perception Issues</Typography>
-            </AccordionSummary>
-            <AccordionDetails>
-              <Typography variant="body2">
-                • Reassure patients this is normal and temporary (occlusion effect)<br/>
-                • Check for proper venting in the earmold/dome<br/>
-                • Adjust gain in low frequencies if voice sounds "boomy"<br/>
-                • Consider open fit if appropriate for the hearing loss<br/>
-                • Explain adaptation process may take 2-4 weeks<br/>
-                • Try reading aloud daily to speed up adaptation
-              </Typography>
-            </AccordionDetails>
-          </Accordion>
-          
-          <Accordion>
-            <AccordionSummary
-              expandIcon={<ExpandMore />}
-              aria-controls="panel5b-content"
-              id="panel5b-header"
-            >
-              <Typography>Loudness/Sound Tolerance Issues</Typography>
-            </AccordionSummary>
-            <AccordionDetails>
-              <Typography variant="body2">
-                • Verify appropriate gain settings for patient's hearing loss<br/>
-                • Check if appropriate acclimatization settings are enabled<br/>
-                • Consider gradual increase in amplification over several weeks<br/>
-                • Show patient how to adjust volume (if available)<br/>
-                • Create a quieter program for sensitive situations<br/>
-                • For sudden loud sounds, ensure appropriate compression settings
-              </Typography>
-            </AccordionDetails>
-          </Accordion>
-          
-          <Accordion>
-            <AccordionSummary
-              expandIcon={<ExpandMore />}
-              aria-controls="panel6b-content"
-              id="panel6b-header"
-            >
-              <Typography>Hearing in Noisy Situations</Typography>
-            </AccordionSummary>
-            <AccordionDetails>
-              <Typography variant="body2">
-                • Ensure directional microphones are activated<br/>
-                • Set up a specific "restaurant" or "noise" program<br/>
-                • Verify noise reduction features are enabled<br/>
-                • Teach proper positioning (face speaker, back to noise)<br/>
-                • Consider accessory microphones for very difficult situations<br/>
-                • Explain realistic expectations about hearing in noise
-              </Typography>
-            </AccordionDetails>
-          </Accordion>
-          
-          <Accordion>
-            <AccordionSummary
-              expandIcon={<ExpandMore />}
-              aria-controls="panel7b-content"
-              id="panel7b-header"
-            >
-              <Typography>Environmental Sounds Issues (Water, Dishes)</Typography>
-            </AccordionSummary>
-            <AccordionDetails>
-              <Typography variant="body2">
-                • Explain that these sounds were previously inaudible to the patient<br/>
-                • For running water: adjust high frequency gain if too sharp/harsh<br/>
-                • For dishes clattering: consider reducing gain above 4000 Hz<br/>
-                • Create a "home" program with reduced high frequencies<br/>
-                • Reassure that brain adaptation will reduce awareness over time<br/>
-                • Recommend gradual exposure to re-learn environmental sounds
-              </Typography>
-            </AccordionDetails>
-          </Accordion>
-          
-          <Box sx={{ display: 'flex', flexDirection: 'row', pt: 2, mt: 2 }}>
-            <Button
-              color="inherit"
-              onClick={handleBack}
-              sx={{ mr: 1 }}
-            >
-              Back
-            </Button>
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={handleNext}
-            >
-              Complete Follow-Up
-            </Button>
-          </Box>
-        </Box>
-      )
-    },
-    {
-      label: 'Summary & Follow-Up Plan',
-      description: 'Summarize findings and create a follow-up plan',
-      content: (
-        <Box sx={{ mt: 2 }}>
-          <Alert severity="success" sx={{ mb: 4 }}>
-            Follow-up appointment completed!
-          </Alert>
-          
-          <Typography variant="h6" gutterBottom>Appointment Summary</Typography>
-          
-          <Paper variant="outlined" sx={{ p: 3, mb: 4 }}>
-            <Grid container spacing={2}>
-              <Grid item xs={12} md={6}>
-                <Typography variant="subtitle1" gutterBottom>Key Findings</Typography>
-                <Box sx={{ mb: 2 }}>
-                  <Typography variant="body2" sx={{ fontWeight: 'bold' }}>Daily Usage:</Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {followUpData.wearTime || "Not specified"}
-                  </Typography>
-                </Box>
-                <Box sx={{ mb: 2 }}>
-                  <Typography variant="body2" sx={{ fontWeight: 'bold' }}>Remaining Difficulties:</Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {followUpData.hearingDifficulties || "Not specified"}
-                  </Typography>
-                </Box>
-                <Box sx={{ mb: 2 }}>
-                  <Typography variant="body2" sx={{ fontWeight: 'bold' }}>Physical Condition:</Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {followUpData.physicalComfort || "No issues reported"}
-                  </Typography>
-                </Box>
-                <Box sx={{ mb: 2 }}>
-                  <Typography variant="body2" sx={{ fontWeight: 'bold' }}>Sound Quality:</Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {followUpData.soundQuality || "No issues reported"}
-                  </Typography>
-                </Box>
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <Typography variant="subtitle1" gutterBottom>Adjustments Made</Typography>
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                  <Chip label="Volume adjustments" />
-                  <Chip label="Program modifications" />
-                  <Chip label="Feature settings" />
-                  <Chip label="Physical maintenance" />
-                </Box>
-                
-                <Typography variant="subtitle1" gutterBottom sx={{ mt: 3 }}>Overall Satisfaction</Typography>
-                <Rating
-                  value={satisfactionRating || 0}
-                  readOnly
-                  icon={<HearingOutlined fontSize="large" />}
-                  emptyIcon={<HearingOutlined fontSize="large" />}
-                  max={5}
-                />
-              </Grid>
-            </Grid>
-          </Paper>
-          
-          <Typography variant="h6" gutterBottom>Follow-Up Plan</Typography>
-          
-          <Grid container spacing={3}>
-            <Grid item xs={12} md={6}>
-              <Card variant="outlined">
-                <CardContent>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                    <EventAvailable color="primary" sx={{ mr: 1 }} />
-                    <Typography variant="h6">Next Appointment</Typography>
-                  </Box>
-                  <FormControl fullWidth sx={{ mb: 2 }}>
-                    <FormLabel>Recommended follow-up timeframe:</FormLabel>
-                    <RadioGroup
-                      row
-                      value={followUpTimeframe}
-                      onChange={(e) => setFollowUpTimeframe(e.target.value)}
-                    >
-                      <FormControlLabel value="1month" control={<Radio />} label="1 month" />
-                      <FormControlLabel value="3months" control={<Radio />} label="3 months" />
-                      <FormControlLabel value="6months" control={<Radio />} label="6 months" />
-                      <FormControlLabel value="1year" control={<Radio />} label="1 year" />
-                    </RadioGroup>
-                  </FormControl>
-                  
-                  <TextField
-                    fullWidth
-                    label="Additional comments"
-                    multiline
-                    rows={2}
-                    placeholder="Add any additional notes for the next appointment"
-                    value={followUpData.feedback}
-                    onChange={(e) => handleInputChange('feedback', e.target.value)}
-                  />
-                </CardContent>
-              </Card>
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <Card variant="outlined">
-                <CardContent>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                    <QuestionAnswer color="primary" sx={{ mr: 1 }} />
-                    <Typography variant="h6">Support Between Visits</Typography>
-                  </Box>
-                  <Typography variant="body2" paragraph>
-                    Patient is encouraged to contact the clinic if:
-                  </Typography>
-                  <List dense>
-                    <ListItem>
-                      <ListItemIcon><Check color="primary" /></ListItemIcon>
-                      <ListItemText primary="Sound quality changes or deteriorates" />
-                    </ListItem>
-                    <ListItem>
-                      <ListItemIcon><Check color="primary" /></ListItemIcon>
-                      <ListItemText primary="Physical discomfort develops" />
-                    </ListItem>
-                    <ListItem>
-                      <ListItemIcon><Check color="primary" /></ListItemIcon>
-                      <ListItemText primary="Persistent feedback occurs" />
-                    </ListItem>
-                    <ListItem>
-                      <ListItemIcon><Check color="primary" /></ListItemIcon>
-                      <ListItemText primary="Hearing aid is damaged or malfunctions" />
-                    </ListItem>
-                  </List>
-                </CardContent>
-              </Card>
-            </Grid>
-          </Grid>
-          
-          <Box sx={{ display: 'flex', flexDirection: 'row', pt: 3, mt: 2 }}>
-            <Button
-              color="inherit"
-              onClick={handleBack}
-              sx={{ mr: 1 }}
-            >
-              Back
-            </Button>
-            <Button
-              variant="contained"
-              color="secondary"
-              onClick={handleReset}
-            >
-              Start New Follow-Up
-            </Button>
-          </Box>
-        </Box>
-      )
-    }
-  ], [followUpData, satisfactionRating, gainAdjustments, selectedProgram, features, followUpTimeframe, handleInputChange, handleNext, handleBack, handleReset]);
 
   return (
     <Box>
@@ -955,124 +49,281 @@ const FollowUpPage: React.FC = () => {
           color: 'primary.contrastText',
           py: { xs: 4, md: 6 },
           px: 2,
-          textAlign: 'center'
+          textAlign: 'center',
         }}
       >
         <Container maxWidth="md">
           <HearingOutlined sx={{ fontSize: { xs: 40, md: 60 }, mb: 2 }} />
-          <Typography 
-            variant="h3" 
-            component="h1" 
-            gutterBottom 
+          <Typography
+            variant="h3"
+            component="h1"
+            gutterBottom
             fontWeight="bold"
             sx={{ fontSize: { xs: '1.75rem', sm: '2.25rem', md: '3rem' } }}
           >
             Hearing Aid Follow-Up Appointment Guide
           </Typography>
-          <Typography 
-            variant="h6" 
+          <Typography
+            variant="h6"
             sx={{ fontSize: { xs: '1rem', sm: '1.1rem', md: '1.25rem' }, maxWidth: '800px', mx: 'auto' }}
           >
-            A comprehensive guide for audiology students to conduct effective hearing aid follow-up appointments
+            A reference guide for audiology students covering all components of an effective hearing aid follow-up
           </Typography>
         </Container>
       </Box>
 
-      {/* Main Content */}
-      <Container maxWidth="lg" sx={{ py: { xs: 4, md: 6 } }}>
-        <Grid container spacing={4}>
-          {/* Left Side - Information */}
-          <Grid item xs={12} md={4}>
-            <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
-              <Typography variant="h5" gutterBottom>
-                About Follow-Up Appointments
+      <Container maxWidth="lg" sx={{ py: { xs: 3, md: 5 } }}>
+        {/* Section 1: Patient Interview */}
+        <Accordion defaultExpanded>
+          <AccordionSummary expandIcon={<ExpandMore />}>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <EmojiPeople color="primary" sx={{ mr: 1.5 }} />
+              <Typography variant="h6">1. Patient Interview</Typography>
+            </Box>
+          </AccordionSummary>
+          <AccordionDetails>
+            <Typography variant="subtitle2" fontWeight="bold" gutterBottom>Key Questions to Ask:</Typography>
+            <List dense>
+              <ListItem><ListItemIcon><Check color="primary" /></ListItemIcon>
+                <ListItemText primary="How many hours per day are you wearing your hearing aids?" secondary="Assess daily wear time and consistency" /></ListItem>
+              <ListItem><ListItemIcon><Check color="primary" /></ListItemIcon>
+                <ListItemText primary="In what environments do you use your hearing aids?" secondary="Home, work, restaurants, social gatherings, etc." /></ListItem>
+              <ListItem><ListItemIcon><Check color="primary" /></ListItemIcon>
+                <ListItemText primary="Are there situations where you still have difficulty hearing?" secondary="Identify specific challenging environments" /></ListItem>
+              <ListItem><ListItemIcon><Check color="primary" /></ListItemIcon>
+                <ListItemText primary="How would you rate your overall satisfaction?" secondary="Use a structured scale (1-10 or very dissatisfied to very satisfied)" /></ListItem>
+              <ListItem><ListItemIcon><Check color="primary" /></ListItemIcon>
+                <ListItemText primary="Have you noticed any changes in your hearing?" secondary="Changes may indicate need for retesting or medical referral" /></ListItem>
+            </List>
+            <Alert severity="info" sx={{ mt: 2 }}>
+              <Typography variant="body2">
+                <strong>What to listen for:</strong> Pay attention to specific complaints about sound quality, comfort, or situations.
+                These will guide your adjustment decisions.
               </Typography>
-              <Typography variant="body1" paragraph>
-                Follow-up appointments are crucial for ensuring patient satisfaction and optimal benefit from hearing aids.
-                They allow audiologists to address concerns, make adjustments, and provide additional counseling.
-              </Typography>
-              <Typography variant="body1">
-                Key aspects of a successful follow-up include:
-              </Typography>
-              <List>
-                <ListItem>
-                  <ListItemIcon><EmojiPeople color="primary" /></ListItemIcon>
-                  <ListItemText 
-                    primary="Patient Experience Assessment" 
-                    secondary="Evaluate satisfaction and identify challenges" 
-                  />
-                </ListItem>
-                <ListItem>
-                  <ListItemIcon><Build color="primary" /></ListItemIcon>
-                  <ListItemText 
-                    primary="Technical Evaluation" 
-                    secondary="Check physical condition and performance" 
-                  />
-                </ListItem>
-                <ListItem>
-                  <ListItemIcon><Settings color="primary" /></ListItemIcon>
-                  <ListItemText 
-                    primary="Adjustments & Fine-Tuning" 
-                    secondary="Optimize settings based on feedback" 
-                  />
-                </ListItem>
-                <ListItem>
-                  <ListItemIcon><RecordVoiceOver color="primary" /></ListItemIcon>
-                  <ListItemText 
-                    primary="Counseling & Education" 
-                    secondary="Reinforce proper use and care techniques" 
-                  />
-                </ListItem>
-              </List>
-            </Paper>
+            </Alert>
+          </AccordionDetails>
+        </Accordion>
 
-            <Paper elevation={2} sx={{ p: 3 }}>
-              <Typography variant="h5" gutterBottom>
-                Resources
+        {/* Section 2: Physical Inspection */}
+        <Accordion>
+          <AccordionSummary expandIcon={<ExpandMore />}>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <Build color="primary" sx={{ mr: 1.5 }} />
+              <Typography variant="h6">2. Physical Inspection</Typography>
+            </Box>
+          </AccordionSummary>
+          <AccordionDetails>
+            <Typography variant="subtitle2" fontWeight="bold" gutterBottom>Physical Inspection Checklist:</Typography>
+            <List dense>
+              <ListItem><ListItemIcon><Check color="primary" /></ListItemIcon>
+                <ListItemText primary="Check for cracks or damage to the case" secondary="Inspect housing, battery door, and receiver" /></ListItem>
+              <ListItem><ListItemIcon><Check color="primary" /></ListItemIcon>
+                <ListItemText primary="Check battery door for proper function" secondary="Door should open/close smoothly; check contacts" /></ListItem>
+              <ListItem><ListItemIcon><Check color="primary" /></ListItemIcon>
+                <ListItemText primary="Examine tubing/wires for damage or stiffening" secondary="Replace tubing that is yellowed, stiff, or cracked" /></ListItem>
+              <ListItem><ListItemIcon><Check color="primary" /></ListItemIcon>
+                <ListItemText primary="Check earmold/dome for wax buildup or damage" secondary="Clean or replace as needed" /></ListItem>
+              <ListItem><ListItemIcon><Check color="primary" /></ListItemIcon>
+                <ListItemText primary="Clean microphone ports and receiver openings" secondary="Use cleaning tools appropriate for the device" /></ListItem>
+            </List>
+            <Alert severity="warning" sx={{ mt: 2 }}>
+              <Typography variant="body2">
+                <strong>When to flag for repair:</strong> Visible cracks in housing, intermittent sound, battery door not closing,
+                moisture damage indicators triggered, or loose receiver wire.
               </Typography>
-              <List>
-                <ListItem component="a" href="/audiometry_trainer/assets/follow_up_checklist.html" target="_blank">
-                  <ListItemIcon><Assignment color="primary" /></ListItemIcon>
-                  <ListItemText primary="Follow-Up Appointment Checklist" />
-                </ListItem>
-                <ListItem component="a" href="#" target="_blank">
-                  <ListItemIcon><Help color="primary" /></ListItemIcon>
-                  <ListItemText primary="Troubleshooting Guide" />
-                </ListItem>
-                <ListItem component="a" href="#" target="_blank">
-                  <ListItemIcon><HearingOutlined color="primary" /></ListItemIcon>
-                  <ListItemText primary="Hearing Aid User Guides" />
-                </ListItem>
-              </List>
-            </Paper>
-          </Grid>
-          
-          {/* Right Side - Interactive Process */}
-          <Grid item xs={12} md={8}>
-            <Paper elevation={3} sx={{ p: { xs: 2, md: 4 }, borderRadius: 2 }}>
-              <Typography variant="h5" gutterBottom>
-                Follow-Up Appointment Workflow
+            </Alert>
+          </AccordionDetails>
+        </Accordion>
+
+        {/* Section 3: Listening Check */}
+        <Accordion>
+          <AccordionSummary expandIcon={<ExpandMore />}>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <VolumeUp color="primary" sx={{ mr: 1.5 }} />
+              <Typography variant="h6">3. Listening Check</Typography>
+            </Box>
+          </AccordionSummary>
+          <AccordionDetails>
+            <Typography variant="subtitle2" fontWeight="bold" gutterBottom>Procedure Steps:</Typography>
+            <List dense>
+              <ListItem><ListItemIcon><Check color="primary" /></ListItemIcon>
+                <ListItemText primary="Test multiple input levels" secondary="Soft, moderate, and loud speech to verify WDRC performance" /></ListItem>
+              <ListItem><ListItemIcon><Check color="primary" /></ListItemIcon>
+                <ListItemText primary="Check for clear sound quality" secondary="Listen for distortion, intermittency, or static" /></ListItem>
+              <ListItem><ListItemIcon><Check color="primary" /></ListItemIcon>
+                <ListItemText primary="Test all programs/memories" secondary="Verify program switching, volume control, and feature toggling" /></ListItem>
+              <ListItem><ListItemIcon><Check color="primary" /></ListItemIcon>
+                <ListItemText primary="Check telecoil function" secondary="If equipped, verify telecoil pickup with a phone or loop system" /></ListItem>
+            </List>
+            <Typography variant="subtitle2" fontWeight="bold" sx={{ mt: 2 }} gutterBottom>What to Listen for with Stethoscope:</Typography>
+            <Typography variant="body2" color="text.secondary" component="div">
+              <ul style={{ paddingLeft: '1.5rem', margin: '0.5rem 0' }}>
+                <li><strong>Distortion:</strong> Indicates receiver damage or excessive gain</li>
+                <li><strong>Intermittency:</strong> May indicate loose wire, corroded contacts, or moisture</li>
+                <li><strong>Feedback/whistling:</strong> Check fit, tubing, and gain settings</li>
+                <li><strong>Weak output:</strong> Check battery, wax guard, and receiver</li>
+              </ul>
+            </Typography>
+          </AccordionDetails>
+        </Accordion>
+
+        {/* Section 4: Adjustments — Cross-link */}
+        <Accordion>
+          <AccordionSummary expandIcon={<ExpandMore />}>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <Tune color="primary" sx={{ mr: 1.5 }} />
+              <Typography variant="h6">4. Adjustments</Typography>
+            </Box>
+          </AccordionSummary>
+          <AccordionDetails>
+            <Alert severity="info" sx={{ mb: 2 }}>
+              <Typography variant="body2">
+                For detailed complaint-based adjustment guidance, see the{' '}
+                <Link to="/hearing-aids/adjustments" style={{ color: 'inherit', fontWeight: 'bold' }}>
+                  Complaint-Based Adjustments Guide
+                </Link>.
               </Typography>
-              <Typography variant="body1" paragraph>
-                Work through each step of a typical hearing aid follow-up appointment. This interactive guide will help you practice the essential components of a thorough follow-up.
+            </Alert>
+            <Typography variant="subtitle2" fontWeight="bold" gutterBottom>When to Adjust vs. When to Counsel:</Typography>
+            <List dense>
+              <ListItem><ListItemIcon><Check color="primary" /></ListItemIcon>
+                <ListItemText primary="Adjust when complaints are specific and reproducible" secondary="E.g., 'speech sounds muffled' → increase mid-frequency gain" /></ListItem>
+              <ListItem><ListItemIcon><Check color="primary" /></ListItemIcon>
+                <ListItemText primary="Counsel when the issue is adaptation-related" secondary="E.g., 'everything sounds different' in the first 2 weeks → explain acclimatization" /></ListItem>
+              <ListItem><ListItemIcon><Check color="primary" /></ListItemIcon>
+                <ListItemText primary="Combine both for best results" secondary="Make small adjustments AND set expectations for adaptation" /></ListItem>
+            </List>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+              <strong>Key principle:</strong> Always verify changes with real-ear measurements when possible.
+              Make small adjustments (2-3 dB) and confirm with the patient before making additional changes.
+            </Typography>
+          </AccordionDetails>
+        </Accordion>
+
+        {/* Section 5: Patient Education & Counseling */}
+        <Accordion>
+          <AccordionSummary expandIcon={<ExpandMore />}>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <RecordVoiceOver color="primary" sx={{ mr: 1.5 }} />
+              <Typography variant="h6">5. Patient Education & Counseling</Typography>
+            </Box>
+          </AccordionSummary>
+          <AccordionDetails>
+            <Box sx={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: 2, mb: 3 }}>
+              <Card variant="outlined" sx={{ height: '100%' }}>
+                <CardHeader avatar={<Build color="primary" />} title="Daily Care" />
+                <CardContent>
+                  <Typography variant="body2" color="text.secondary">
+                    • Clean hearing aids daily with a soft, dry cloth<br />
+                    • Remove batteries at night (if non-rechargeable)<br />
+                    • Store in a dry, safe place<br />
+                    • Check for and remove earwax from openings
+                  </Typography>
+                </CardContent>
+              </Card>
+              <Card variant="outlined" sx={{ height: '100%' }}>
+                <CardHeader avatar={<SelfImprovement color="primary" />} title="Usage Tips" />
+                <CardContent>
+                  <Typography variant="body2" color="text.secondary">
+                    • Start with shorter wear times and gradually increase<br />
+                    • Begin in quieter environments before more challenging ones<br />
+                    • Take breaks if experiencing fatigue<br />
+                    • Use appropriate programs for different environments
+                  </Typography>
+                </CardContent>
+              </Card>
+              <Card variant="outlined" sx={{ height: '100%' }}>
+                <CardHeader avatar={<RecordVoiceOver color="primary" />} title="Communication Strategies" />
+                <CardContent>
+                  <Typography variant="body2" color="text.secondary">
+                    • Face the speaker when possible<br />
+                    • Reduce background noise<br />
+                    • Ask for clarification when needed<br />
+                    • Inform others of your hearing needs
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Box>
+
+            <Alert severity="info">
+              <Typography variant="body2">
+                For patient troubleshooting guides and printable handouts, see the{' '}
+                <Link to="/hearing-aids/troubleshooting" style={{ color: 'inherit', fontWeight: 'bold' }}>
+                  Troubleshooting & Handouts page
+                </Link>.
               </Typography>
-              
-              <Stepper activeStep={activeStep} orientation="vertical">
-                {steps.map((step, index) => (
-                  <Step key={step.label}>
-                    <StepLabel>
-                      <Typography variant="subtitle1">{step.label}</Typography>
-                      <Typography variant="body2" color="text.secondary">{step.description}</Typography>
-                    </StepLabel>
-                    <StepContent>
-                      {step.content}
-                    </StepContent>
-                  </Step>
-                ))}
-              </Stepper>
-            </Paper>
-          </Grid>
-        </Grid>
+            </Alert>
+          </AccordionDetails>
+        </Accordion>
+
+        {/* Section 6: Follow-Up Planning */}
+        <Accordion>
+          <AccordionSummary expandIcon={<ExpandMore />}>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <EventAvailable color="primary" sx={{ mr: 1.5 }} />
+              <Typography variant="h6">6. Follow-Up Planning</Typography>
+            </Box>
+          </AccordionSummary>
+          <AccordionDetails>
+            <Typography variant="subtitle2" fontWeight="bold" gutterBottom>Recommended Follow-Up Intervals:</Typography>
+            <List dense>
+              <ListItem><ListItemIcon><Check color="primary" /></ListItemIcon>
+                <ListItemText primary="2 weeks after initial fitting" secondary="Address early adaptation issues; verify basic function" /></ListItem>
+              <ListItem><ListItemIcon><Check color="primary" /></ListItemIcon>
+                <ListItemText primary="1 month" secondary="Fine-tune based on real-world experience; increase gain toward targets" /></ListItem>
+              <ListItem><ListItemIcon><Check color="primary" /></ListItemIcon>
+                <ListItemText primary="3 months" secondary="Confirm acclimatization; address remaining complaints; REM verification" /></ListItem>
+              <ListItem><ListItemIcon><Check color="primary" /></ListItemIcon>
+                <ListItemText primary="6-12 months (ongoing)" secondary="Annual hearing retest; hearing aid performance check; programming update" /></ListItem>
+            </List>
+
+            <Divider sx={{ my: 2 }} />
+
+            <Typography variant="subtitle2" fontWeight="bold" gutterBottom>When to Schedule Sooner:</Typography>
+            <List dense>
+              <ListItem><ListItemIcon><Check color="warning" /></ListItemIcon>
+                <ListItemText primary="Patient reports significant dissatisfaction" /></ListItem>
+              <ListItem><ListItemIcon><Check color="warning" /></ListItemIcon>
+                <ListItemText primary="Sound quality changes or hearing aid malfunctions" /></ListItem>
+              <ListItem><ListItemIcon><Check color="warning" /></ListItemIcon>
+                <ListItemText primary="Physical discomfort or persistent feedback" /></ListItem>
+              <ListItem><ListItemIcon><Check color="warning" /></ListItemIcon>
+                <ListItemText primary="Change in hearing (sudden or gradual)" /></ListItem>
+            </List>
+          </AccordionDetails>
+        </Accordion>
+
+        {/* Resources */}
+        <Paper variant="outlined" sx={{ p: 3, mt: 3 }}>
+          <Typography variant="h6" gutterBottom>Resources</Typography>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+            <Button
+              variant="outlined"
+              startIcon={<Assignment />}
+              component="a"
+              href="/audiometry_trainer/assets/follow_up_checklist.html"
+              target="_blank"
+            >
+              Print Follow-Up Checklist
+            </Button>
+            <Button
+              variant="outlined"
+              startIcon={<Tune />}
+              component={Link}
+              to="/hearing-aids/adjustments"
+            >
+              Complaint-Based Adjustments
+            </Button>
+            <Button
+              variant="outlined"
+              startIcon={<Help />}
+              component={Link}
+              to="/hearing-aids/troubleshooting"
+            >
+              Troubleshooting & Handouts
+            </Button>
+          </Box>
+        </Paper>
       </Container>
     </Box>
   );

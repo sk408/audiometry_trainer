@@ -1017,7 +1017,7 @@ const TutorialPage: React.FC = () => {
               variant="contained" 
               color="primary"
               component={Link}
-              to="/patients"
+              to="/practice/patients"
               sx={{ mt: 1 }}
             >
               Go to Virtual Patients
@@ -1242,7 +1242,7 @@ const TutorialPage: React.FC = () => {
                 color="primary" 
                 fullWidth
                 component={Link}
-                to="/patients"
+                to="/practice/patients"
               >
                 Start Practicing
               </Button>

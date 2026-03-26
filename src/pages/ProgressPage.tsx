@@ -209,7 +209,7 @@ const ProgressPage: React.FC = () => {
               size="large"
               startIcon={<PersonIcon />}
               component={RouterLink}
-              to="/patients"
+              to="/practice/patients"
               sx={{ px: 4, py: 1.5 }}
             >
               Start Practicing
