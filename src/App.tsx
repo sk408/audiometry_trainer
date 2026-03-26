@@ -70,6 +70,8 @@ const SettingsPage = React.lazy(() => import('./pages/SettingsPage'));
 const ReferralsPage = React.lazy(() => import('./pages/ReferralsPage'));
 const EarmoldsPage = React.lazy(() => import('./pages/EarmoldsPage'));
 const ComplaintAdjustmentsPage = React.lazy(() => import('./pages/ComplaintAdjustmentsPage'));
+const ClinicalDecisionPage = React.lazy(() => import('./pages/ClinicalDecisionPage'));
+const AudiogramPatternsPage = React.lazy(() => import('./pages/AudiogramPatternsPage'));
 
 // Import logo for splash screen
 import logo from './logo512.png';
@@ -113,6 +115,8 @@ const navigation: NavEntry[] = [
     label: 'Reference', icon: <MenuBook />, basePath: '/reference',
     children: [
       { label: 'Ear Anatomy', path: '/reference/anatomy', icon: <ViewInAr /> },
+      { label: 'Audiogram Patterns', path: '/reference/audiogram-patterns', icon: <AssessmentIcon /> },
+      { label: 'Clinical Decision-Making', path: '/reference/clinical-decisions', icon: <Assignment /> },
     ],
   },
   {
@@ -336,6 +340,8 @@ function AppContent({ darkMode, toggleDarkMode }: { darkMode: boolean; toggleDar
 
               {/* Reference */}
               <Route path="/reference/anatomy" element={<EarAnatomyPage />} />
+              <Route path="/reference/audiogram-patterns" element={<AudiogramPatternsPage />} />
+              <Route path="/reference/clinical-decisions" element={<ClinicalDecisionPage />} />
 
               {/* Practice */}
               <Route path="/practice/patients" element={<PatientsPage />} />
@@ -388,6 +394,8 @@ function AppContent({ darkMode, toggleDarkMode }: { darkMode: boolean; toggleDar
               <Box sx={{ minWidth: 140 }}>
                 <Typography variant="subtitle2" fontWeight="bold" gutterBottom>Reference</Typography>
                 <Typography variant="body2"><Link to="/reference/anatomy" style={{ color: 'inherit', textDecoration: 'none' }}>Ear Anatomy</Link></Typography>
+                <Typography variant="body2"><Link to="/reference/audiogram-patterns" style={{ color: 'inherit', textDecoration: 'none' }}>Audiogram Patterns</Link></Typography>
+                <Typography variant="body2"><Link to="/reference/clinical-decisions" style={{ color: 'inherit', textDecoration: 'none' }}>Clinical Decisions</Link></Typography>
               </Box>
               <Box sx={{ minWidth: 140 }}>
                 <Typography variant="subtitle2" fontWeight="bold" gutterBottom>Practice</Typography>

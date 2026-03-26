@@ -19,6 +19,8 @@ const ROUTE_LABELS: Record<string, string> = {
   'earmolds': 'Earmolds & Amplification',
   'reference': 'Reference',
   'anatomy': 'Ear Anatomy',
+  'audiogram-patterns': 'Audiogram Patterns',
+  'clinical-decisions': 'Clinical Decision-Making',
   'practice': 'Practice',
   'patients': 'Virtual Patients',
   'quizzes': 'Quizzes & Scenarios',
