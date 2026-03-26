@@ -71,11 +71,11 @@ class AudioService {
     
     // For values lower than 0 dB HL
     if (dBHL < 0) {
-      return 0.0001 * Math.pow(10, (dBHL) / 20);
+      return 0.001 * Math.pow(10, (dBHL) / 20);
     }
-    
-    // Base calculation
-    let amplitude = 0.0001 * Math.pow(10, dBHL / 20);
+
+    // Base calculation — 0.001 base ensures audibility on laptop speakers
+    let amplitude = 0.001 * Math.pow(10, dBHL / 20);
     
     // Apply calibration adjustment
     if (isBone) {
@@ -122,6 +122,10 @@ class AudioService {
 
     // Ensure the audio context is running before creating nodes
     await this.resumeAudioContext();
+
+    if (this.audioContext.state !== 'running') {
+      console.warn('AudioContext is not running after resume attempt, state:', this.audioContext.state);
+    }
 
     // Destroy any existing audio nodes
     this.destroyAllAudioNodes();
@@ -447,7 +451,9 @@ class AudioService {
   }
 
   /**
-   * Play a pulsed tone that alternates between on and off
+   * Play a pulsed tone using Web Audio API gain scheduling.
+   * Creates a single oscillator and schedules on/off pulses via gainNode.gain
+   * to avoid the race condition of calling playTone inside setInterval.
    * @param frequency - Frequency in Hz
    * @param dBHL - Hearing level in dB
    * @param ear - Ear to present to
@@ -459,22 +465,85 @@ class AudioService {
     ear: Ear,
     testType: 'air' | 'bone' | 'masked_air' | 'masked_bone' = 'air'
   ): Promise<void> {
-    // Stop any existing pulsed tone
+    // Stop any existing tone
     this.stopTone();
+
+    if (!this.audioContext) {
+      this.initializeAudioContext();
+    }
+
+    if (!this.audioContext) {
+      console.error('Could not initialize AudioContext');
+      return;
+    }
+
+    await this.resumeAudioContext();
+
+    if (this.audioContext.state !== 'running') {
+      console.warn('AudioContext is not running after resume attempt, state:', this.audioContext.state);
+    }
 
     // Store current frequency
     this.currentFrequency = frequency;
 
-    // Play the first tone immediately
-    await this.playTone(frequency, dBHL, ear, this.pulseDuration, testType);
+    // Calculate amplitude
+    let amplitude: number;
+    if (testType === 'bone' || testType === 'masked_bone') {
+      amplitude = this.dBToAmplitude(dBHL, frequency, true);
+    } else {
+      amplitude = this.dBToAmplitude(dBHL, frequency);
+    }
 
-    // Set up interval for pulsing
-    this.pulseInterval = window.setInterval(() => {
-      this.playTone(frequency, dBHL, ear, this.pulseDuration, testType);
-    }, this.pulseDuration + this.pauseDuration);
-    
+    // Create audio nodes
+    this.oscillator = this.audioContext.createOscillator();
+    this.gainNode = this.audioContext.createGain();
+    this.panNode = this.audioContext.createStereoPanner();
+
+    this.oscillator.type = this.getBoneOscillatorType(testType);
+    this.oscillator.frequency.value = frequency;
+    this.setPan(ear);
+
+    if (testType === 'bone' || testType === 'masked_bone') {
+      this.applyBoneConductionEffect();
+    }
+
+    // Start with gain at 0
+    this.gainNode.gain.value = 0;
+
+    // Connect nodes
+    this.oscillator.connect(this.gainNode);
+    this.gainNode.connect(this.panNode);
+    this.panNode.connect(this.audioContext.destination);
+
+    // Start the oscillator
+    this.oscillator.start();
+
+    // Schedule 3 pulses using gain automation (no setInterval needed)
+    const now = this.audioContext.currentTime;
+    const pulseSec = this.pulseDuration / 1000;
+    const pauseSec = this.pauseDuration / 1000;
+    const ramp = 0.005; // 5ms ramp to avoid clicks
+    const numPulses = 3;
+
+    for (let i = 0; i < numPulses; i++) {
+      const pulseStart = now + i * (pulseSec + pauseSec);
+      const pulseEnd = pulseStart + pulseSec;
+
+      // Ramp up
+      this.gainNode.gain.setValueAtTime(0, pulseStart);
+      this.gainNode.gain.linearRampToValueAtTime(amplitude, pulseStart + ramp);
+      // Hold at amplitude
+      this.gainNode.gain.setValueAtTime(amplitude, pulseEnd - ramp);
+      // Ramp down
+      this.gainNode.gain.linearRampToValueAtTime(0, pulseEnd);
+    }
+
+    // Stop oscillator after all pulses complete
+    const totalDuration = numPulses * (pulseSec + pauseSec);
+    this.oscillator.stop(now + totalDuration);
+
     if (this.debugMode) {
-      console.log(`Playing pulsed ${testType} tone: ${frequency}Hz at ${dBHL}dB HL to ${ear} ear`);
+      console.log(`Playing pulsed ${testType} tone: ${frequency}Hz at ${dBHL}dB HL to ${ear} ear (${numPulses} pulses)`);
     }
   }
 
@@ -490,6 +559,41 @@ class AudioService {
     if (this.debugMode) {
       console.log(`Pulse timing set: ${pulseDuration}ms on, ${pauseDuration}ms off`);
     }
+  }
+
+  /**
+   * Play a clearly audible test tone for debugging audio output.
+   * 1000Hz sine wave at high gain (0.5) for 500ms.
+   */
+  public async testAudio(): Promise<void> {
+    if (!this.audioContext) {
+      this.initializeAudioContext();
+    }
+    if (!this.audioContext) {
+      console.error('Could not initialize AudioContext');
+      return;
+    }
+
+    await this.resumeAudioContext();
+
+    this.destroyAllAudioNodes();
+
+    const osc = this.audioContext.createOscillator();
+    const gain = this.audioContext.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = 1000;
+    gain.gain.value = 0;
+    osc.connect(gain);
+    gain.connect(this.audioContext.destination);
+    osc.start();
+
+    const now = this.audioContext.currentTime;
+    gain.gain.linearRampToValueAtTime(0.5, now + 0.01);
+    gain.gain.setValueAtTime(0.5, now + 0.49);
+    gain.gain.linearRampToValueAtTime(0, now + 0.5);
+    osc.stop(now + 0.6);
+
+    console.log('testAudio: playing 1000Hz at gain 0.5 for 500ms');
   }
 
   /**

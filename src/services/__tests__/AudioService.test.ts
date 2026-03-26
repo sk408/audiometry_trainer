@@ -158,9 +158,9 @@ describe('AudioService', () => {
   // Pulsed Tone
   // =========================================================================
   describe('Pulsed Tone', () => {
-    it('10. playPulsedTone creates interval (via isPulsed flag)', async () => {
+    it('10. playPulsedTone creates gain-scheduled pulses (via isPulsed flag)', async () => {
       await audioService.playTone(1000, 40, 'right', 200, 'air', true);
-      // Should not throw; the interval is running
+      // Should not throw; pulses are scheduled via gain automation
       audioService.stopTone(); // Clean up
     });
 
@@ -170,11 +170,15 @@ describe('AudioService', () => {
       audioService.setPulseTiming(200, 200);
     });
 
-    it('12. stopTone clears pulse interval', async () => {
+    it('12. stopTone cleans up pulsed tone nodes', async () => {
       await audioService.playTone(1000, 40, 'right', 200, 'air', true);
       expect(() => audioService.stopTone()).not.toThrow();
       // Calling stop again should also be safe
       expect(() => audioService.stopTone()).not.toThrow();
+    });
+
+    it('12b. testAudio plays a debug tone without throwing', async () => {
+      await expect(audioService.testAudio()).resolves.toBeUndefined();
     });
   });
 
