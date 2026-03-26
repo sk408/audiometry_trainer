@@ -381,9 +381,7 @@ const GuidancePanel: React.FC<GuidancePanelProps> = ({
             <Button
               variant="contained"
               color={action === 'present' ? 'info' : 'primary'}
-              onMouseDown={action === 'present' ? (e) => { e.preventDefault(); handleImplementSuggestion(); } : undefined}
-              onTouchStart={action === 'present' ? (e) => { e.preventDefault(); handleImplementSuggestion(); } : undefined}
-              onClick={action !== 'present' ? handleImplementSuggestion : undefined}
+              onClick={handleImplementSuggestion}
               startIcon={actionInfo.icon}
               sx={{
                 mt: 1,

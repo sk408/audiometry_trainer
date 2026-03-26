@@ -23,7 +23,9 @@ export function useTestingSession({ patient, onComplete, onCancel }: UseTestingS
   const toneActiveRef = useRef(false);
   const patientResponseRef = useRef<boolean | null>(null);
   const startToneRef = useRef<(() => void) | null>(null);
+  const stopToneRef = useRef<() => void>(() => {});
   const toneIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const responseRecordedRef = useRef(false);
   const [trainerMode, setTrainerMode] = useState(true);
   const [currentGuidance, setCurrentGuidance] = useState<string>('Start testing at a comfortable level (30-40 dB).');
   const [procedurePhase, setProcedurePhase] = useState<'initial' | 'descending' | 'ascending' | 'threshold' | 'complete'>('initial');
@@ -262,8 +264,11 @@ export function useTestingSession({ patient, onComplete, onCancel }: UseTestingS
       setPatientJustResponded(false);
     }
 
-    const responseTimestamp = Date.now();
-    testingService.recordResponseWithoutAdjustment(didRespond);
+    // Only record if not already recorded for this presentation
+    if (!responseRecordedRef.current) {
+      testingService.recordResponseWithoutAdjustment(didRespond);
+      responseRecordedRef.current = true;
+    }
 
     const currentUserLevel = currentStep.currentLevel;
 
@@ -275,12 +280,14 @@ export function useTestingSession({ patient, onComplete, onCancel }: UseTestingS
 
     setCurrentStep(newStep);
 
-    const updatedSession = testingService.getCurrentSession();
-    if (updatedSession) {
-      if (updatedSession.testSequence && updatedSession.testSequence[updatedSession.currentStep]) {
-        updatedSession.testSequence[updatedSession.currentStep].currentLevel = currentUserLevel;
+    const serviceSession = testingService.getCurrentSession();
+    if (serviceSession) {
+      if (serviceSession.testSequence && serviceSession.testSequence[serviceSession.currentStep]) {
+        serviceSession.testSequence[serviceSession.currentStep].currentLevel = currentUserLevel;
       }
 
+      // Create a new reference so React detects the change and useMemo recalculates thresholds
+      const updatedSession = { ...serviceSession, testSequence: [...serviceSession.testSequence] };
       setSession(updatedSession);
 
       if (updatedSession.completed) {
@@ -317,16 +324,18 @@ export function useTestingSession({ patient, onComplete, onCancel }: UseTestingS
   const stopTone = useCallback(() => {
     audioService.stopTone();
 
+    // Clear auto-stop timer if active
+    if (toneIntervalRef.current) {
+      clearTimeout(toneIntervalRef.current);
+      toneIntervalRef.current = null;
+    }
+
     // C2 fix: read from refs instead of stale closure variables
-    const currentToneActive = toneActiveRef.current;
     const currentPatientResponse = patientResponseRef.current;
-    const currentProcedurePhase = procedurePhase;
 
     setToneActive(false);
     toneActiveRef.current = false;
 
-    const presentationStopTime = Date.now();
-    lastPresentationTimeRef.current = presentationStopTime;
     let effectiveResponse = currentPatientResponse;
     if (effectiveResponse === null) {
       const didRespond = simulatePatientResponse();
@@ -334,18 +343,14 @@ export function useTestingSession({ patient, onComplete, onCancel }: UseTestingS
     }
 
     if (currentStep) {
-      if (presentationStopTime > lastProcessedPresentationRef.current) {
-        if (effectiveResponse !== null) {
-          testingService.recordResponseWithoutAdjustment(Boolean(effectiveResponse));
-          updateTrainerState(Boolean(effectiveResponse));
-          lastProcessedPresentationRef.current = presentationStopTime;
-        } else {
-          if (currentPatientResponse !== null) {
-            testingService.recordResponseWithoutAdjustment(Boolean(currentPatientResponse));
-            updateTrainerState(Boolean(currentPatientResponse));
-            lastProcessedPresentationRef.current = presentationStopTime;
-          }
-        }
+      // Only record the response if it hasn't already been recorded for this presentation
+      if (!responseRecordedRef.current && effectiveResponse !== null) {
+        testingService.recordResponseWithoutAdjustment(Boolean(effectiveResponse));
+        responseRecordedRef.current = true;
+      }
+      // Always update trainer guidance (but only once per presentation)
+      if (effectiveResponse !== null) {
+        updateTrainerState(Boolean(effectiveResponse));
       }
     }
 
@@ -353,31 +358,17 @@ export function useTestingSession({ patient, onComplete, onCancel }: UseTestingS
     patientResponseRef.current = null;
     setShowResponseIndicator(false);
     setPatientJustResponded(false);
-  }, [currentStep, updateTrainerState, procedurePhase, simulatePatientResponse]);
+  }, [currentStep, updateTrainerState, simulatePatientResponse]);
 
-  // Clean up interval on unmount
+  // Clean up on unmount
   useEffect(() => {
     return () => {
       if (toneIntervalRef.current) {
-        clearInterval(toneIntervalRef.current);
+        clearTimeout(toneIntervalRef.current);
       }
       audioService.stopTone();
     };
   }, []);
-
-  // Handle mouse up event outside the component — C2 fix: use ref instead of state
-  useEffect(() => {
-    const handleMouseUp = () => {
-      if (toneActiveRef.current) {
-        stopTone();
-      }
-    };
-
-    document.addEventListener('mouseup', handleMouseUp);
-    return () => {
-      document.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, [stopTone]);
 
   // Handle level adjustment
   const handleAdjustLevel = useCallback((change: number) => {
@@ -687,6 +678,22 @@ export function useTestingSession({ patient, onComplete, onCancel }: UseTestingS
 
       setSession(updatedSession);
 
+      // Also update the TestingService's internal session so that future calls to
+      // getCurrentSession() return a session with the stored thresholds intact.
+      const serviceSession = testingService.getCurrentSession();
+      if (serviceSession) {
+        const serviceStep = serviceSession.testSequence.find(
+          s => s.frequency === currentStep.frequency &&
+               s.ear === currentStep.ear &&
+               s.testType === currentStep.testType
+        );
+        if (serviceStep) {
+          serviceStep.completed = true;
+          serviceStep.responseStatus = 'threshold';
+          serviceStep.currentLevel = validThresholdLevel as HearingLevel;
+        }
+      }
+
       if (currentStep) {
         const updatedCurrentStep: TestStep = {
           ...currentStep,
@@ -914,12 +921,18 @@ export function useTestingSession({ patient, onComplete, onCancel }: UseTestingS
   }, [suggestedAction, procedurePhase, currentStep, handleAdjustLevel, handleStoreThreshold,
       handleSkipStep, validateThreshold, session, preserveThresholds]);
 
-  // Start playing tone with pulsing pattern
+  // Start playing tone — click-to-play with auto-stop after pulsed duration
   const startTone = useCallback(async () => {
     if (!currentStep) return;
 
     try {
       audioService.stopTone();
+
+      // Clear any existing auto-stop timer
+      if (toneIntervalRef.current) {
+        clearTimeout(toneIntervalRef.current);
+        toneIntervalRef.current = null;
+      }
 
       if (currentStep) {
         testingService.setCurrentLevel(currentStep.currentLevel);
@@ -927,6 +940,7 @@ export function useTestingSession({ patient, onComplete, onCancel }: UseTestingS
 
       setPatientResponse(null);
       patientResponseRef.current = null;
+      responseRecordedRef.current = false;
       setPatientJustResponded(false);
       setShowResponseIndicator(false);
       setToneActive(true);
@@ -940,16 +954,25 @@ export function useTestingSession({ patient, onComplete, onCancel }: UseTestingS
         setShowResponseIndicator(true);
         setPatientJustResponded(true);
         testingService.recordResponseWithoutAdjustment(didRespond);
+        responseRecordedRef.current = true;
       }
 
       lastPresentationTimeRef.current = Date.now();
 
-      // C2 fix: setTimeout reads from refs, not stale closure state
+      // After 600ms, check for auto patient response if none yet
       setTimeout(() => {
         if (toneActiveRef.current && !patientResponseRef.current) {
           processAutomaticResponse();
         }
       }, 600);
+
+      // Auto-stop after pulsed tone completes (3 pulses × 400ms = 1200ms + 300ms buffer)
+      toneIntervalRef.current = setTimeout(() => {
+        if (toneActiveRef.current) {
+          stopToneRef.current();
+        }
+        toneIntervalRef.current = null;
+      }, 1500) as unknown as NodeJS.Timeout;
 
     } catch (error) {
       setErrorMessage('Failed to play tone. Please try again.');
@@ -960,10 +983,13 @@ export function useTestingSession({ patient, onComplete, onCancel }: UseTestingS
     }
   }, [currentStep, processAutomaticResponse, simulatePatientResponse]);
 
-  // Keep startToneRef in sync so handleSuggestedAction can call it without circular dep
+  // Keep refs in sync so deferred callbacks use the latest versions
   useEffect(() => {
     startToneRef.current = startTone;
   }, [startTone]);
+  useEffect(() => {
+    stopToneRef.current = stopTone;
+  }, [stopTone]);
 
   // Memoize the thresholds calculation
   const thresholds = useMemo((): ThresholdPoint[] => {

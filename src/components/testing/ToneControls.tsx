@@ -121,66 +121,29 @@ const ToneControls: React.FC<ToneControlsProps> = ({ hookState }) => {
         </Box>
       </Box>
 
-      {/* Present tone button */}
+      {/* Present tone button — click to play, auto-stops after pulsed duration */}
       <Box
         sx={{
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
           mb: 2,
-          touchAction: 'manipulation',
           position: 'relative'
         }}
         className="tone-button-container"
       >
-        {/* Mouse event capture layer for reliable press-and-hold */}
-        {toneActive && (
-          <Box
-            sx={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              zIndex: 9999,
-              cursor: 'pointer'
-            }}
-            onMouseUp={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              if (toneActive) stopTone();
-            }}
-            onTouchEnd={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              if (toneActive) stopTone();
-            }}
-          />
-        )}
         <Button
           color="primary"
           variant="contained"
           size="large"
           disabled={!currentStep}
-          onMouseDown={(e) => {
+          onClick={(e) => {
             e.preventDefault();
-            e.stopPropagation();
-            if (!toneActive) startTone();
-          }}
-          onMouseUp={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            if (toneActive) stopTone();
-          }}
-          onTouchStart={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            if (!toneActive) startTone();
-          }}
-          onTouchEnd={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            if (toneActive) stopTone();
+            if (toneActive) {
+              stopTone();
+            } else {
+              startTone();
+            }
           }}
           startIcon={<VolumeUp />}
           fullWidth
@@ -191,13 +154,7 @@ const ToneControls: React.FC<ToneControlsProps> = ({ hookState }) => {
             '&:hover': {
               backgroundColor: toneActive ? 'success.dark' : 'primary.dark',
             },
-            '&:active': {
-              outline: 'none'
-            },
             userSelect: 'none',
-            touchAction: 'manipulation',
-            position: 'relative',
-            zIndex: 1
           }}
         >
           {toneActive ? 'Tone Playing...' : 'Present Tone'}
