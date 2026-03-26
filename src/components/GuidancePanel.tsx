@@ -376,19 +376,21 @@ const GuidancePanel: React.FC<GuidancePanelProps> = ({
             </Typography>
           </Box>
           
-          {/* New Implementation Button */}
-          {action !== 'present' && onImplementSuggestion && (
+          {/* Implementation Button — shown for all actions including 'present' */}
+          {onImplementSuggestion && (
             <Button
               variant="contained"
-              color="primary"
-              onClick={handleImplementSuggestion}
+              color={action === 'present' ? 'info' : 'primary'}
+              onMouseDown={action === 'present' ? (e) => { e.preventDefault(); handleImplementSuggestion(); } : undefined}
+              onTouchStart={action === 'present' ? (e) => { e.preventDefault(); handleImplementSuggestion(); } : undefined}
+              onClick={action !== 'present' ? handleImplementSuggestion : undefined}
               startIcon={actionInfo.icon}
               sx={{
                 mt: 1,
                 alignSelf: 'flex-end'
               }}
             >
-              Implement This Suggestion
+              {action === 'present' ? 'Present Tone' : 'Implement This Suggestion'}
             </Button>
           )}
         </Box>

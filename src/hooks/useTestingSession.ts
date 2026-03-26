@@ -22,6 +22,7 @@ export function useTestingSession({ patient, onComplete, onCancel }: UseTestingS
   const [toneActive, setToneActive] = useState(false);
   const toneActiveRef = useRef(false);
   const patientResponseRef = useRef<boolean | null>(null);
+  const startToneRef = useRef<(() => void) | null>(null);
   const toneIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const [trainerMode, setTrainerMode] = useState(true);
   const [currentGuidance, setCurrentGuidance] = useState<string>('Start testing at a comfortable level (30-40 dB).');
@@ -899,7 +900,7 @@ export function useTestingSession({ patient, onComplete, onCancel }: UseTestingS
         setProcedurePhase('initial');
         break;
       case 'present':
-        setCurrentGuidance(`Present the tone at ${currentStep.currentLevel} dB to check for a response.`);
+        if (startToneRef.current) startToneRef.current();
         break;
       default:
     }
@@ -958,6 +959,11 @@ export function useTestingSession({ patient, onComplete, onCancel }: UseTestingS
       audioService.stopTone();
     }
   }, [currentStep, processAutomaticResponse, simulatePatientResponse]);
+
+  // Keep startToneRef in sync so handleSuggestedAction can call it without circular dep
+  useEffect(() => {
+    startToneRef.current = startTone;
+  }, [startTone]);
 
   // Memoize the thresholds calculation
   const thresholds = useMemo((): ThresholdPoint[] => {
