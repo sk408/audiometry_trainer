@@ -48,7 +48,7 @@ export default defineConfig({
       manifest: false, // Use the existing manifest.json in public/
     }),
   ],
-  base: '/',
+  base: '/audiometry_trainer/',
   server: {
     port: 3000,
     open: true,
